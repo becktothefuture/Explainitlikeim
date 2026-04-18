@@ -1139,8 +1139,6 @@ select {
   width: min(100%, 252px);
   padding-top: 4px;
   align-self: start;
-  position: sticky;
-  top: clamp(96px, 14vh, 148px);
 }
 
 .eli5-example-tabs__viewport {

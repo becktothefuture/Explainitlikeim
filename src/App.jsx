@@ -16,7 +16,6 @@ const SUPPORT_HREF = 'https://buymeacoffee.com/explainitlikeim';
 const HOW_GIF_VIDEO = './assets/how/michael-scott-waiting.mp4';
 const HOW_GIF_POSTER = './assets/how/michael-scott-waiting-poster.jpg';
 const HOW_GIF_STICKY_TOP_VH = 35;
-const STICKY_EASE_BAND = 132;
 const EXAMPLE_SEPARATOR = '---------------';
 const EXAMPLE_TAB_VISIBLE_COUNT = 6;
 const EXAMPLE_TAB_HEIGHT = 56;
@@ -103,6 +102,9 @@ const HERO_MAGNET_DEFAULTS = {
   bounceTwist: 1,
   bounceSpeed: 1,
   bounceDamping: 1,
+  stickyEaseBand: 196,
+  stickyEaseEnterStrength: 1.36,
+  stickyEaseReleaseStrength: 1.24,
   vibrance: 1.18,
   faceContrast: 0.9,
   innerLightOpacity: 0.58,
@@ -158,6 +160,14 @@ const HERO_CONTROL_SECTIONS = [
       { key: 'bounceTwist', label: 'Bounce Twist', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
       { key: 'bounceSpeed', label: 'Bounce Speed', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
       { key: 'bounceDamping', label: 'Bounce Settle', min: 0.35, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
+    ],
+  },
+  {
+    title: 'Sticky Motion',
+    fields: [
+      { key: 'stickyEaseBand', label: 'Sticky Window', min: 64, max: 320, step: 1, format: (value) => `${Math.round(value)}px` },
+      { key: 'stickyEaseEnterStrength', label: 'Catch Drift', min: 0, max: 2.2, step: 0.01, format: (value) => value.toFixed(2) },
+      { key: 'stickyEaseReleaseStrength', label: 'Release Drift', min: 0, max: 2.2, step: 0.01, format: (value) => value.toFixed(2) },
     ],
   },
   {
@@ -826,6 +836,9 @@ function sanitizeHeroMagnetControls(controls = {}) {
     bounceTwist: clamp(getFiniteNumber(controls.bounceTwist, HERO_MAGNET_DEFAULTS.bounceTwist), 0, 2.4),
     bounceSpeed: clamp(getFiniteNumber(controls.bounceSpeed, HERO_MAGNET_DEFAULTS.bounceSpeed), 0, 2.4),
     bounceDamping: clamp(getFiniteNumber(controls.bounceDamping, HERO_MAGNET_DEFAULTS.bounceDamping), 0.35, 2.4),
+    stickyEaseBand: Math.round(clamp(getFiniteNumber(controls.stickyEaseBand, HERO_MAGNET_DEFAULTS.stickyEaseBand), 64, 320)),
+    stickyEaseEnterStrength: clamp(getFiniteNumber(controls.stickyEaseEnterStrength, HERO_MAGNET_DEFAULTS.stickyEaseEnterStrength), 0, 2.2),
+    stickyEaseReleaseStrength: clamp(getFiniteNumber(controls.stickyEaseReleaseStrength, HERO_MAGNET_DEFAULTS.stickyEaseReleaseStrength), 0, 2.2),
     vibrance: clamp(getFiniteNumber(controls.vibrance, HERO_MAGNET_DEFAULTS.vibrance), 0, 2.4),
     faceContrast: clamp(getFiniteNumber(controls.faceContrast, HERO_MAGNET_DEFAULTS.faceContrast), 0, 2),
     innerLightOpacity: clamp(getFiniteNumber(controls.innerLightOpacity, HERO_MAGNET_DEFAULTS.innerLightOpacity), 0, 1),
@@ -1119,17 +1132,25 @@ function getMotionBehavior() {
     : 'smooth';
 }
 
-function getStickyEaseDistance(distance, band) {
-  const normalized = clamp(distance / band, 0, 1);
+function smootherstep(value) {
+  const clampedValue = clamp(value, 0, 1);
 
-  return distance * normalized * (1 - normalized);
+  return clampedValue * clampedValue * clampedValue * (
+    clampedValue * (clampedValue * 6 - 15) + 10
+  );
+}
+
+function getStickyEaseOffset(distance, band, strength) {
+  const progress = 1 - clamp(distance / band, 0, 1);
+
+  return distance * smootherstep(progress) * strength;
 }
 
 function useStickyEase({
   shellRef,
   contentRef,
   trackRef,
-  band = STICKY_EASE_BAND,
+  motionControls = HERO_MAGNET_DEFAULTS,
 }) {
   const lastOffsetRef = useRef(Number.NaN);
 
@@ -1151,6 +1172,21 @@ function useStickyEase({
     if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       const shellStyle = window.getComputedStyle(shellNode);
       const stickyTop = Number.parseFloat(shellStyle.top);
+      const stickyBand = clamp(
+        getFiniteNumber(motionControls.stickyEaseBand, HERO_MAGNET_DEFAULTS.stickyEaseBand),
+        64,
+        320,
+      );
+      const enterStrength = clamp(
+        getFiniteNumber(motionControls.stickyEaseEnterStrength, HERO_MAGNET_DEFAULTS.stickyEaseEnterStrength),
+        0,
+        2.2,
+      );
+      const releaseStrength = clamp(
+        getFiniteNumber(motionControls.stickyEaseReleaseStrength, HERO_MAGNET_DEFAULTS.stickyEaseReleaseStrength),
+        0,
+        2.2,
+      );
 
       if (shellStyle.position === 'sticky' && Number.isFinite(stickyTop)) {
         const trackRect = trackNode.getBoundingClientRect();
@@ -1160,9 +1196,9 @@ function useStickyEase({
         const releaseDistance = trackRect.bottom - stickyHeight - stickyTop;
 
         if (enterDistance > 0) {
-          nextOffset = -getStickyEaseDistance(enterDistance, band);
+          nextOffset = -getStickyEaseOffset(enterDistance, stickyBand, enterStrength);
         } else if (releaseDistance > 0) {
-          nextOffset = getStickyEaseDistance(releaseDistance, band);
+          nextOffset = getStickyEaseOffset(releaseDistance, stickyBand, releaseStrength);
         }
       }
     }
@@ -1242,7 +1278,16 @@ function useStickyEase({
       resizeObserver?.disconnect();
       window.cancelAnimationFrame(frameId);
     };
-  }, [band, shellRef, trackRef, syncStickyEase]);
+  }, [contentRef, shellRef, trackRef, syncStickyEase]);
+
+  useEffect(() => {
+    syncStickyEase();
+  }, [
+    motionControls.stickyEaseBand,
+    motionControls.stickyEaseEnterStrength,
+    motionControls.stickyEaseReleaseStrength,
+    syncStickyEase,
+  ]);
 }
 
 function getExampleTabVisuals(index) {
@@ -1829,7 +1874,7 @@ function ControlPanelSurface({
   onClose,
 }) {
   return (
-    <aside className="eli5-control-panel" aria-label="Hero letter controls">
+    <aside className="eli5-control-panel" aria-label="Site control panel">
       <div className="eli5-control-panel__header">
         <div>
           <p className="eli5-control-panel__eyebrow">{eyebrow}</p>
@@ -1921,18 +1966,9 @@ function ExampleTopicTabs({
   examples,
   activeSlug,
   onSelect,
-  trackRef,
 }) {
-  const shellRef = useRef(null);
-  const contentRef = useRef(null);
   const tabRefs = useRef([]);
   const activeIndex = Math.max(0, examples.findIndex((example) => example.slug === activeSlug));
-
-  useStickyEase({
-    shellRef,
-    contentRef,
-    trackRef,
-  });
 
   const focusTabAtIndex = (nextIndex) => {
     const wrappedIndex = wrapIndex(nextIndex, examples.length);
@@ -1998,7 +2034,6 @@ function ExampleTopicTabs({
 
   return (
     <div
-      ref={shellRef}
       className="eli5-example-tabs"
       style={{
         '--example-tab-item-height': `${EXAMPLE_TAB_HEIGHT}px`,
@@ -2006,70 +2041,68 @@ function ExampleTopicTabs({
         '--example-tab-viewport-height': `${EXAMPLE_TAB_VIEWPORT_HEIGHT}px`,
       }}
     >
-      <div ref={contentRef} className="eli5-sticky-ease">
-        <div className="eli5-example-tabs__viewport">
-          <div
-            className="eli5-example-tabs__list"
-            role="tablist"
-            aria-label="Example topics"
-            aria-orientation="vertical"
-          >
-            {tabWindow.map(({ example, exampleIndex, position }) => {
-              const isActive = example.slug === activeSlug;
-              const tabStyle = EXAMPLE_TAB_STYLES[exampleIndex % EXAMPLE_TAB_STYLES.length];
-              const visuals = getExampleTabVisuals(position);
+      <div className="eli5-example-tabs__viewport">
+        <div
+          className="eli5-example-tabs__list"
+          role="tablist"
+          aria-label="Example topics"
+          aria-orientation="vertical"
+        >
+          {tabWindow.map(({ example, exampleIndex, position }) => {
+            const isActive = example.slug === activeSlug;
+            const tabStyle = EXAMPLE_TAB_STYLES[exampleIndex % EXAMPLE_TAB_STYLES.length];
+            const visuals = getExampleTabVisuals(position);
 
-              return (
-                <button
-                  key={example.slug}
-                  ref={(node) => {
-                    tabRefs.current[exampleIndex] = node;
-                  }}
-                  id={`example-tab-${example.slug}`}
-                  type="button"
-                  role="tab"
-                  tabIndex={isActive ? 0 : -1}
-                  aria-selected={isActive}
-                  aria-hidden={visuals.opacity === 0 ? 'true' : undefined}
-                  aria-controls={`example-panel-${example.slug}`}
-                  className={`eli5-example-tab${isActive ? ' is-active' : ''}`}
-                  style={{
-                    '--example-tab-color': tabStyle.color,
-                    '--example-tab-tilt': `${tabStyle.tilt}deg`,
-                    '--example-tab-offset-y': `${visuals.offsetY}px`,
-                    '--example-tab-offset-x': `${isActive ? 10 : 0}px`,
-                    '--example-tab-scale': visuals.scale.toFixed(3),
-                    '--example-tab-opacity': visuals.opacity.toFixed(3),
-                  }}
-                  onClick={() => focusTabAtIndex(exampleIndex)}
-                  onKeyDown={(event) => handleTabKeyDown(event, exampleIndex)}
-                >
-                  {example.subject}
-                </button>
-              );
-            })}
-          </div>
+            return (
+              <button
+                key={example.slug}
+                ref={(node) => {
+                  tabRefs.current[exampleIndex] = node;
+                }}
+                id={`example-tab-${example.slug}`}
+                type="button"
+                role="tab"
+                tabIndex={isActive ? 0 : -1}
+                aria-selected={isActive}
+                aria-hidden={visuals.opacity === 0 ? 'true' : undefined}
+                aria-controls={`example-panel-${example.slug}`}
+                className={`eli5-example-tab${isActive ? ' is-active' : ''}`}
+                style={{
+                  '--example-tab-color': tabStyle.color,
+                  '--example-tab-tilt': `${tabStyle.tilt}deg`,
+                  '--example-tab-offset-y': `${visuals.offsetY}px`,
+                  '--example-tab-offset-x': `${isActive ? 10 : 0}px`,
+                  '--example-tab-scale': visuals.scale.toFixed(3),
+                  '--example-tab-opacity': visuals.opacity.toFixed(3),
+                }}
+                onClick={() => focusTabAtIndex(exampleIndex)}
+                onKeyDown={(event) => handleTabKeyDown(event, exampleIndex)}
+              >
+                {example.subject}
+              </button>
+            );
+          })}
         </div>
+      </div>
 
-        <div className="eli5-example-tabs__controls" aria-label="Scroll topics">
-          <button
-            type="button"
-            className="eli5-example-tabs__chevron"
-            onClick={() => shiftActiveBy(-1)}
-            aria-label="Show previous topic"
-          >
-            <ExampleChevronIcon className="eli5-example-tabs__chevron-icon" />
-          </button>
+      <div className="eli5-example-tabs__controls" aria-label="Scroll topics">
+        <button
+          type="button"
+          className="eli5-example-tabs__chevron"
+          onClick={() => shiftActiveBy(-1)}
+          aria-label="Show previous topic"
+        >
+          <ExampleChevronIcon className="eli5-example-tabs__chevron-icon" />
+        </button>
 
-          <button
-            type="button"
-            className="eli5-example-tabs__chevron eli5-example-tabs__chevron--down"
-            onClick={() => shiftActiveBy(1)}
-            aria-label="Show next topic"
-          >
-            <ExampleChevronIcon className="eli5-example-tabs__chevron-icon" />
-          </button>
-        </div>
+        <button
+          type="button"
+          className="eli5-example-tabs__chevron eli5-example-tabs__chevron--down"
+          onClick={() => shiftActiveBy(1)}
+          aria-label="Show next topic"
+        >
+          <ExampleChevronIcon className="eli5-example-tabs__chevron-icon" />
+        </button>
       </div>
     </div>
   );
@@ -2079,6 +2112,7 @@ function ScrollScrubMedia({
   trackRef,
   topVh = 35,
   label,
+  motionControls,
 }) {
   const wrapRef = useRef(null);
   const contentRef = useRef(null);
@@ -2088,6 +2122,7 @@ function ScrollScrubMedia({
     shellRef: wrapRef,
     contentRef,
     trackRef,
+    motionControls,
   });
 
   const syncFrame = useEffectEvent(() => {
@@ -2565,6 +2600,7 @@ export default function App() {
                       trackRef={howSectionRef}
                       topVh={HOW_GIF_STICKY_TOP_VH}
                       label="Michael Scott waiting for the answer to become intelligible."
+                      motionControls={heroMagnetControls}
                     />
                   </div>
                 </section>
@@ -2582,7 +2618,6 @@ export default function App() {
                       examples={EXAMPLES}
                       activeSlug={activeExample.slug}
                       onSelect={setActiveExampleSlug}
-                      trackRef={playfieldBoardRef}
                     />
 
                     <div
@@ -2745,8 +2780,8 @@ export default function App() {
         <div className="eli5-control-dock">
           <ControlPanelSurface
             eyebrow="Linked control panel"
-            title="Hero letters"
-            caption="Motion and material settings are live on this page."
+            title="Live page controls"
+            caption="Hero letters and the Michael Scott sticky motion update live on this page."
             controls={heroMagnetControls}
             sections={HERO_CONTROL_SECTIONS}
             onChange={handleHeroControlChange}
@@ -2759,8 +2794,8 @@ export default function App() {
         ? createPortal(
             <ControlPanelSurface
               eyebrow="Linked control panel"
-              title="Hero letters"
-              caption="Motion and material settings are live on this page."
+              title="Live page controls"
+              caption="Hero letters and the Michael Scott sticky motion update live on this page."
               controls={heroMagnetControls}
               sections={HERO_CONTROL_SECTIONS}
               onChange={handleHeroControlChange}
