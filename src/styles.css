@@ -1,0 +1,1211 @@
+:root {
+  --bg: #e5d8c3;
+  --bg-soft: #f3ead9;
+  --paper: #efe3cf;
+  --paper-strong: #f7efdf;
+  --ink: #243042;
+  --ink-soft: #5f6d7e;
+  --line: rgba(36, 48, 66, 0.12);
+  --line-strong: rgba(36, 48, 66, 0.2);
+  --blue: #345cff;
+  --shadow-soft: none;
+  --shadow-button: 0 5px 0 rgba(112, 76, 32, 0.18), 0 18px 18px rgba(73, 53, 28, 0.1);
+  --magnet-shadow: 0 5px 0 rgba(112, 76, 32, 0.18), 0 18px 18px rgba(73, 53, 28, 0.1);
+  --radius-pill: 999px;
+  --radius-card: 28px;
+  --radius-surface: 42px;
+  --shell: min(1020px, calc(100vw - 88px));
+  --font-ui: 'Outfit', 'Inter', 'Segoe UI', sans-serif;
+  --font-magnet: 'Fredoka', 'Arial Rounded MT Bold', sans-serif;
+}
+
+html {
+  color-scheme: light;
+  scroll-behavior: smooth;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding-inline: clamp(14px, 2vw, 28px);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  background:
+    radial-gradient(circle at 16% 0%, rgba(255, 186, 103, 0.2), transparent 24%),
+    radial-gradient(circle at 82% 10%, rgba(89, 144, 214, 0.08), transparent 24%),
+    radial-gradient(circle at 50% 115%, rgba(110, 84, 49, 0.08), transparent 34%),
+    linear-gradient(180deg, #f2e6d2 0%, var(--bg) 100%);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  border: 0;
+  background: none;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+button,
+a,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.eli5-page {
+  position: relative;
+  min-height: 100vh;
+  overflow-x: clip;
+}
+
+.eli5-page::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 20% 12%, rgba(255, 255, 255, 0.18) 0, transparent 22%),
+    radial-gradient(circle at 78% 18%, rgba(112, 86, 49, 0.045) 0, transparent 28%),
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.08) 0,
+      rgba(255, 255, 255, 0.08) 1px,
+      transparent 1px,
+      transparent 22px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(96, 80, 51, 0.012) 0,
+      rgba(96, 80, 51, 0.012) 1px,
+      transparent 1px,
+      transparent 32px
+    );
+  opacity: 0.4;
+}
+
+.eli5-page::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  box-shadow:
+    inset 0 24px 100px rgba(255, 250, 241, 0.24),
+    inset 0 -48px 120px rgba(112, 84, 50, 0.08);
+  opacity: 0.9;
+}
+
+.eli5-control-launcher,
+.eli5-control-dock {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 40;
+}
+
+.eli5-control-launcher {
+  display: grid;
+  justify-items: end;
+  gap: 10px;
+  width: min(250px, calc(100vw - 24px));
+}
+
+.eli5-control-dock {
+  width: min(390px, calc(100vw - 24px));
+}
+
+.eli5-control-launcher__button,
+.eli5-control-panel__reset,
+.eli5-control-panel__close {
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(255, 252, 247, 0.94);
+  color: var(--ink);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 12px 24px rgba(36, 48, 66, 0.08);
+  backdrop-filter: blur(12px);
+}
+
+.eli5-control-launcher__button {
+  width: 100%;
+}
+
+.eli5-control-launcher__button--secondary,
+.eli5-control-panel__close {
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.eli5-control-panel {
+  width: 100%;
+  padding: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.76);
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(255, 254, 249, 0.98) 0%, rgba(255, 247, 233, 0.96) 100%);
+  box-shadow: 0 24px 60px rgba(36, 48, 66, 0.14);
+  backdrop-filter: blur(18px);
+}
+
+.eli5-control-panel__header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.eli5-control-panel__eyebrow {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink-soft);
+}
+
+.eli5-control-panel h2 {
+  margin: 8px 0 0;
+  font-size: 1.42rem;
+  line-height: 1;
+  letter-spacing: -0.05em;
+}
+
+.eli5-control-panel__caption {
+  margin: 8px 0 0;
+  font-size: 0.92rem;
+  color: var(--ink-soft);
+}
+
+.eli5-control-panel__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.eli5-control-panel__reset,
+.eli5-control-panel__close {
+  min-height: 36px;
+  padding-inline: 12px;
+  font-size: 0.88rem;
+}
+
+.eli5-control-panel__sections {
+  display: grid;
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.eli5-control-section {
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.eli5-control-section:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.eli5-control-section h3 {
+  margin: 0 0 12px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.eli5-control-panel__rows {
+  display: grid;
+  gap: 12px;
+}
+
+.eli5-control-row {
+  display: grid;
+  gap: 8px;
+}
+
+.eli5-control-row__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--ink);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.eli5-control-row__top span:last-child {
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.eli5-control-row input[type='range'] {
+  width: 100%;
+  height: 6px;
+  margin: 0;
+  accent-color: var(--blue);
+  cursor: pointer;
+}
+
+.eli5-main,
+.eli5-section,
+.eli5-hero {
+  position: relative;
+  z-index: 2;
+}
+
+.eli5-magnet-layer {
+  z-index: 3;
+}
+
+.eli5-shell {
+  width: var(--shell);
+  margin: 0 auto;
+  padding: 18px 0 40px;
+}
+
+.eli5-surface {
+  position: relative;
+  padding: 26px clamp(26px, 4vw, 64px) 88px;
+  border: 1px solid rgba(255, 247, 232, 0.62);
+  border-radius: var(--radius-surface);
+  background: linear-gradient(180deg, rgba(246, 238, 224, 0.97) 0%, rgba(238, 227, 209, 0.96) 100%);
+  box-shadow:
+    0 24px 48px rgba(86, 64, 35, 0.08),
+    inset 0 1px 0 rgba(255, 251, 243, 0.56),
+    inset 0 -1px 0 rgba(118, 89, 52, 0.05);
+  overflow: clip;
+}
+
+.eli5-surface::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 18% 10%, rgba(255, 249, 238, 0.42), transparent 28%),
+    linear-gradient(180deg, rgba(255, 250, 242, 0.22), transparent 24%),
+    repeating-linear-gradient(
+      0deg,
+      rgba(96, 80, 51, 0.012) 0,
+      rgba(96, 80, 51, 0.012) 1px,
+      transparent 1px,
+      transparent 18px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(255, 252, 245, 0.08) 0,
+      rgba(255, 252, 245, 0.08) 1px,
+      transparent 1px,
+      transparent 28px
+    );
+  opacity: 0.58;
+}
+
+.eli5-surface > * {
+  position: relative;
+  z-index: 1;
+}
+
+.eli5-header {
+  position: sticky;
+  top: 12px;
+  z-index: 18;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: nowrap;
+  width: fit-content;
+  max-width: min(calc(100% - 18px), 920px);
+  margin: 0 auto;
+  padding: 9px 12px;
+  border: 1px solid rgba(255, 247, 234, 0.72);
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(244, 236, 221, 0.92) 0%, rgba(235, 224, 206, 0.9) 100%);
+  box-shadow: var(--magnet-shadow);
+  backdrop-filter: blur(12px);
+}
+
+.eli5-brand {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.38rem;
+  min-width: 0;
+  white-space: nowrap;
+  font-size: 0.96rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.eli5-brand__lead {
+  color: var(--ink);
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+
+.eli5-brand__accent {
+  color: var(--ink);
+  font-size: 1.08rem;
+  font-weight: 800;
+  letter-spacing: -0.06em;
+  text-shadow:
+    0 -1px 0 rgba(255, 251, 243, 0.84),
+    0 1px 0 rgba(120, 90, 52, 0.1);
+  min-width: 0;
+}
+
+.eli5-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: nowrap;
+}
+
+.eli5-nav a,
+.eli5-button {
+  transition:
+    transform 180ms ease,
+    background-color 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    color 180ms ease;
+}
+
+.eli5-nav a {
+  color: var(--ink-soft);
+  font-size: 0.96rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.eli5-nav a.is-active {
+  color: var(--ink);
+}
+
+.eli5-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 56px;
+  padding: 0 24px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.eli5-button--primary {
+  color: #fffdf8;
+  background: linear-gradient(180deg, #2a3749 0%, #1e2835 100%);
+  box-shadow:
+    0 6px 0 rgba(75, 57, 31, 0.18),
+    0 18px 20px rgba(73, 53, 28, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 -2px 0 rgba(7, 10, 14, 0.16);
+}
+
+.eli5-button--secondary {
+  color: var(--ink);
+  border-color: rgba(182, 148, 100, 0.42);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(236, 221, 196, 0.96) 100%);
+  box-shadow:
+    0 6px 0 rgba(75, 57, 31, 0.12),
+    0 18px 20px rgba(73, 53, 28, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72),
+    inset 0 -1px 0 rgba(84, 61, 32, 0.16);
+}
+
+.eli5-button--support {
+  color: #2a3749;
+  border-color: rgba(255, 255, 255, 0.86);
+  background: linear-gradient(180deg, #f5edd8 0%, #eadfc7 100%);
+  box-shadow:
+    0 6px 0 rgba(75, 57, 31, 0.12),
+    0 18px 20px rgba(73, 53, 28, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72),
+    inset 0 -2px 0 rgba(75, 57, 31, 0.08);
+}
+
+.eli5-button--header {
+  min-height: 42px;
+  padding-inline: 16px;
+  font-size: 0.92rem;
+}
+
+.eli5-button--large {
+  min-height: 64px;
+  padding-inline: 30px;
+  font-size: 1.05rem;
+}
+
+.eli5-hero {
+  display: grid;
+  justify-items: center;
+  padding: 22px 0 18px;
+}
+
+.eli5-hero-stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  min-height: clamp(420px, calc(100svh - 320px), 560px);
+  padding: 40px 0 12px;
+}
+
+.eli5-hero__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 255, 255, 0.84);
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(250, 243, 229, 0.96) 100%);
+  box-shadow: var(--magnet-shadow);
+  color: var(--ink);
+  font-size: 0.84rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+.eli5-hero__notes {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  margin-top: 2px;
+  text-align: center;
+  width: min(100%, 38rem);
+}
+
+.eli5-hero__magnet-slot {
+  position: relative;
+  width: min(100%, 920px);
+  height: clamp(200px, 26vw, 300px);
+  max-width: 100%;
+  pointer-events: none;
+}
+
+.eli5-hero__notes-copy {
+  max-width: 38rem;
+  width: 100%;
+}
+
+.eli5-hero__summary,
+.eli5-how__lede,
+.eli5-section-heading p,
+.eli5-step p,
+.eli5-band-row p,
+.eli5-cta p {
+  margin: 0;
+  font-size: 1.05rem;
+  line-height: 1.56;
+  color: var(--ink-soft);
+}
+
+.eli5-hero__summary {
+  max-width: 38ch;
+  font-size: clamp(0.98rem, 1.18vw, 1.08rem);
+}
+
+.eli5-hero__compat {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px 16px;
+  flex-wrap: wrap;
+  max-width: 52rem;
+  color: var(--ink-soft);
+  font-size: 0.92rem;
+  margin: 0;
+}
+
+.eli5-hero__compat-label {
+  color: var(--ink-soft);
+}
+
+.eli5-hero__compat-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.eli5-tool-logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+}
+
+.eli5-tool-logo svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.eli5-tool-logo--codex {
+  color: #111111;
+}
+
+.eli5-tool-logo--claude-code {
+  color: #d97757;
+}
+
+.eli5-tool-logo--cursor {
+  color: #111111;
+}
+
+.eli5-hero__actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.eli5-section-break {
+  display: flex;
+  justify-content: center;
+  padding: 60px 0;
+}
+
+.eli5-section-break__magnet {
+  display: block;
+  width: var(--divider-width, 132px);
+  height: 28px;
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.04) 38%),
+    var(--divider-color, #2d7cff);
+  transform: rotate(var(--divider-tilt, -4deg));
+  box-shadow:
+    0 8px 0 rgba(112, 76, 32, 0.14),
+    0 18px 18px rgba(73, 53, 28, 0.07),
+    inset 0 2px 0 rgba(255, 255, 255, 0.34),
+    inset 0 -2px 0 rgba(34, 26, 12, 0.08);
+}
+
+.eli5-section {
+  padding: 0;
+}
+
+.eli5-install-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 26px;
+  align-items: start;
+  margin-top: 32px;
+  max-width: 980px;
+  margin-inline: auto;
+}
+
+.eli5-install-step {
+  display: grid;
+  justify-items: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.eli5-install-step__art {
+  width: min(100%, 196px);
+  height: auto;
+  filter: drop-shadow(0 14px 18px rgba(73, 53, 28, 0.14));
+}
+
+.eli5-install-step__copy {
+  display: grid;
+  gap: 8px;
+  max-width: 15rem;
+}
+
+.eli5-install-step__index {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.eli5-install-step h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+  color: var(--ink);
+}
+
+.eli5-install-step p:last-child {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.98rem;
+  line-height: 1.52;
+}
+
+.eli5-how {
+  display: grid;
+  grid-template-columns: minmax(0, 1.04fr) minmax(280px, 0.96fr);
+  gap: 36px;
+  align-items: start;
+}
+
+.eli5-how__copy h2,
+.eli5-section-heading h2,
+.eli5-cta h2 {
+  margin: 0;
+  font-size: clamp(2.35rem, 4.4vw, 4.15rem);
+  line-height: 0.94;
+  letter-spacing: -0.06em;
+}
+
+.eli5-how__copy h2,
+.eli5-section-heading h2,
+.eli5-cta h2,
+.eli5-example-thread__topic {
+  color: var(--ink);
+  text-shadow:
+    0 -1px 0 rgba(255, 251, 243, 0.84),
+    0 1.2px 0 rgba(120, 90, 52, 0.13),
+    0 3px 6px rgba(78, 58, 32, 0.04);
+}
+
+.eli5-how__lede,
+.eli5-section-heading p {
+  margin-top: 14px;
+  max-width: 34rem;
+}
+
+.eli5-step-list {
+  display: grid;
+  gap: 16px;
+  margin-top: 28px;
+}
+
+.eli5-step {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.eli5-step:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.eli5-step__age {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--ink);
+}
+
+.eli5-step h3,
+.eli5-example-card h3 {
+  margin: 0;
+  font-size: 1.3rem;
+  line-height: 1.06;
+  letter-spacing: -0.04em;
+}
+
+.eli5-step p {
+  margin-top: 6px;
+}
+
+.eli5-gif-wrap {
+  position: sticky;
+  top: clamp(86px, 13vh, 124px);
+  align-self: start;
+  padding: 20px 0 0 20px;
+}
+
+.eli5-gif-card__frame {
+  overflow: hidden;
+  padding: 14px;
+  border: 1px solid rgba(255, 247, 232, 0.72);
+  border-radius: 32px;
+  background: linear-gradient(180deg, rgba(255, 250, 242, 0.76) 0%, rgba(236, 224, 204, 0.68) 100%);
+  box-shadow: 0 18px 28px rgba(73, 53, 28, 0.12);
+}
+
+.eli5-gif-card__frame img {
+  width: 100%;
+  height: auto;
+  border-radius: 22px;
+  object-fit: contain;
+}
+
+.eli5-section-heading {
+  max-width: 720px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.eli5-section-heading p {
+  margin-inline: auto;
+}
+
+.eli5-playfield {
+  position: relative;
+  display: grid;
+  align-content: start;
+  min-height: auto;
+  margin-top: 28px;
+  padding: 18px 0 8px;
+}
+
+.eli5-example-tabs {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.eli5-example-tab {
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  color: var(--ink-soft);
+  font-size: 0.96rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  cursor: pointer;
+}
+
+.eli5-example-tab.is-active {
+  color: #fffdf8;
+  background: linear-gradient(180deg, #2a3749 0%, #1e2835 100%);
+  box-shadow: var(--magnet-shadow);
+}
+
+.eli5-example-thread {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  gap: 14px;
+  max-width: 760px;
+  margin-top: 24px;
+  margin-inline: auto;
+}
+
+.eli5-example-thread__category {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.96rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.eli5-example-thread__prompt {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  width: fit-content;
+  max-width: 100%;
+  min-height: 58px;
+  padding: 12px 16px;
+  border-radius: 20px;
+  background: #1d1a23;
+  box-shadow: 0 8px 18px rgba(16, 12, 8, 0.18);
+}
+
+.eli5-example-thread__skill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(136, 72, 255, 0.22);
+  color: #d8c0ff;
+  font-size: 0.96rem;
+  font-weight: 700;
+}
+
+.eli5-example-thread__skill-mark {
+  width: 10px;
+  height: 10px;
+  border-radius: 4px;
+  background: linear-gradient(180deg, #b58fff 0%, #8848ff 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
+.eli5-example-thread__topic {
+  color: #fffdf8;
+  font-size: 1.34rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.eli5-example-thread__scale {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.96rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-align: center;
+}
+
+.eli5-example-output {
+  display: grid;
+  gap: 0;
+  max-width: 56rem;
+}
+
+.eli5-example-output__entry {
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(1.02rem, 1.28vw, 1.14rem);
+  line-height: 1.64;
+}
+
+.eli5-example-output__label {
+  color: var(--blue);
+  font-weight: 800;
+}
+
+.eli5-example-output__separator {
+  margin: 8px 0 10px;
+  color: rgba(36, 48, 66, 0.32);
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  user-select: none;
+}
+
+.eli5-section--download {
+  padding-top: 0;
+}
+
+.eli5-science-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 28px;
+  max-width: 920px;
+  margin-inline: auto;
+}
+
+.eli5-science-point {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  min-height: 100%;
+  padding: 20px 22px;
+  border: 1px solid rgba(36, 48, 66, 0.08);
+  border-radius: 24px;
+  background: rgba(72, 92, 122, 0.045);
+}
+
+.eli5-science-point h3 {
+  margin: 0;
+  font-size: 1.28rem;
+  line-height: 1.12;
+  letter-spacing: -0.04em;
+  color: var(--ink);
+  text-shadow: none;
+}
+
+.eli5-science-point p {
+  margin: 10px 0 0;
+  color: var(--ink-soft);
+  font-size: 0.98rem;
+  line-height: 1.58;
+}
+
+.eli5-science-point__sources {
+  margin-top: 14px;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.eli5-science-point__sources a {
+  color: var(--ink);
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.15em;
+}
+
+.eli5-section--install {
+  padding-top: 0;
+}
+
+.eli5-section--install .eli5-section-heading {
+  max-width: 640px;
+}
+
+.eli5-section--install .eli5-section-heading h2 {
+  font-size: clamp(2.6rem, 4vw, 3.45rem);
+}
+
+.eli5-cta {
+  display: grid;
+  justify-items: center;
+  gap: 18px;
+  padding: 32px 0 10px;
+  text-align: center;
+}
+
+.eli5-cta p {
+  max-width: 34rem;
+}
+
+.eli5-cta__actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.eli5-button--cta-download,
+.eli5-button--cta-support {
+  min-width: 228px;
+  min-height: 70px;
+  padding-inline: 32px;
+}
+
+.eli5-button--cta-support {
+  background: linear-gradient(180deg, #f4ead4 0%, #e8ddc5 100%);
+}
+
+.eli5-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.eli5-nav a:hover,
+.eli5-button:hover,
+.eli5-control-launcher__button:hover,
+.eli5-control-panel__reset:hover,
+.eli5-control-panel__close:hover {
+  transform: translateY(-2px);
+}
+
+.eli5-nav a:hover {
+  color: var(--ink);
+}
+
+.eli5-nav a:focus-visible,
+.eli5-button:focus-visible,
+.eli5-brand:focus-visible,
+.eli5-control-launcher__button:focus-visible,
+.eli5-control-panel__reset:focus-visible,
+.eli5-control-panel__close:focus-visible {
+  outline: 2px solid rgba(52, 92, 255, 0.35);
+  outline-offset: 3px;
+}
+
+@media (max-width: 1120px) {
+  .eli5-header {
+    gap: 14px;
+  }
+
+  .eli5-playfield {
+    min-height: 920px;
+  }
+}
+
+@media (max-width: 980px) {
+  .eli5-control-dock {
+    right: 12px;
+    bottom: 12px;
+    width: min(360px, calc(100vw - 24px));
+  }
+
+  .eli5-control-launcher {
+    right: 12px;
+    bottom: 12px;
+    width: min(240px, calc(100vw - 24px));
+  }
+
+  .eli5-header {
+    gap: 12px;
+    padding: 10px 12px;
+  }
+
+  .eli5-how,
+  .eli5-install-grid,
+  .eli5-science-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .eli5-gif-wrap {
+    position: static;
+    padding: 16px 0 0;
+  }
+
+  .eli5-hero-stage {
+    min-height: 480px;
+    padding-top: 32px;
+  }
+
+  .eli5-playfield {
+    min-height: auto;
+    padding-top: 18px;
+  }
+}
+
+@media (max-width: 720px) {
+  :root {
+    --shell: min(1020px, calc(100vw - 32px));
+  }
+
+  .eli5-control-launcher,
+  .eli5-control-dock {
+    width: calc(100vw - 24px);
+  }
+
+  .eli5-surface {
+    padding: 20px 18px 72px;
+    border-radius: 30px;
+  }
+
+  .eli5-nav {
+    gap: 14px;
+  }
+
+  .eli5-hero {
+    padding-top: 34px;
+  }
+
+  .eli5-hero-stage {
+    gap: 12px;
+    min-height: 420px;
+    padding-top: 26px;
+  }
+
+  .eli5-header {
+    top: 8px;
+    max-width: calc(100% - 8px);
+    gap: 10px 12px;
+    padding: 9px 12px;
+  }
+
+  .eli5-brand {
+    gap: 0.28rem;
+  }
+
+  .eli5-brand__lead {
+    font-size: 0.84rem;
+  }
+
+  .eli5-brand__accent {
+    font-size: 0.96rem;
+  }
+
+  .eli5-nav a {
+    font-size: 0.9rem;
+  }
+
+  .eli5-hero__compat {
+    display: grid;
+    gap: 6px;
+  }
+
+  .eli5-button,
+  .eli5-cta__actions,
+  .eli5-cta__actions .eli5-button {
+    width: 100%;
+  }
+
+  .eli5-button--header {
+    width: auto;
+    min-height: 38px;
+    padding-inline: 14px;
+    font-size: 0.88rem;
+  }
+
+  .eli5-section-break__magnet {
+    width: min(var(--divider-width, 132px), 116px);
+    height: 22px;
+  }
+
+  .eli5-hero__actions {
+    width: 100%;
+    display: grid;
+  }
+
+  .eli5-hero__actions .eli5-button {
+    width: 100%;
+  }
+
+  .eli5-step {
+    grid-template-columns: 1fr;
+  }
+
+  .eli5-example-thread__prompt {
+    width: 100%;
+  }
+
+  .eli5-example-thread__topic {
+    font-size: 1.14rem;
+  }
+
+  .eli5-control-panel__header {
+    flex-direction: column;
+  }
+
+  .eli5-control-panel__actions {
+    width: 100%;
+  }
+
+  .eli5-control-panel__actions button {
+    flex: 1 1 auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .eli5-nav a,
+  .eli5-button,
+  .eli5-control-launcher__button,
+  .eli5-control-panel__reset,
+  .eli5-control-panel__close {
+    transition: none;
+  }
+}
