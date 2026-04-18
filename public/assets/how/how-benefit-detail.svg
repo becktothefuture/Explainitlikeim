@@ -1,0 +1,31 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="detailCard" x1="60" y1="54" x2="176" y2="182" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFDF8"/>
+      <stop offset="1" stop-color="#EEE1C8"/>
+    </linearGradient>
+    <filter id="detailShadow" x="12" y="16" width="232" height="220" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#B88A45" flood-opacity="0.16"/>
+      <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#2D3543" flood-opacity="0.14"/>
+    </filter>
+    <filter id="detailGlow" x="28" y="42" width="200" height="168" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="18"/>
+    </filter>
+  </defs>
+  <g opacity="0.42" filter="url(#detailGlow)">
+    <ellipse cx="128" cy="166" rx="76" ry="24" fill="#FFE082"/>
+  </g>
+  <g filter="url(#detailShadow)">
+    <rect x="60" y="54" width="122" height="88" rx="22" fill="#FFF8ED"/>
+    <rect x="78" y="74" width="92" height="10" rx="5" fill="#50607C" fill-opacity="0.16"/>
+    <rect x="78" y="94" width="76" height="10" rx="5" fill="#50607C" fill-opacity="0.16"/>
+    <rect x="74" y="120" width="110" height="68" rx="20" fill="url(#detailCard)"/>
+    <rect x="90" y="142" width="72" height="10" rx="5" fill="#50607C" fill-opacity="0.18"/>
+    <rect x="90" y="160" width="58" height="10" rx="5" fill="#50607C" fill-opacity="0.14"/>
+    <circle cx="171" cy="95" r="36" fill="#5A8BFF"/>
+    <circle cx="171" cy="95" r="21" fill="#E9F1FF"/>
+    <path d="M195 118L214 137" stroke="#5A8BFF" stroke-width="12" stroke-linecap="round"/>
+    <circle cx="171" cy="95" r="7" fill="#5A8BFF" fill-opacity="0.22"/>
+    <path d="M128 128L139 139L160 118" stroke="#31C48D" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

@@ -1,0 +1,32 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bubble" x1="54" y1="62" x2="180" y2="174" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFDF8"/>
+      <stop offset="1" stop-color="#F0E1C5"/>
+    </linearGradient>
+    <filter id="promptShadow" x="10" y="24" width="236" height="212" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#B88A45" flood-opacity="0.16"/>
+      <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#2D3543" flood-opacity="0.14"/>
+    </filter>
+    <filter id="promptGlow" x="20" y="52" width="216" height="168" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="18"/>
+    </filter>
+  </defs>
+  <g opacity="0.42" filter="url(#promptGlow)">
+    <ellipse cx="128" cy="172" rx="84" ry="24" fill="#FFD978"/>
+  </g>
+  <g filter="url(#promptShadow)">
+    <path d="M56 78C56 65.8497 65.8497 56 78 56H178C190.15 56 200 65.8497 200 78V132C200 144.15 190.15 154 178 154H125L98 178V154H78C65.8497 154 56 144.15 56 132V78Z" fill="url(#bubble)"/>
+    <rect x="78" y="84" width="74" height="10" rx="5" fill="#50607C" fill-opacity="0.16"/>
+    <rect x="78" y="104" width="56" height="10" rx="5" fill="#50607C" fill-opacity="0.16"/>
+    <rect x="78" y="124" width="82" height="10" rx="5" fill="#50607C" fill-opacity="0.16"/>
+    <path d="M178 92C187.389 92 195 99.6112 195 109C195 118.389 187.389 126 178 126C168.611 126 161 118.389 161 109" stroke="#5A8BFF" stroke-width="10" stroke-linecap="round"/>
+    <path d="M173 83L188 92L176 104" fill="#5A8BFF"/>
+    <circle cx="177" cy="159" r="24" fill="#31C48D"/>
+    <path d="M166 159L174 167L189 150" stroke="#F7FFF9" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M214 68L219 58" stroke="#FFC43B" stroke-width="6" stroke-linecap="round"/>
+    <path d="M226 80L238 78" stroke="#FFC43B" stroke-width="6" stroke-linecap="round"/>
+    <path d="M211 88L218 97" stroke="#FFC43B" stroke-width="6" stroke-linecap="round"/>
+    <circle cx="220" cy="78" r="10" fill="#FFD55E"/>
+  </g>
+</svg>

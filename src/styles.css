@@ -1,22 +1,16 @@
 :root {
-  --bg: #e5d8c3;
-  --bg-soft: #f3ead9;
-  --paper: #efe3cf;
-  --paper-strong: #f7efdf;
-  --ink: #243042;
-  --ink-soft: #5f6d7e;
-  --line: rgba(36, 48, 66, 0.12);
-  --line-strong: rgba(36, 48, 66, 0.2);
-  --blue: #345cff;
   --shadow-soft: none;
-  --shadow-button: 0 5px 0 rgba(112, 76, 32, 0.18), 0 18px 18px rgba(73, 53, 28, 0.1);
-  --magnet-shadow: 0 5px 0 rgba(112, 76, 32, 0.18), 0 18px 18px rgba(73, 53, 28, 0.1);
   --radius-pill: 999px;
   --radius-card: 28px;
   --radius-surface: 42px;
   --shell: min(1020px, calc(100vw - 88px));
   --font-ui: 'Outfit', 'Inter', 'Segoe UI', sans-serif;
   --font-magnet: 'Fredoka', 'Arial Rounded MT Bold', sans-serif;
+  --ui-duration: 180ms;
+  --ui-ease: ease;
+  --enter-distance: 18px;
+  --enter-duration: 680ms;
+  --enter-ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 html {
@@ -35,11 +29,16 @@ body {
   padding-inline: clamp(14px, 2vw, 28px);
   color: var(--ink);
   font-family: var(--font-ui);
-  background:
-    radial-gradient(circle at 16% 0%, rgba(255, 186, 103, 0.2), transparent 24%),
-    radial-gradient(circle at 82% 10%, rgba(89, 144, 214, 0.08), transparent 24%),
-    radial-gradient(circle at 50% 115%, rgba(110, 84, 49, 0.08), transparent 34%),
-    linear-gradient(180deg, #f2e6d2 0%, var(--bg) 100%);
+  cursor: default;
+  -webkit-user-select: none;
+  user-select: none;
+  background: var(--page-gradient);
+}
+
+.eli5-page,
+.eli5-page * {
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 a {
@@ -75,28 +74,35 @@ select {
   overflow-x: clip;
 }
 
+@keyframes eli5-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, var(--enter-distance), 0);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes eli5-divider-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(var(--divider-tilt, -4deg));
+  }
+
+  50% {
+    transform: translate3d(0, -10px, 0) rotate(calc(var(--divider-tilt, -4deg) + 2.5deg));
+  }
+}
+
 .eli5-page::before {
   content: '';
   position: fixed;
   inset: 0;
   pointer-events: none;
-  background:
-    radial-gradient(circle at 20% 12%, rgba(255, 255, 255, 0.18) 0, transparent 22%),
-    radial-gradient(circle at 78% 18%, rgba(112, 86, 49, 0.045) 0, transparent 28%),
-    repeating-linear-gradient(
-      0deg,
-      rgba(255, 255, 255, 0.08) 0,
-      rgba(255, 255, 255, 0.08) 1px,
-      transparent 1px,
-      transparent 22px
-    ),
-    repeating-linear-gradient(
-      90deg,
-      rgba(96, 80, 51, 0.012) 0,
-      rgba(96, 80, 51, 0.012) 1px,
-      transparent 1px,
-      transparent 32px
-    );
+  background: var(--page-grid-gradient);
   opacity: 0.4;
 }
 
@@ -105,9 +111,7 @@ select {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  box-shadow:
-    inset 0 24px 100px rgba(255, 250, 241, 0.24),
-    inset 0 -48px 120px rgba(112, 84, 50, 0.08);
+  box-shadow: var(--page-vignette);
   opacity: 0.9;
 }
 
@@ -135,14 +139,14 @@ select {
 .eli5-control-panel__close {
   min-height: 42px;
   padding: 0 14px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--floating-border);
   border-radius: 16px;
-  background: rgba(255, 252, 247, 0.94);
+  background: var(--floating-surface);
   color: var(--ink);
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 12px 24px rgba(36, 48, 66, 0.08);
+  box-shadow: var(--shadow-floating-ui);
   backdrop-filter: blur(12px);
 }
 
@@ -152,17 +156,21 @@ select {
 
 .eli5-control-launcher__button--secondary,
 .eli5-control-panel__close {
-  background: rgba(255, 255, 255, 0.82);
+  background: var(--floating-surface-strong);
 }
 
 .eli5-control-panel {
   width: 100%;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 36px);
   padding: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.76);
+  border: 1px solid var(--panel-border);
   border-radius: 24px;
-  background: linear-gradient(180deg, rgba(255, 254, 249, 0.98) 0%, rgba(255, 247, 233, 0.96) 100%);
-  box-shadow: 0 24px 60px rgba(36, 48, 66, 0.14);
+  background: var(--panel-gradient);
+  box-shadow: var(--shadow-panel);
   backdrop-filter: blur(18px);
+  overflow: hidden;
 }
 
 .eli5-control-panel__header {
@@ -170,6 +178,7 @@ select {
   align-items: start;
   justify-content: space-between;
   gap: 12px;
+  flex-shrink: 0;
 }
 
 .eli5-control-panel__eyebrow {
@@ -208,8 +217,44 @@ select {
 
 .eli5-control-panel__sections {
   display: grid;
+  flex: 1 1 auto;
   gap: 18px;
   margin-top: 18px;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 4px;
+  scrollbar-gutter: stable;
+}
+
+.eli5-control-panel__layout-tools {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px solid var(--floating-border);
+  border-radius: 18px;
+  background: var(--floating-surface-strong);
+  flex-shrink: 0;
+}
+
+.eli5-control-panel__layout-caption {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.eli5-control-panel__layout-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.eli5-control-panel__layout-actions button:disabled {
+  opacity: 0.42;
+  cursor: default;
+  box-shadow: none;
 }
 
 .eli5-control-section {
@@ -270,7 +315,81 @@ select {
   z-index: 2;
 }
 
+.eli5-header,
+.eli5-hero__badge,
+.eli5-hero__notes,
+.eli5-section-break,
+.eli5-section:not(.eli5-hero),
+.eli5-control-launcher,
+.eli5-control-dock {
+  opacity: 0;
+  transform: translate3d(0, var(--enter-distance), 0);
+  animation: eli5-enter var(--enter-duration) var(--enter-ease) forwards;
+}
+
+.eli5-header {
+  animation-delay: 40ms;
+}
+
+.eli5-hero__badge {
+  animation-delay: 150ms;
+}
+
+.eli5-hero__notes {
+  animation-delay: 250ms;
+}
+
+.eli5-section--how {
+  animation-delay: 420ms;
+}
+
+.eli5-section--examples {
+  animation-delay: 620ms;
+}
+
+.eli5-section--science {
+  animation-delay: 820ms;
+}
+
+.eli5-section--install {
+  animation-delay: 1020ms;
+}
+
+.eli5-section--download {
+  animation-delay: 1220ms;
+}
+
+.eli5-surface > .eli5-section-break:nth-of-type(1) {
+  animation-delay: 340ms;
+}
+
+.eli5-surface > .eli5-section-break:nth-of-type(2) {
+  animation-delay: 540ms;
+}
+
+.eli5-surface > .eli5-section-break:nth-of-type(3) {
+  animation-delay: 740ms;
+}
+
+.eli5-surface > .eli5-section-break:nth-of-type(4) {
+  animation-delay: 940ms;
+}
+
+.eli5-surface > .eli5-section-break:nth-of-type(5) {
+  animation-delay: 1140ms;
+}
+
+.eli5-control-launcher {
+  animation-delay: 1320ms;
+}
+
+.eli5-control-dock {
+  animation-delay: 1400ms;
+}
+
 .eli5-magnet-layer {
+  position: absolute;
+  inset: 0;
   z-index: 3;
 }
 
@@ -283,13 +402,10 @@ select {
 .eli5-surface {
   position: relative;
   padding: 26px clamp(26px, 4vw, 64px) 88px;
-  border: 1px solid rgba(255, 247, 232, 0.62);
+  border: 1px solid var(--surface-border);
   border-radius: var(--radius-surface);
-  background: linear-gradient(180deg, rgba(246, 238, 224, 0.97) 0%, rgba(238, 227, 209, 0.96) 100%);
-  box-shadow:
-    0 24px 48px rgba(86, 64, 35, 0.08),
-    inset 0 1px 0 rgba(255, 251, 243, 0.56),
-    inset 0 -1px 0 rgba(118, 89, 52, 0.05);
+  background: var(--surface-gradient);
+  box-shadow: var(--shadow-surface);
   overflow: clip;
 }
 
@@ -298,23 +414,7 @@ select {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background:
-    radial-gradient(circle at 18% 10%, rgba(255, 249, 238, 0.42), transparent 28%),
-    linear-gradient(180deg, rgba(255, 250, 242, 0.22), transparent 24%),
-    repeating-linear-gradient(
-      0deg,
-      rgba(96, 80, 51, 0.012) 0,
-      rgba(96, 80, 51, 0.012) 1px,
-      transparent 1px,
-      transparent 18px
-    ),
-    repeating-linear-gradient(
-      90deg,
-      rgba(255, 252, 245, 0.08) 0,
-      rgba(255, 252, 245, 0.08) 1px,
-      transparent 1px,
-      transparent 28px
-    );
+  background: var(--surface-overlay);
   opacity: 0.58;
 }
 
@@ -326,7 +426,7 @@ select {
 .eli5-header {
   position: sticky;
   top: 12px;
-  z-index: 18;
+  z-index: 64;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -336,10 +436,10 @@ select {
   max-width: min(calc(100% - 18px), 920px);
   margin: 0 auto;
   padding: 9px 12px;
-  border: 1px solid rgba(255, 247, 234, 0.72);
+  border: 1px solid var(--header-border);
   border-radius: 22px;
-  background: linear-gradient(180deg, rgba(244, 236, 221, 0.92) 0%, rgba(235, 224, 206, 0.9) 100%);
-  box-shadow: var(--magnet-shadow);
+  background: var(--header-gradient);
+  box-shadow: var(--shadow-header);
   backdrop-filter: blur(12px);
 }
 
@@ -355,20 +455,18 @@ select {
 }
 
 .eli5-brand__lead {
-  color: var(--ink);
+  color: var(--ink-soft);
   font-size: 0.92rem;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: -0.04em;
 }
 
 .eli5-brand__accent {
-  color: var(--ink);
+  color: var(--ink-subhead);
   font-size: 1.08rem;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.06em;
-  text-shadow:
-    0 -1px 0 rgba(255, 251, 243, 0.84),
-    0 1px 0 rgba(120, 90, 52, 0.1);
+  text-shadow: var(--brand-shadow);
   min-width: 0;
 }
 
@@ -381,13 +479,16 @@ select {
 }
 
 .eli5-nav a,
-.eli5-button {
+.eli5-button,
+.eli5-example-tab {
   transition:
-    transform 180ms ease,
-    background-color 180ms ease,
-    border-color 180ms ease,
-    box-shadow 180ms ease,
-    color 180ms ease;
+    transform var(--ui-duration) var(--ui-ease),
+    background-color var(--ui-duration) var(--ui-ease),
+    border-color var(--ui-duration) var(--ui-ease),
+    box-shadow var(--ui-duration) var(--ui-ease),
+    color var(--ui-duration) var(--ui-ease),
+    opacity var(--ui-duration) var(--ui-ease),
+    filter var(--ui-duration) var(--ui-ease);
 }
 
 .eli5-nav a {
@@ -415,35 +516,23 @@ select {
 }
 
 .eli5-button--primary {
-  color: #fffdf8;
-  background: linear-gradient(180deg, #2a3749 0%, #1e2835 100%);
-  box-shadow:
-    0 6px 0 rgba(75, 57, 31, 0.18),
-    0 18px 20px rgba(73, 53, 28, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.16),
-    inset 0 -2px 0 rgba(7, 10, 14, 0.16);
+  color: var(--on-dark);
+  background: var(--button-primary-gradient);
+  box-shadow: var(--shadow-button);
 }
 
 .eli5-button--secondary {
   color: var(--ink);
-  border-color: rgba(182, 148, 100, 0.42);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(236, 221, 196, 0.96) 100%);
-  box-shadow:
-    0 6px 0 rgba(75, 57, 31, 0.12),
-    0 18px 20px rgba(73, 53, 28, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.72),
-    inset 0 -1px 0 rgba(84, 61, 32, 0.16);
+  border-color: var(--button-secondary-border);
+  background: var(--button-secondary-gradient);
+  box-shadow: var(--shadow-button-soft);
 }
 
 .eli5-button--support {
-  color: #2a3749;
-  border-color: rgba(255, 255, 255, 0.86);
-  background: linear-gradient(180deg, #f5edd8 0%, #eadfc7 100%);
-  box-shadow:
-    0 6px 0 rgba(75, 57, 31, 0.12),
-    0 18px 20px rgba(73, 53, 28, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.72),
-    inset 0 -2px 0 rgba(75, 57, 31, 0.08);
+  color: var(--ink);
+  border-color: var(--button-support-border);
+  background: var(--button-support-gradient);
+  box-shadow: var(--shadow-button-soft);
 }
 
 .eli5-button--header {
@@ -481,12 +570,12 @@ select {
   align-items: center;
   justify-content: center;
   min-height: 34px;
-  padding: 0 14px;
-  border: 1px solid rgba(255, 255, 255, 0.84);
-  border-radius: 999px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(250, 243, 229, 0.96) 100%);
-  box-shadow: var(--magnet-shadow);
-  color: var(--ink);
+  padding: 0 15px;
+  border: 1px solid var(--badge-border);
+  border-radius: 16px;
+  background: var(--hero-badge-gradient);
+  box-shadow: var(--shadow-hero-badge);
+  color: var(--ink-soft);
   font-size: 0.84rem;
   font-weight: 700;
   letter-spacing: -0.02em;
@@ -504,13 +593,17 @@ select {
 
 .eli5-hero__magnet-slot {
   position: relative;
-  width: min(100%, 920px);
+  width: 100%;
   height: clamp(200px, 26vw, 300px);
   max-width: 100%;
+  overflow: hidden;
   pointer-events: none;
 }
 
 .eli5-hero__notes-copy {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
   max-width: 38rem;
   width: 100%;
 }
@@ -528,8 +621,24 @@ select {
 }
 
 .eli5-hero__summary {
-  max-width: 38ch;
-  font-size: clamp(0.98rem, 1.18vw, 1.08rem);
+  width: 100%;
+  max-width: none;
+  color: var(--ink-subhead);
+  font-size: clamp(1.3rem, 1.9vw, 1.68rem);
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  line-height: 1.24;
+  text-align: center;
+}
+
+.eli5-hero__detail {
+  width: 100%;
+  max-width: 27.2rem;
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: clamp(0.98rem, 1.16vw, 1.06rem);
+  line-height: 1.56;
+  text-align: center;
 }
 
 .eli5-hero__compat {
@@ -539,6 +648,7 @@ select {
   gap: 10px 16px;
   flex-wrap: wrap;
   max-width: 52rem;
+  padding-block: 12px;
   color: var(--ink-soft);
   font-size: 0.92rem;
   margin: 0;
@@ -552,8 +662,8 @@ select {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  color: var(--ink);
-  font-weight: 600;
+  color: var(--ink-soft);
+  font-weight: 500;
 }
 
 .eli5-tool-logo {
@@ -572,15 +682,15 @@ select {
 }
 
 .eli5-tool-logo--codex {
-  color: #111111;
+  color: var(--brand-codex);
 }
 
 .eli5-tool-logo--claude-code {
-  color: #d97757;
+  color: var(--brand-claude);
 }
 
 .eli5-tool-logo--cursor {
-  color: #111111;
+  color: var(--brand-cursor);
 }
 
 .eli5-hero__actions {
@@ -594,27 +704,53 @@ select {
 .eli5-section-break {
   display: flex;
   justify-content: center;
-  padding: 60px 0;
+  padding: 74px 0 148px;
 }
 
 .eli5-section-break__magnet {
   display: block;
-  width: var(--divider-width, 132px);
-  height: 28px;
+  width: var(--divider-width, 106px);
+  height: 22px;
   border-radius: 999px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.04) 38%),
-    var(--divider-color, #2d7cff);
+  background: var(--tab-sheen-gradient), var(--divider-color, var(--magnet-blue));
   transform: rotate(var(--divider-tilt, -4deg));
-  box-shadow:
-    0 8px 0 rgba(112, 76, 32, 0.14),
-    0 18px 18px rgba(73, 53, 28, 0.07),
-    inset 0 2px 0 rgba(255, 255, 255, 0.34),
-    inset 0 -2px 0 rgba(34, 26, 12, 0.08);
+  box-shadow: var(--shadow-divider);
+  animation: eli5-divider-float 7.8s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.eli5-surface > .eli5-section-break:nth-of-type(1) .eli5-section-break__magnet {
+  animation-duration: 8.4s;
+  animation-delay: -0.8s;
+}
+
+.eli5-surface > .eli5-section-break:nth-of-type(2) .eli5-section-break__magnet {
+  animation-duration: 7.2s;
+  animation-delay: -2.4s;
+}
+
+.eli5-surface > .eli5-section-break:nth-of-type(3) .eli5-section-break__magnet {
+  animation-duration: 8.8s;
+  animation-delay: -1.7s;
+}
+
+.eli5-surface > .eli5-section-break:nth-of-type(4) .eli5-section-break__magnet {
+  animation-duration: 7.5s;
+  animation-delay: -3.1s;
+}
+
+.eli5-surface > .eli5-section-break:nth-of-type(5) .eli5-section-break__magnet {
+  animation-duration: 8.1s;
+  animation-delay: -2.1s;
 }
 
 .eli5-section {
   padding: 0;
+  scroll-margin-top: 104px;
+}
+
+.eli5-hero {
+  scroll-margin-top: 104px;
 }
 
 .eli5-install-grid {
@@ -634,10 +770,22 @@ select {
   text-align: center;
 }
 
+.eli5-install-step__art-frame {
+  display: grid;
+  place-items: center;
+  width: min(100%, 206px);
+  aspect-ratio: 1;
+  overflow: hidden;
+}
+
 .eli5-install-step__art {
-  width: min(100%, 196px);
-  height: auto;
-  filter: drop-shadow(0 14px 18px rgba(73, 53, 28, 0.14));
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  transform: scale(var(--install-art-scale, 1));
+  transform-origin: center;
+  filter: var(--shadow-install-art);
 }
 
 .eli5-install-step__copy {
@@ -648,17 +796,18 @@ select {
 
 .eli5-install-step__index {
   margin: 0;
-  color: var(--ink-soft);
+  color: var(--ink-muted);
   font-size: 0.92rem;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .eli5-install-step h3 {
   margin: 0;
+  color: var(--ink-subhead);
   font-size: 1.2rem;
+  font-weight: 600;
   line-height: 1.08;
   letter-spacing: -0.04em;
-  color: var(--ink);
 }
 
 .eli5-install-step p:last-child {
@@ -670,8 +819,8 @@ select {
 
 .eli5-how {
   display: grid;
-  grid-template-columns: minmax(0, 1.04fr) minmax(280px, 0.96fr);
-  gap: 36px;
+  grid-template-columns: minmax(0, 1.12fr) minmax(320px, 0.88fr);
+  gap: 48px;
   align-items: start;
 }
 
@@ -680,25 +829,214 @@ select {
 .eli5-cta h2 {
   margin: 0;
   font-size: clamp(2.35rem, 4.4vw, 4.15rem);
+  font-weight: 700;
   line-height: 0.94;
   letter-spacing: -0.06em;
 }
 
 .eli5-how__copy h2,
 .eli5-section-heading h2,
-.eli5-cta h2,
-.eli5-example-thread__topic {
+.eli5-cta h2 {
   color: var(--ink);
-  text-shadow:
-    0 -1px 0 rgba(255, 251, 243, 0.84),
-    0 1.2px 0 rgba(120, 90, 52, 0.13),
-    0 3px 6px rgba(78, 58, 32, 0.04);
+  text-shadow: var(--headline-shadow);
+}
+
+.eli5-how__copy {
+  min-width: 0;
 }
 
 .eli5-how__lede,
 .eli5-section-heading p {
   margin-top: 14px;
   max-width: 34rem;
+}
+
+.eli5-prompt-field {
+  display: grid;
+  gap: 8px;
+}
+
+.eli5-prompt-field__label {
+  color: var(--ink-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.eli5-prompt-field__shell {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  width: fit-content;
+  max-width: 100%;
+  min-height: 56px;
+  padding: 10px 14px;
+  border: 1px solid var(--prompt-border);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(228, 219, 203, 0.98) 0%, rgba(244, 238, 228, 0.99) 100%);
+  box-shadow:
+    inset 0 2px 4px rgba(92, 68, 33, 0.12),
+    inset 0 12px 22px rgba(255, 255, 255, 0.14),
+    inset 0 -1px 0 rgba(255, 251, 243, 0.72),
+    0 1px 0 rgba(255, 252, 245, 0.42);
+}
+
+.eli5-prompt-field__skill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--prompt-skill-border);
+  border-radius: 12px;
+  background: var(--prompt-skill-gradient);
+  box-shadow: var(--shadow-prompt-skill);
+  color: var(--prompt-violet-text);
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.eli5-prompt-field__text {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  color: var(--ink-subhead);
+  font-size: 1.08rem;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: -0.03em;
+}
+
+.eli5-prompt-field__cursor {
+  width: 2px;
+  height: 1.15em;
+  margin-left: 4px;
+  border-radius: 999px;
+  background: var(--blue);
+  animation: eli5-caret-blink 1s steps(1, end) infinite;
+}
+
+@keyframes eli5-caret-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.eli5-how__prompt {
+  margin-top: 26px;
+}
+
+.eli5-how__prompt .eli5-prompt-field__shell {
+  gap: 8px;
+  min-height: 58px;
+  padding: 10px 14px;
+  border-color: rgba(136, 111, 80, 0.16);
+  border-radius: 15px;
+  background: linear-gradient(180deg, rgba(255, 251, 244, 0.98) 0%, rgba(241, 232, 216, 0.98) 100%);
+  box-shadow:
+    inset 0 2px 6px rgba(128, 97, 57, 0.12),
+    inset 0 -2px 4px rgba(255, 255, 255, 0.86),
+    inset 0 10px 20px rgba(255, 255, 255, 0.12);
+}
+
+.eli5-how__prompt .eli5-prompt-field__skill {
+  padding: 0 11px;
+  border-color: rgba(111, 79, 171, 0.15);
+  background: rgba(136, 72, 255, 0.12);
+  box-shadow: none;
+}
+
+.eli5-how__benefits {
+  display: grid;
+  margin-top: 42px;
+}
+
+.eli5-how-benefit {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 24px 0;
+  border-top: 1px solid var(--line);
+}
+
+.eli5-how-benefit__art {
+  flex: 0 0 112px;
+  width: 112px;
+}
+
+.eli5-how-benefit__art img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.eli5-how-benefit__copy {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.eli5-how-benefit h3 {
+  margin: 0;
+  max-width: 21ch;
+  color: var(--ink-subhead);
+  font-size: clamp(1.14rem, 1.65vw, 1.46rem);
+  font-weight: 600;
+  line-height: 1.12;
+  letter-spacing: -0.04em;
+}
+
+.eli5-how-benefit__copy p {
+  margin: 0;
+  max-width: 34rem;
+  color: var(--ink-soft);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.eli5-how__use-cases {
+  display: grid;
+  gap: 16px;
+  margin-top: 12px;
+  padding-top: 26px;
+  border-top: 1px solid var(--line);
+}
+
+.eli5-how__use-cases-label {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: 0.88rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.eli5-how__use-cases-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.eli5-how__use-case {
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid var(--soft-border);
+  border-radius: 999px;
+  background: var(--pill-surface);
+  color: var(--ink-soft);
+  font-size: 0.92rem;
+  font-weight: 600;
+  box-shadow: var(--shadow-pill-inset);
 }
 
 .eli5-step-list {
@@ -728,6 +1066,15 @@ select {
   color: var(--ink);
 }
 
+.eli5-step--answer {
+  align-items: start;
+}
+
+.eli5-step--answer .eli5-step__age {
+  padding-top: 1px;
+  color: var(--blue);
+}
+
 .eli5-step h3,
 .eli5-example-card h3 {
   margin: 0;
@@ -740,27 +1087,45 @@ select {
   margin-top: 6px;
 }
 
+.eli5-step__answer {
+  margin: 0;
+  font-size: 1.06rem;
+  line-height: 1.52;
+  color: var(--ink);
+}
+
 .eli5-gif-wrap {
   position: sticky;
-  top: clamp(86px, 13vh, 124px);
+  top: var(--eli5-gif-sticky-top, 35vh);
   align-self: start;
   padding: 20px 0 0 20px;
 }
 
-.eli5-gif-card__frame {
-  overflow: hidden;
-  padding: 14px;
-  border: 1px solid rgba(255, 247, 232, 0.72);
-  border-radius: 32px;
-  background: linear-gradient(180deg, rgba(255, 250, 242, 0.76) 0%, rgba(236, 224, 204, 0.68) 100%);
-  box-shadow: 0 18px 28px rgba(73, 53, 28, 0.12);
+.eli5-sticky-ease {
+  display: grid;
+  gap: inherit;
+  transform: translate3d(0, var(--eli5-sticky-ease-y, 0px), 0);
+  will-change: transform;
 }
 
-.eli5-gif-card__frame img {
+.eli5-gif-card__frame {
+  position: relative;
+  overflow: hidden;
+  padding: 14px;
+  border: 1px solid var(--surface-border-strong);
+  border-radius: 32px;
+  background: var(--media-frame-gradient);
+  box-shadow: var(--shadow-media);
+}
+
+.eli5-gif-card__media {
+  display: block;
   width: 100%;
   height: auto;
+  aspect-ratio: 6 / 5;
   border-radius: 22px;
   object-fit: contain;
+  background: var(--media-bg);
 }
 
 .eli5-section-heading {
@@ -776,129 +1141,177 @@ select {
 .eli5-playfield {
   position: relative;
   display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  align-items: start;
   align-content: start;
+  gap: 28px;
   min-height: auto;
   margin-top: 28px;
-  padding: 18px 0 8px;
+  padding: 12px 0 8px;
 }
 
 .eli5-example-tabs {
   position: relative;
   z-index: 2;
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
+  display: grid;
+  align-content: start;
   gap: 10px;
+  width: min(100%, 228px);
+  padding-top: 4px;
+  align-self: start;
+  position: sticky;
+  top: clamp(96px, 14vh, 148px);
+}
+
+.eli5-example-tabs__viewport {
+  overflow-y: auto;
+  height: var(--example-tab-viewport-height, 328px);
+  padding-block: 4px;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  scroll-snap-type: y mandatory;
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 10%, #000 90%, transparent 100%);
+  mask-image: linear-gradient(180deg, transparent 0%, #000 10%, #000 90%, transparent 100%);
+}
+
+.eli5-example-tabs__viewport::-webkit-scrollbar {
+  display: none;
+}
+
+.eli5-example-tabs__list {
+  display: grid;
+  gap: var(--example-tab-gap, 12px);
+  align-content: start;
 }
 
 .eli5-example-tab {
-  min-height: 42px;
-  padding: 0 16px;
-  border: 1px solid transparent;
+  justify-self: start;
+  height: var(--example-tab-item-height, 56px);
+  padding: 0 18px;
+  border: 1px solid var(--surface-border-strong);
   border-radius: 999px;
-  color: var(--ink-soft);
+  background: var(--tab-sheen-gradient), var(--example-tab-color, var(--magnet-blue));
+  color: var(--on-dark);
   font-size: 0.96rem;
   font-weight: 700;
   letter-spacing: -0.02em;
   cursor: pointer;
+  white-space: nowrap;
+  scroll-snap-align: start;
+  transform-origin: left center;
+  opacity: var(--example-tab-opacity, 1);
+  filter: blur(var(--example-tab-blur, 0));
+  transform:
+    translateX(var(--example-tab-shift, 0px))
+    rotate(var(--example-tab-tilt, 0deg))
+    scale(var(--example-tab-scale, 1));
+  box-shadow: var(--shadow-tab);
 }
 
 .eli5-example-tab.is-active {
-  color: #fffdf8;
-  background: linear-gradient(180deg, #2a3749 0%, #1e2835 100%);
-  box-shadow: var(--magnet-shadow);
+  color: var(--on-dark);
+  --example-tab-shift: 10px;
+  box-shadow: var(--shadow-tab-active);
+}
+
+.eli5-example-tabs__controls {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.eli5-example-tabs__chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 252, 247, 0.82);
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: var(--shadow-floating-ui);
+  transition:
+    transform var(--ui-duration) var(--ui-ease),
+    opacity var(--ui-duration) var(--ui-ease),
+    box-shadow var(--ui-duration) var(--ui-ease),
+    background-color var(--ui-duration) var(--ui-ease);
+}
+
+.eli5-example-tabs__chevron:disabled {
+  opacity: 0.32;
+  cursor: default;
+  box-shadow: none;
+}
+
+.eli5-example-tabs__chevron:not(:disabled):hover {
+  transform: translateY(-2px);
 }
 
 .eli5-example-thread {
   position: relative;
   z-index: 2;
   display: grid;
-  gap: 14px;
-  max-width: 760px;
-  margin-top: 24px;
-  margin-inline: auto;
+  gap: 16px;
+  min-width: 0;
+  padding: 18px 0 0 28px;
+  border-left: 1px solid var(--line);
 }
 
 .eli5-example-thread__category {
   margin: 0;
-  color: var(--ink-soft);
-  font-size: 0.96rem;
+  color: var(--blue);
+  font-size: 0.78rem;
   font-weight: 700;
-  text-align: center;
+  letter-spacing: 0.08em;
+  text-align: left;
+  text-transform: uppercase;
 }
 
 .eli5-example-thread__prompt {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  width: fit-content;
+  width: min(100%, 44rem);
+}
+
+.eli5-example-thread__prompt .eli5-prompt-field__shell {
   max-width: 100%;
-  min-height: 58px;
-  padding: 12px 16px;
-  border-radius: 20px;
-  background: #1d1a23;
-  box-shadow: 0 8px 18px rgba(16, 12, 8, 0.18);
+  border-color: rgba(108, 84, 50, 0.22);
+  background: linear-gradient(180deg, rgba(228, 218, 203, 0.98) 0%, rgba(244, 238, 228, 0.99) 100%);
+  box-shadow:
+    inset 0 2px 5px rgba(95, 72, 39, 0.16),
+    inset 0 14px 22px rgba(255, 255, 255, 0.14),
+    inset 0 -1px 0 rgba(255, 251, 243, 0.76),
+    0 1px 0 rgba(255, 252, 245, 0.34);
 }
 
-.eli5-example-thread__skill {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 34px;
-  padding: 0 12px;
-  border-radius: 999px;
-  background: rgba(136, 72, 255, 0.22);
-  color: #d8c0ff;
-  font-size: 0.96rem;
-  font-weight: 700;
-}
-
-.eli5-example-thread__skill-mark {
-  width: 10px;
-  height: 10px;
-  border-radius: 4px;
-  background: linear-gradient(180deg, #b58fff 0%, #8848ff 100%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28);
-}
-
-.eli5-example-thread__topic {
-  color: #fffdf8;
-  font-size: 1.34rem;
-  font-weight: 700;
-  letter-spacing: -0.03em;
-}
-
-.eli5-example-thread__scale {
-  margin: 0;
-  color: var(--ink-soft);
-  font-size: 0.96rem;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  text-align: center;
+.eli5-example-thread__prompt .eli5-prompt-field__text {
+  font-size: clamp(0.96rem, 1.1vw, 1.04rem);
 }
 
 .eli5-example-output {
   display: grid;
   gap: 0;
   max-width: 56rem;
+  min-width: 0;
 }
 
 .eli5-example-output__entry {
   margin: 0;
-  color: var(--ink);
-  font-size: clamp(1.02rem, 1.28vw, 1.14rem);
+  color: var(--ink-soft);
+  font-size: clamp(0.94rem, 1.08vw, 1.01rem);
   line-height: 1.64;
 }
 
 .eli5-example-output__label {
   color: var(--blue);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .eli5-example-output__separator {
   margin: 8px 0 10px;
-  color: rgba(36, 48, 66, 0.32);
+  color: var(--separator-color);
   font-size: 0.92rem;
   font-weight: 700;
   letter-spacing: 0.18em;
@@ -924,17 +1337,18 @@ select {
   gap: 0;
   min-height: 100%;
   padding: 20px 22px;
-  border: 1px solid rgba(36, 48, 66, 0.08);
+  border: 1px solid var(--floating-border);
   border-radius: 24px;
-  background: rgba(72, 92, 122, 0.045);
+  background: var(--science-card-surface);
 }
 
 .eli5-science-point h3 {
   margin: 0;
-  font-size: 1.28rem;
-  line-height: 1.12;
+  color: var(--ink-subhead);
+  font-size: 1.14rem;
+  font-weight: 600;
+  line-height: 1.18;
   letter-spacing: -0.04em;
-  color: var(--ink);
   text-shadow: none;
 }
 
@@ -946,17 +1360,46 @@ select {
 }
 
 .eli5-science-point__sources {
-  margin-top: 14px;
-  font-size: 0.88rem;
-  line-height: 1.5;
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
 }
 
-.eli5-science-point__sources a {
-  color: var(--ink);
-  font-weight: 700;
+.eli5-science-point__sources-label {
+  margin: 0;
+  color: rgba(36, 48, 66, 0.5);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.eli5-science-point__source-list {
+  display: grid;
+  gap: 8px;
+}
+
+.eli5-science-point__source {
+  display: grid;
+  gap: 2px;
+  text-decoration: none;
+}
+
+.eli5-science-point__source span:first-child {
+  color: var(--ink-soft);
+  font-size: 0.74rem;
+  font-weight: 600;
+  line-height: 1.2;
   text-decoration: underline;
   text-decoration-thickness: 1px;
-  text-underline-offset: 0.15em;
+  text-underline-offset: 0.14em;
+}
+
+.eli5-science-point__source span:last-child {
+  color: rgba(36, 48, 66, 0.58);
+  font-size: 0.68rem;
+  line-height: 1.3;
 }
 
 .eli5-section--install {
@@ -1000,7 +1443,7 @@ select {
 }
 
 .eli5-button--cta-support {
-  background: linear-gradient(180deg, #f4ead4 0%, #e8ddc5 100%);
+  background: var(--button-support-gradient);
 }
 
 .eli5-sr-only {
@@ -1017,6 +1460,7 @@ select {
 
 .eli5-nav a:hover,
 .eli5-button:hover,
+.eli5-example-tabs__chevron:hover,
 .eli5-control-launcher__button:hover,
 .eli5-control-panel__reset:hover,
 .eli5-control-panel__close:hover {
@@ -1030,10 +1474,11 @@ select {
 .eli5-nav a:focus-visible,
 .eli5-button:focus-visible,
 .eli5-brand:focus-visible,
+.eli5-example-tabs__chevron:focus-visible,
 .eli5-control-launcher__button:focus-visible,
 .eli5-control-panel__reset:focus-visible,
 .eli5-control-panel__close:focus-visible {
-  outline: 2px solid rgba(52, 92, 255, 0.35);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 3px;
 }
 
@@ -1069,6 +1514,31 @@ select {
   .eli5-install-grid,
   .eli5-science-grid {
     grid-template-columns: 1fr;
+  }
+
+  .eli5-playfield {
+    grid-template-columns: 1fr;
+    gap: 22px;
+  }
+
+  .eli5-example-tabs {
+    position: relative;
+    top: auto;
+    width: min(100%, 280px);
+  }
+
+  .eli5-example-thread {
+    padding: 10px 0 0;
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .eli5-section-break {
+    padding: 60px 0 120px;
+  }
+
+  .eli5-section-break__magnet {
+    height: 20px;
   }
 
   .eli5-gif-wrap {
@@ -1157,9 +1627,23 @@ select {
     font-size: 0.88rem;
   }
 
+  .eli5-how-benefit {
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .eli5-how-benefit__art {
+    flex-basis: 104px;
+    width: 104px;
+  }
+
   .eli5-section-break__magnet {
-    width: min(var(--divider-width, 132px), 116px);
-    height: 22px;
+    width: min(var(--divider-width, 106px), 92px);
+    height: 18px;
+  }
+
+  .eli5-section-break {
+    padding: 44px 0 88px;
   }
 
   .eli5-hero__actions {
@@ -1171,16 +1655,26 @@ select {
     width: 100%;
   }
 
-  .eli5-step {
-    grid-template-columns: 1fr;
+  .eli5-example-tab {
+    height: 52px;
+    padding-inline: 16px;
   }
 
-  .eli5-example-thread__prompt {
+  .eli5-example-thread__prompt,
+  .eli5-how__prompt {
     width: 100%;
   }
 
-  .eli5-example-thread__topic {
-    font-size: 1.14rem;
+  .eli5-prompt-field__shell {
+    width: 100%;
+  }
+
+  .eli5-prompt-field__text {
+    font-size: 1.08rem;
+  }
+
+  .eli5-how-benefit {
+    align-items: flex-start;
   }
 
   .eli5-control-panel__header {
@@ -1201,11 +1695,39 @@ select {
     scroll-behavior: auto;
   }
 
+  .eli5-header,
+  .eli5-hero__badge,
+  .eli5-hero__notes,
+  .eli5-section-break,
+  .eli5-section:not(.eli5-hero),
+  .eli5-control-launcher,
+  .eli5-control-dock {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+
   .eli5-nav a,
   .eli5-button,
+  .eli5-example-tab,
+  .eli5-example-tabs__chevron,
   .eli5-control-launcher__button,
   .eli5-control-panel__reset,
   .eli5-control-panel__close {
     transition: none;
+  }
+
+  .eli5-section-break__magnet {
+    animation: none;
+  }
+
+  .eli5-prompt-field__cursor {
+    animation: none;
+    opacity: 1;
+  }
+
+  .eli5-sticky-ease {
+    transform: none;
+    will-change: auto;
   }
 }

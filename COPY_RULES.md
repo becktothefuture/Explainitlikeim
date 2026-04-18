@@ -3,15 +3,29 @@
 Use these rules for all website copy, UI text, examples, and supporting language in this project.
 
 The voice should be:
+- clear before clever
 - direct
 - helpful
-- a bit cheeky
+- dry and lightly cheeky
+- specific about the product, output, and use case
 
 It should never be:
 - vague
 - self-important
 - startup-generic
 - cute at the expense of clarity
+- mysterious about what the product actually is
+
+## Product Framing
+
+Never assume the visitor already understands the product.
+
+Say plainly that this is:
+- a skill for an AI agent
+- something you can add to tools like Codex, Claude Code, Cursor, and similar agents
+- a way to get one answer rewritten in five levels, from very simple to more complete
+
+If the hero, intro, or CTA does not make that clear somewhere, the copy is not finished.
 
 ## Core Rule
 
@@ -33,9 +47,12 @@ If a line does not do one of those three things, cut it.
 4. Keep the joke in the margins.
    A small wink is good. The main line still needs to work without the joke.
 
-5. Sound like a smart person being clear, not a brand being clever.
+5. Sound like a sharp teacher or helpful coworker, not a brand trying to be clever.
 
 6. Make the visitor feel helped, not marketed at.
+
+7. Explain before you stylize.
+   The visitor should know what this is before they notice the personality.
 
 ## Hard Bans
 
@@ -48,12 +65,26 @@ Do not write lines like:
 
 These sound polished but say almost nothing.
 
+## Hero Rule
+
+The hero must answer these questions in this order, either in one tight block or in a short sequence:
+
+1. What is this?
+2. What do I get?
+3. Where do I use it?
+4. Why is it better than asking again?
+
+If the visitor has to scroll to learn that this is a skill for AI agents, the hero is under-explaining.
+
 ## Preferred Copy Pattern
 
 Most lines should do one of these jobs:
 
+- Explain the product
+  Example: `This is a skill for AI agents that rewrites one answer in five levels.`
+
 - Explain the output
-  Example: `The skill writes four versions of the same explanation: ages 4, 7, 12, and 16.`
+  Example: `The skill writes five versions of the same explanation: ages 5, 7, 9, 12, and 16.`
 
 - Explain the benefit
   Example: `People get the simple version first, then the more precise one.`
@@ -80,12 +111,14 @@ Allowed:
 - lightly self-aware
 - office-adjacent
 - one small wink in a section
+- one clean line that sounds human
 
 Not allowed:
 - trying too hard
 - meme voice everywhere
 - “quirky product” filler
 - fake confidence
+- making the visitor decode the point
 
 ## Headlines
 
@@ -93,7 +126,7 @@ Headlines should be clear in one glance.
 
 Good:
 - `Explain complicated things in plain English.`
-- `Four explanation levels. One idea.`
+- `Five explanation levels. One idea.`
 - `What the skill actually outputs.`
 
 Bad:
@@ -107,9 +140,15 @@ Supporting copy should answer the next obvious question.
 
 Example:
 - Headline: `What the skill actually outputs.`
-- Support: `It rewrites one idea four times so a beginner can start small and keep going.`
+- Support: `It rewrites one idea five times so a beginner can start small and keep going.`
 
 Do not use supporting copy to restate the headline with fancier words.
+
+Supporting copy should usually handle one of these follow-up jobs:
+- say that this is a skill for AI agents
+- say that it works in named tools
+- say what the output format looks like
+- say why this beats asking for a rewrite afterward
 
 ## CTAs
 
@@ -131,7 +170,7 @@ The examples section must show output, not talk about output.
 
 Always:
 - use a real question or topic
-- show the four age levels
+- show the five age levels
 - make each step meaningfully better
 - keep labels obvious
 
@@ -156,14 +195,22 @@ Aim for:
 - teacher who respects your time
 - helpful coworker with decent taste
 - one eyebrow raised, not a comedy sketch
+- clear first sentence, cheeky second sentence at most
+- “this is what it is” before “this is why it feels good”
 
 ## Quick Rewrites
 
 Weak: `The value is a cleaner sequence.`
-Better: `The skill gives you four versions of the same explanation, starting simple and ending precise.`
+Better: `The skill gives you five versions of the same explanation, starting simple and ending precise.`
 
 Weak: `Complex ideas, made clear fast.`
 Better: `Explain hard things in a way people actually understand.`
 
-Weak: `One idea. Four passes. Zero wall of text.`
-Better: `You get four versions of the same answer: 4, 7, 12, and 16.`
+Weak: `One idea. Five passes. Zero wall of text.`
+Better: `You get five versions of the same answer: 5, 7, 9, 12, and 16.`
+
+Weak: `For when you're not getting it.`
+Better: `A skill for AI agents that rewrites one answer in five levels, from simple to precise.`
+
+Weak: `Why people use it`
+Better: `What this skill does`

@@ -2,8 +2,6 @@ import { useEffect, useEffectEvent, useRef } from 'react';
 
 import {
   clamp,
-  clampMagnetToBounds,
-  cloneMagnetList,
   drawMagnet,
   findTopMagnetAtPoint,
   invalidateMagnetRenderCaches,
@@ -11,60 +9,40 @@ import {
 } from './magnetUtils';
 
 const LAYER_STYLE = {
-  position: 'fixed',
+  position: 'absolute',
   inset: 0,
   pointerEvents: 'none',
   contain: 'strict',
   willChange: 'transform',
 };
-const HIT_PADDING = 16;
-const INERTIA_MIN_SPEED = 90;
-const INERTIA_DAMPING = 0.9;
-const INERTIA_STOP_SPEED = 14;
-const INTRO_LINE_DELAY_MS = 120;
-const INTRO_LINE_DURATION_MS = 680;
+const HIT_PADDING = 8;
+const INTRO_STAGGER_MS = 22;
+const INTRO_DURATION_MS = 420;
+const BOUNCE_DURATION_MS = 1100;
 
-/**
- * Magnet shape:
- * { id, label, x, y, width?, height?, size?, color?, textColor?, rotation?, boardId?, bounds? }
- *
- * boards supports:
- * [{ id, element?, ref?, bounds?, padding? }]
- *
- * drawBounds supports:
- * { x, y, width, height } or { left, top, right, bottom } or element/ref source.
- */
 export default function MagnetCanvas({
   magnets,
   initialMagnets = [],
-  boards = [],
-  drawBounds = null,
   className,
-  onMagnetsChange,
   pixelRatioCap = 1.6,
 }) {
   const canvasRef = useRef(null);
   const contextRef = useRef(null);
   const magnetsRef = useRef([]);
   const sortedMagnetsRef = useRef([]);
-  const dragRef = useRef(null);
   const drawFrameRef = useRef(0);
-  const dragFrameRef = useRef(0);
-  const inertiaFrameRef = useRef(0);
-  const inertiaRef = useRef(null);
   const introAnimationRef = useRef(null);
   const introHasPlayedRef = useRef(false);
-  const pendingPointRef = useRef(null);
-  const viewportRef = useRef({ width: 0, height: 0, dpr: 1 });
-  const restoreUserSelectRef = useRef('');
-  const restoreCursorRef = useRef('');
+  const floatProfilesRef = useRef(new Map());
+  const bounceStatesRef = useRef(new Map());
+  const pointerPointRef = useRef(null);
   const hoverMagnetIdRef = useRef(null);
+  const layerOriginRef = useRef({ x: 0, y: 0 });
+  const viewportRef = useRef({ width: 0, height: 0, dpr: 1 });
+  const prefersReducedMotionRef = useRef(false);
   const didHydrateInitialMagnetsRef = useRef(false);
+  const sessionPhaseRef = useRef(Math.random() * Math.PI * 2);
   const isControlled = magnets != null;
-
-  const emitMagnetsChange = useEffectEvent((nextMagnets, meta) => {
-    onMagnetsChange?.(cloneMagnetList(nextMagnets), meta);
-  });
 
   const requestDraw = useEffectEvent(() => {
     if (drawFrameRef.current) {
@@ -79,13 +57,15 @@ export default function MagnetCanvas({
 
   const syncCanvasSize = useEffectEvent(() => {
     const canvas = canvasRef.current;
+    const layer = canvas?.parentElement;
 
-    if (!canvas) {
+    if (!canvas || !layer) {
       return;
     }
 
-    const width = window.innerWidth;
-    const height = window.innerHeight;
+    const layerRect = layer.getBoundingClientRect();
+    const width = Math.max(0, Math.round(layerRect.width));
+    const height = Math.max(0, Math.round(layerRect.height));
     const dpr = Math.min(window.devicePixelRatio || 1, pixelRatioCap);
     const backingWidth = Math.round(width * dpr);
     const backingHeight = Math.round(height * dpr);
@@ -104,82 +84,118 @@ export default function MagnetCanvas({
       });
     }
 
+    layerOriginRef.current = {
+      x: layerRect.left + window.scrollX,
+      y: layerRect.top + window.scrollY,
+    };
     viewportRef.current = { width, height, dpr };
     requestDraw();
   });
 
-  const drawScene = useEffectEvent(() => {
-    const canvas = canvasRef.current;
+  const syncFloatProfiles = useEffectEvent((nextMagnets) => {
+    const nextProfiles = new Map();
 
-    if (!canvas) {
-      return;
-    }
+    nextMagnets.forEach((magnet) => {
+      nextProfiles.set(
+        magnet.id,
+        createFloatProfile(magnet, sessionPhaseRef.current),
+      );
+    });
 
-    const ctx = contextRef.current;
-    const { width, height, dpr } = viewportRef.current;
+    floatProfilesRef.current = nextProfiles;
+  });
 
-    if (!ctx || width === 0 || height === 0) {
-      return;
-    }
+  const pruneBounceStates = useEffectEvent((nextMagnets) => {
+    const validIds = new Set(nextMagnets.map((magnet) => magnet.id));
 
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, width, height);
-
-    const scrollPosition = { x: window.scrollX, y: window.scrollY };
-    const now = performance.now();
-    let hasActiveIntroFrame = false;
-
-    for (const magnet of sortedMagnetsRef.current) {
-      const animatedMagnet = resolveIntroMagnet(magnet, now);
-      if (animatedMagnet !== magnet) {
-        hasActiveIntroFrame = true;
+    for (const magnetId of bounceStatesRef.current.keys()) {
+      if (!validIds.has(magnetId)) {
+        bounceStatesRef.current.delete(magnetId);
       }
-      drawMagnet(ctx, animatedMagnet, scrollPosition, viewportRef.current);
     }
 
-    if (hasActiveIntroFrame) {
-      requestDraw();
+    if (hoverMagnetIdRef.current && !validIds.has(hoverMagnetIdRef.current)) {
+      hoverMagnetIdRef.current = null;
     }
+  });
+
+  const maybePrimeIntroAnimation = useEffectEvent((nextMagnets) => {
+    if (introHasPlayedRef.current) {
+      return;
+    }
+
+    const heroMagnets = nextMagnets.filter(
+      (magnet) => magnet.boardId === 'hero' && Number.isFinite(magnet.lineIndex),
+    );
+
+    if (heroMagnets.length < 2) {
+      return;
+    }
+
+    const heroBounds = heroMagnets.reduce((acc, magnet) => ({
+      left: Math.min(acc.left, magnet.x),
+      top: Math.min(acc.top, magnet.y),
+      right: Math.max(acc.right, magnet.x + magnet.width),
+      bottom: Math.max(acc.bottom, magnet.y + magnet.height),
+    }), {
+      left: Number.POSITIVE_INFINITY,
+      top: Number.POSITIVE_INFINITY,
+      right: Number.NEGATIVE_INFINITY,
+      bottom: Number.NEGATIVE_INFINITY,
+    });
+    const centerX = (heroBounds.left + heroBounds.right) / 2;
+    const centerY = (heroBounds.top + heroBounds.bottom) / 2;
+    const entries = new Map();
+
+    heroMagnets.forEach((magnet) => {
+      const hash = hashString(`${magnet.id}:${magnet.lineIndex}:${magnet.charIndex}`);
+      const radial = normalizeVector(
+        magnet.x + magnet.width / 2 - centerX,
+        magnet.y + magnet.height / 2 - centerY,
+      );
+      const jitterAngle = ((hash % 360) * Math.PI) / 180;
+      const jitterVector = {
+        x: Math.cos(jitterAngle),
+        y: Math.sin(jitterAngle),
+      };
+      const travelDistance =
+        Math.max(22, magnet.height * 0.18) + ((hash >>> 3) % 18);
+      const direction = normalizeVector(
+        radial.x * 0.72 + jitterVector.x * 0.48,
+        radial.y * 0.72 + jitterVector.y * 0.48,
+      );
+      const delayBucket = (magnet.charIndex + magnet.lineIndex * 2 + (hash % 3)) % 6;
+
+      entries.set(magnet.id, {
+        fromX: magnet.x + direction.x * travelDistance,
+        fromY: magnet.y + direction.y * travelDistance,
+        fromRotation: magnet.rotation + direction.x * 5.5 + direction.y * 3.5,
+        delayMs: delayBucket * INTRO_STAGGER_MS,
+        durationMs: INTRO_DURATION_MS + (hash % 2) * 18,
+      });
+    });
+
+    const maxDelay = Math.max(
+      ...Array.from(entries.values(), (entry) => entry.delayMs),
+    );
+    const startTime = performance.now();
+
+    introAnimationRef.current = {
+      entries,
+      startTime,
+      endTime: startTime + maxDelay + INTRO_DURATION_MS + 18,
+    };
+    introHasPlayedRef.current = true;
   });
 
   const syncExternalMagnets = useEffectEvent((sourceMagnets) => {
-    magnetsRef.current = normalizeMagnetList(sourceMagnets);
-    sortedMagnetsRef.current = sortMagnetsForPaint(magnetsRef.current);
-    maybePrimeIntroAnimation(magnetsRef.current);
-    requestDraw();
-  });
-
-  const updateMagnetList = useEffectEvent((updater, meta) => {
-    const nextMagnets = updater(cloneMagnetList(magnetsRef.current));
+    const nextMagnets = normalizeMagnetList(sourceMagnets);
     magnetsRef.current = nextMagnets;
     sortedMagnetsRef.current = sortMagnetsForPaint(nextMagnets);
+    syncFloatProfiles(nextMagnets);
+    pruneBounceStates(nextMagnets);
+    maybePrimeIntroAnimation(nextMagnets);
     requestDraw();
-
-    if (meta) {
-      emitMagnetsChange(nextMagnets, meta);
-    }
-  });
-
-  const setCursor = useEffectEvent((value) => {
-    document.documentElement.style.cursor = value;
-  });
-
-  const updateHoverCursor = useEffectEvent((point) => {
-    if (dragRef.current) {
-      return;
-    }
-
-    const hit = point
-      ? findTopMagnetAtPoint(magnetsRef.current, point, HIT_PADDING)
-      : null;
-    const nextHoverId = hit?.magnet.id ?? null;
-
-    if (hoverMagnetIdRef.current === nextHoverId) {
-      return;
-    }
-
-    hoverMagnetIdRef.current = nextHoverId;
-    setCursor(nextHoverId ? 'grab' : restoreCursorRef.current || '');
   });
 
   const isIntroAnimating = useEffectEvent((now = performance.now()) => {
@@ -242,354 +258,171 @@ export default function MagnetCanvas({
     };
   });
 
-  const maybePrimeIntroAnimation = useEffectEvent((nextMagnets) => {
-    if (introHasPlayedRef.current) {
-      return;
+  const resolveBounceOffset = useEffectEvent((magnet, now) => {
+    const state = bounceStatesRef.current.get(magnet.id);
+
+    if (!state) {
+      return { x: 0, y: 0, rotation: 0 };
     }
 
-    const heroMagnets = nextMagnets.filter(
-      (magnet) => magnet.boardId === 'hero' && Number.isFinite(magnet.lineIndex),
-    );
+    const elapsedSeconds = (now - state.startTime) / 1000;
 
-    if (heroMagnets.length < 2) {
-      return;
+    if (elapsedSeconds >= BOUNCE_DURATION_MS / 1000) {
+      bounceStatesRef.current.delete(magnet.id);
+      return { x: 0, y: 0, rotation: 0 };
     }
 
-    const uniqueLines = [...new Set(heroMagnets.map((magnet) => magnet.lineIndex))].sort(
-      (left, right) => left - right,
-    );
-    const lineOrder = new Map(uniqueLines.map((lineIndex, order) => [lineIndex, order]));
-    const travelX = Math.max(viewportRef.current.width * 0.66, 420);
-    const travelY = Math.max(viewportRef.current.height * 0.72, 360);
-    const directionByLine = [
-      { x: -travelX, y: 0, rotation: -14 },
-      { x: travelX, y: 0, rotation: 14 },
-      { x: 0, y: -travelY, rotation: -10 },
-      { x: 0, y: travelY, rotation: 10 },
-    ];
+    const attack = 1 - Math.exp(-elapsedSeconds * 18);
+    const decay = Math.exp(-elapsedSeconds * state.decay);
+    const wave = Math.cos(elapsedSeconds * state.frequency);
+    const sway = Math.sin(elapsedSeconds * state.frequency * 0.72 + state.phase);
+    const scale = attack * decay;
 
-    const entries = new Map();
-
-    heroMagnets.forEach((magnet) => {
-      const order = lineOrder.get(magnet.lineIndex) ?? 0;
-      const direction = directionByLine[order % directionByLine.length];
-      entries.set(magnet.id, {
-        fromX: magnet.x + direction.x,
-        fromY: magnet.y + direction.y,
-        fromRotation: magnet.rotation + direction.rotation,
-        delayMs: order * INTRO_LINE_DELAY_MS,
-        durationMs: INTRO_LINE_DURATION_MS,
-      });
-    });
-
-    const maxDelay = Math.max(
-      ...Array.from(entries.values(), (entry) => entry.delayMs),
-    );
-    const startTime = performance.now();
-
-    introAnimationRef.current = {
-      entries,
-      startTime,
-      endTime: startTime + maxDelay + INTRO_LINE_DURATION_MS,
+    return {
+      x: state.amplitudeX * sway * scale,
+      y: state.amplitudeY * wave * scale,
+      rotation: state.rotationAmplitude * wave * scale * state.rotationDirection,
     };
-    introHasPlayedRef.current = true;
   });
 
-  const stopInertia = useEffectEvent(() => {
-    if (inertiaFrameRef.current) {
-      window.cancelAnimationFrame(inertiaFrameRef.current);
-      inertiaFrameRef.current = 0;
+  const getPointerLean = useEffectEvent((magnet, profile) => {
+    const point = pointerPointRef.current;
+
+    if (!point) {
+      return 0;
     }
 
-    inertiaRef.current = null;
+    const centerX = magnet.x + magnet.width / 2;
+    return (
+      clamp(
+        (point.x - centerX) / Math.max(magnet.width * 0.52, 1),
+        -1,
+        1,
+      ) * profile.hoverLean
+    );
   });
 
-  const applyPendingDragPosition = useEffectEvent((phase = 'move') => {
-    const dragState = dragRef.current;
-    const point = pendingPointRef.current;
+  const resolveFloatingMagnet = useEffectEvent((magnet, now) => {
+    const profile = floatProfilesRef.current.get(magnet.id);
 
-    if (!dragState || !point) {
-      return;
+    if (!profile) {
+      return magnet;
     }
 
-    pendingPointRef.current = null;
+    const time = now / 1000;
+    const idleX =
+      Math.sin(time * profile.waveX + profile.phaseX) * profile.amplitudeX +
+      Math.cos(time * profile.driftX + profile.phaseDrift) * profile.amplitudeX * 0.36;
+    const idleY =
+      Math.sin(time * profile.waveY + profile.phaseY) * profile.amplitudeY +
+      Math.cos(time * profile.driftY + profile.phaseDrift) * profile.amplitudeY * 0.32;
+    const idleRotation =
+      Math.sin(time * profile.waveRotation + profile.phaseRotation) * profile.rotationAmplitude;
+    const isHovered = hoverMagnetIdRef.current === magnet.id;
+    const bounce = resolveBounceOffset(magnet, now);
 
-    updateMagnetList((currentMagnets) => {
-      const targetIndex = currentMagnets.findIndex(
-        (magnet) => magnet.id === dragState.magnetId,
-      );
-
-      if (targetIndex === -1) {
-        return currentMagnets;
-      }
-
-      const magnet = currentMagnets[targetIndex];
-      const rawX = point.x - dragState.offsetX;
-      const rawY = point.y - dragState.offsetY;
-      const clamped = clampMagnetToBounds(
-        magnet,
-        rawX,
-        rawY,
-        boards,
-        drawBounds,
-      );
-
-      if (magnet.x === clamped.x && magnet.y === clamped.y && phase === 'move') {
-        return currentMagnets;
-      }
-
-      currentMagnets[targetIndex] = {
-        ...magnet,
-        x: clamped.x,
-        y: clamped.y,
-        rotation: dragState.dragRotation ?? magnet.rotation,
-        userPlaced: true,
-      };
-
-      return currentMagnets;
-    }, { source: 'drag', phase, activeId: dragState.magnetId });
-  });
-
-  const scheduleDragFrame = useEffectEvent(() => {
-    if (dragFrameRef.current) {
-      return;
-    }
-
-    dragFrameRef.current = window.requestAnimationFrame(() => {
-      dragFrameRef.current = 0;
-      applyPendingDragPosition('move');
-
-      if (pendingPointRef.current) {
-        scheduleDragFrame();
-      }
-    });
-  });
-
-  const stopDrag = useEffectEvent((pointerEvent, phase = 'end') => {
-    const dragState = dragRef.current;
-
-    if (!dragState) {
-      return;
-    }
-
-    if (pointerEvent) {
-      pendingPointRef.current = toDocumentPoint(pointerEvent);
-    }
-
-    if (dragFrameRef.current) {
-      window.cancelAnimationFrame(dragFrameRef.current);
-      dragFrameRef.current = 0;
-    }
-
-    applyPendingDragPosition(phase);
-    dragRef.current = null;
-    pendingPointRef.current = null;
-    restoreInteractionStyles();
-    updateHoverCursor(pointerEvent ? toDocumentPoint(pointerEvent) : null);
-    requestDraw();
-
-    if (phase === 'end' && dragState.velocity) {
-      const speed = Math.hypot(dragState.velocity.x, dragState.velocity.y);
-
-      if (speed >= INERTIA_MIN_SPEED) {
-        inertiaRef.current = {
-          magnetId: dragState.magnetId,
-          velocityX: dragState.velocity.x,
-          velocityY: dragState.velocity.y,
-          angularVelocity: dragState.angularVelocity ?? 0,
-          lastTime: performance.now(),
-        };
-
-        const tick = () => {
-          const state = inertiaRef.current;
-
-          if (!state) {
-            inertiaFrameRef.current = 0;
-            return;
-          }
-
-          const now = performance.now();
-          const dt = Math.min((now - state.lastTime) / 1000, 0.034);
-          state.lastTime = now;
-
-          let shouldStop = false;
-
-          updateMagnetList((currentMagnets) => {
-            const targetIndex = currentMagnets.findIndex(
-              (magnet) => magnet.id === state.magnetId,
-            );
-
-            if (targetIndex === -1) {
-              shouldStop = true;
-              return currentMagnets;
-            }
-
-            const magnet = currentMagnets[targetIndex];
-            const nextVelocityX = state.velocityX * INERTIA_DAMPING;
-            const nextVelocityY = state.velocityY * INERTIA_DAMPING;
-            const nextAngularVelocity = state.angularVelocity * 0.88;
-            const rawX = magnet.x + nextVelocityX * dt;
-            const rawY = magnet.y + nextVelocityY * dt;
-            const clamped = clampMagnetToBounds(
-              magnet,
-              rawX,
-              rawY,
-              boards,
-              drawBounds,
-            );
-            const hitBoundary = clamped.x !== rawX || clamped.y !== rawY;
-
-            state.velocityX = hitBoundary ? nextVelocityX * 0.42 : nextVelocityX;
-            state.velocityY = hitBoundary ? nextVelocityY * 0.42 : nextVelocityY;
-            state.angularVelocity = hitBoundary ? nextAngularVelocity * 0.42 : nextAngularVelocity;
-
-            currentMagnets[targetIndex] = {
-              ...magnet,
-              x: clamped.x,
-              y: clamped.y,
-              rotation: magnet.rotation + state.angularVelocity * dt,
-              userPlaced: true,
-            };
-
-            if (
-              Math.hypot(state.velocityX, state.velocityY) < INERTIA_STOP_SPEED &&
-              Math.abs(state.angularVelocity) < 8
-            ) {
-              shouldStop = true;
-            }
-
-            return currentMagnets;
-          }, { source: 'drag', phase: 'inertia', activeId: state.magnetId });
-
-          if (shouldStop) {
-            stopInertia();
-            return;
-          }
-
-          inertiaFrameRef.current = window.requestAnimationFrame(tick);
-        };
-
-        stopInertia();
-        inertiaFrameRef.current = window.requestAnimationFrame(tick);
-      }
-    }
-  });
-
-  const restoreInteractionStyles = useEffectEvent(() => {
-    document.body.style.userSelect = restoreUserSelectRef.current;
-    document.documentElement.style.cursor = restoreCursorRef.current;
-  });
-
-  const lockInteractionStyles = useEffectEvent(() => {
-    restoreUserSelectRef.current = document.body.style.userSelect;
-    restoreCursorRef.current = document.documentElement.style.cursor;
-    document.body.style.userSelect = 'none';
-    setCursor('grabbing');
-  });
-
-  const handlePointerDown = useEffectEvent((event) => {
-    if (event.button !== 0 || dragRef.current || isIntroAnimating()) {
-      return;
-    }
-
-    stopInertia();
-    const point = toDocumentPoint(event);
-    const hit = findTopMagnetAtPoint(magnetsRef.current, point, HIT_PADDING);
-
-    if (!hit) {
-      return;
-    }
-
-    event.preventDefault();
-
-    const targetMagnet = hit.magnet;
-    const nextZIndex =
-      Math.max(0, ...magnetsRef.current.map((magnet) => magnet.zIndex)) + 1;
-
-    updateMagnetList((currentMagnets) => {
-      const targetIndex = currentMagnets.findIndex(
-        (magnet) => magnet.id === targetMagnet.id,
-      );
-
-      if (targetIndex === -1) {
-        return currentMagnets;
-      }
-
-      currentMagnets[targetIndex] = {
-        ...currentMagnets[targetIndex],
-        zIndex: nextZIndex,
-      };
-
-      return currentMagnets;
-    }, { source: 'drag', phase: 'start', activeId: targetMagnet.id });
-
-    dragRef.current = {
-      pointerId: event.pointerId,
-      magnetId: targetMagnet.id,
-      offsetX: point.x - targetMagnet.x,
-      offsetY: point.y - targetMagnet.y,
-      lastPoint: point,
-      lastTime: performance.now(),
-      velocity: { x: 0, y: 0 },
-      angularVelocity: 0,
-      baseRotation: targetMagnet.rotation,
-      dragRotation: targetMagnet.rotation,
+    return {
+      ...magnet,
+      x: magnet.x + idleX + bounce.x,
+      y: magnet.y + idleY + bounce.y + (isHovered ? profile.hoverSink : 0),
+      rotation:
+        magnet.rotation +
+        idleRotation +
+        bounce.rotation +
+        (isHovered ? getPointerLean(magnet, profile) : 0),
     };
-
-    lockInteractionStyles();
-    requestDraw();
   });
 
-  const handlePointerMove = useEffectEvent((event) => {
-    const dragState = dragRef.current;
+  const drawScene = useEffectEvent(() => {
+    const canvas = canvasRef.current;
 
-    if (!dragState) {
-      if (isIntroAnimating()) {
-        return;
-      }
-      updateHoverCursor(toDocumentPoint(event));
+    if (!canvas) {
       return;
     }
 
-    if (dragState.pointerId !== event.pointerId) {
+    const ctx = contextRef.current;
+    const { width, height, dpr } = viewportRef.current;
+
+    if (!ctx || width === 0 || height === 0) {
       return;
     }
 
-    event.preventDefault();
-    const point = toDocumentPoint(event);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, width, height);
+
     const now = performance.now();
-    const dt = Math.max((now - dragState.lastTime) / 1000, 0.001);
-    const dx = point.x - dragState.lastPoint.x;
-    const dy = point.y - dragState.lastPoint.y;
+    const allowFloating = !prefersReducedMotionRef.current;
+    let hasActiveIntroFrame = false;
 
-    dragState.velocity = {
-      x: dx / dt,
-      y: dy / dt,
-    };
-    dragState.angularVelocity = clamp(dragState.velocity.x * 0.24, -120, 120);
-    dragState.dragRotation = dragState.baseRotation + clamp(dragState.velocity.x * 0.006, -5.5, 5.5);
-    dragState.lastPoint = point;
-    dragState.lastTime = now;
-    pendingPointRef.current = point;
-    scheduleDragFrame();
+    for (const magnet of sortedMagnetsRef.current) {
+      const introMagnet = resolveIntroMagnet(magnet, now);
+      const animatedMagnet = allowFloating
+        ? resolveFloatingMagnet(introMagnet, now)
+        : introMagnet;
+
+      if (introMagnet !== magnet) {
+        hasActiveIntroFrame = true;
+      }
+
+      drawMagnet(ctx, animatedMagnet, layerOriginRef.current, viewportRef.current);
+    }
+
+    if (hasActiveIntroFrame || allowFloating) {
+      requestDraw();
+    }
   });
 
-  const handlePointerUp = useEffectEvent((event) => {
-    const dragState = dragRef.current;
+  const triggerBounce = useEffectEvent((magnetId) => {
+    const profile = floatProfilesRef.current.get(magnetId);
 
-    if (!dragState || dragState.pointerId !== event.pointerId) {
+    if (!profile) {
       return;
     }
 
-    event.preventDefault();
-    stopDrag(event, 'end');
+    bounceStatesRef.current.set(magnetId, {
+      startTime: performance.now(),
+      amplitudeX: profile.bounceAmplitudeX,
+      amplitudeY: profile.bounceAmplitudeY,
+      rotationAmplitude: profile.bounceRotation,
+      frequency: profile.bounceFrequency,
+      decay: profile.bounceDecay,
+      phase: profile.phaseBounce,
+      rotationDirection: profile.rotationDirection,
+    });
   });
 
-  const handleWindowBlur = useEffectEvent(() => {
-    stopDrag(null, 'cancel');
+  const updateHoverTarget = useEffectEvent((point) => {
+    pointerPointRef.current = point;
+
+    if (prefersReducedMotionRef.current) {
+      return;
+    }
+
+    const hit = point
+      ? findTopMagnetAtPoint(magnetsRef.current, point, HIT_PADDING)
+      : null;
+    const nextHoverId = hit?.magnet.id ?? null;
+    const previousHoverId = hoverMagnetIdRef.current;
+
+    hoverMagnetIdRef.current = nextHoverId;
+
+    if (nextHoverId && nextHoverId !== previousHoverId) {
+      triggerBounce(nextHoverId);
+    }
+
+    if (nextHoverId || previousHoverId !== nextHoverId) {
+      requestDraw();
+    }
   });
 
-  const handleViewportChange = useEffectEvent(() => {
+  const clearHoverState = useEffectEvent(() => {
+    pointerPointRef.current = null;
+
+    if (!hoverMagnetIdRef.current) {
+      return;
+    }
+
+    hoverMagnetIdRef.current = null;
     requestDraw();
   });
 
@@ -638,53 +471,63 @@ export default function MagnetCanvas({
   }, [requestDraw]);
 
   useEffect(() => {
-    syncCanvasSize();
+    if (typeof window === 'undefined') {
+      return;
+    }
 
-    window.addEventListener('resize', syncCanvasSize);
-    window.addEventListener('scroll', handleViewportChange, { passive: true });
-    window.addEventListener('pointerdown', handlePointerDown, true);
-    window.addEventListener('pointermove', handlePointerMove, true);
-    window.addEventListener('pointerup', handlePointerUp, true);
-    window.addEventListener('pointercancel', handlePointerUp, true);
-    window.addEventListener('blur', handleWindowBlur);
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const syncPreference = () => {
+      prefersReducedMotionRef.current = mediaQuery.matches;
+      requestDraw();
+    };
+
+    syncPreference();
+    mediaQuery.addEventListener('change', syncPreference);
 
     return () => {
+      mediaQuery.removeEventListener('change', syncPreference);
+    };
+  }, [requestDraw]);
+
+  useEffect(() => {
+    syncCanvasSize();
+    const layer = canvasRef.current?.parentElement ?? null;
+    const resizeObserver = layer && typeof ResizeObserver === 'function'
+      ? new ResizeObserver(() => syncCanvasSize())
+      : null;
+
+    if (layer) {
+      resizeObserver?.observe(layer);
+    }
+
+    const handlePointerMove = (event) => {
+      if (isIntroAnimating()) {
+        return;
+      }
+
+      updateHoverTarget(toDocumentPoint(event));
+    };
+
+    window.addEventListener('resize', syncCanvasSize);
+    window.addEventListener('pointermove', handlePointerMove, { passive: true });
+    window.addEventListener('blur', clearHoverState);
+
+    return () => {
+      resizeObserver?.disconnect();
       window.removeEventListener('resize', syncCanvasSize);
-      window.removeEventListener('scroll', handleViewportChange);
-      window.removeEventListener('pointerdown', handlePointerDown, true);
-      window.removeEventListener('pointermove', handlePointerMove, true);
-      window.removeEventListener('pointerup', handlePointerUp, true);
-      window.removeEventListener('pointercancel', handlePointerUp, true);
-      window.removeEventListener('blur', handleWindowBlur);
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('blur', clearHoverState);
 
       if (drawFrameRef.current) {
         window.cancelAnimationFrame(drawFrameRef.current);
         drawFrameRef.current = 0;
       }
-
-      if (dragFrameRef.current) {
-        window.cancelAnimationFrame(dragFrameRef.current);
-        dragFrameRef.current = 0;
-      }
-
-      if (inertiaFrameRef.current) {
-        window.cancelAnimationFrame(inertiaFrameRef.current);
-        inertiaFrameRef.current = 0;
-      }
-
-      restoreInteractionStyles();
     };
   }, [
-    handlePointerDown,
-    handlePointerMove,
-    handlePointerUp,
-    handleViewportChange,
-    handleWindowBlur,
-    setCursor,
-    restoreInteractionStyles,
+    clearHoverState,
+    isIntroAnimating,
     syncCanvasSize,
-    stopInertia,
-    updateHoverCursor,
+    updateHoverTarget,
   ]);
 
   return (
@@ -711,6 +554,37 @@ function sortMagnetsForPaint(magnets) {
   });
 }
 
+function createFloatProfile(magnet, sessionPhase) {
+  const seed = hashString(`${magnet.id}:${sessionPhase.toFixed(6)}`);
+  const height = Math.max(28, magnet.height ?? magnet.size ?? 68);
+  const width = Math.max(28, magnet.width ?? height);
+  const unit = (shift) => ((seed >>> shift) & 1023) / 1023;
+
+  return {
+    amplitudeX: clamp(width * (0.0035 + unit(0) * 0.005), 0.35, 1.9),
+    amplitudeY: clamp(height * (0.012 + unit(3) * 0.011), 1.1, 4.4),
+    rotationAmplitude: clamp(0.18 + unit(6) * 0.92, 0.18, 1.1),
+    waveX: 0.42 + unit(9) * 0.16,
+    driftX: 0.18 + unit(12) * 0.08,
+    waveY: 0.48 + unit(15) * 0.18,
+    driftY: 0.24 + unit(18) * 0.08,
+    waveRotation: 0.34 + unit(21) * 0.12,
+    phaseX: sessionPhase + unit(24) * Math.PI * 2,
+    phaseY: sessionPhase * 0.6 + unit(27) * Math.PI * 2,
+    phaseRotation: sessionPhase * 1.2 + unit(30) * Math.PI * 2,
+    phaseDrift: sessionPhase * 0.8 + unit(5) * Math.PI * 2,
+    phaseBounce: unit(11) * Math.PI,
+    hoverSink: clamp(height * 0.009, 0.8, 1.9),
+    hoverLean: clamp(0.55 + unit(14) * 0.85, 0.55, 1.4),
+    bounceAmplitudeX: clamp(width * 0.003, 0.15, 0.75),
+    bounceAmplitudeY: clamp(height * 0.036 + unit(17) * 0.8, 2.2, 6.4),
+    bounceRotation: clamp(0.24 + unit(20) * 0.9, 0.24, 1.2),
+    bounceFrequency: 13 + unit(23) * 5,
+    bounceDecay: 3.4 + unit(26) * 1.4,
+    rotationDirection: unit(29) > 0.5 ? 1 : -1,
+  };
+}
+
 function lerp(start, end, progress) {
   return start + (end - start) * progress;
 }
@@ -718,4 +592,28 @@ function lerp(start, end, progress) {
 function easeOutCubic(value) {
   const clamped = clamp(value, 0, 1);
   return 1 - (1 - clamped) ** 3;
+}
+
+function normalizeVector(x, y) {
+  const length = Math.hypot(x, y);
+
+  if (length < 0.0001) {
+    return { x: 0, y: -1 };
+  }
+
+  return {
+    x: x / length,
+    y: y / length,
+  };
+}
+
+function hashString(value) {
+  let hash = 2166136261;
+
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+
+  return hash >>> 0;
 }
