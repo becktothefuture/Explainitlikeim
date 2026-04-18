@@ -21,9 +21,11 @@ const EDIT_LAYER_STYLE = {
   touchAction: 'none',
 };
 const HIT_PADDING = 8;
-const INTRO_STAGGER_MS = 22;
-const INTRO_DURATION_MS = 420;
+const INTRO_STAGGER_MS = 46;
+const INTRO_DURATION_MS = 780;
 const BOUNCE_DURATION_MS = 1100;
+const AMBIENT_FLOAT_FADE_MS = 1480;
+const GEOMETRY_TRACK_MS = 1680;
 const DEFAULT_MOTION_CONFIG = {
   floatRangeX: 1,
   floatRangeY: 1,
@@ -41,8 +43,10 @@ export default function MagnetCanvas({
   magnets,
   initialMagnets = [],
   className,
+  introEnabled = true,
   pixelRatioCap = 1.6,
   motionConfig = DEFAULT_MOTION_CONFIG,
+  localCoordinates = false,
   layoutEditing = false,
   onLayoutCommit,
 }) {
@@ -52,6 +56,8 @@ export default function MagnetCanvas({
   const sortedMagnetsRef = useRef([]);
   const drawFrameRef = useRef(0);
   const introAnimationRef = useRef(null);
+  const ambientFloatFadeStartRef = useRef(0);
+  const geometryTrackUntilRef = useRef(0);
   const introHasPlayedRef = useRef(false);
   const floatProfilesRef = useRef(new Map());
   const bounceStatesRef = useRef(new Map());
@@ -63,6 +69,7 @@ export default function MagnetCanvas({
   const didHydrateInitialMagnetsRef = useRef(false);
   const sessionPhaseRef = useRef(Math.random() * Math.PI * 2);
   const motionConfigRef = useRef(resolveMotionConfig(motionConfig));
+  const introEnabledRef = useRef(introEnabled);
   const ambientMotionEnabledRef = useRef(true);
   const dragStateRef = useRef(null);
   const dragOverridesRef = useRef(new Map());
@@ -153,7 +160,7 @@ export default function MagnetCanvas({
   });
 
   const maybePrimeIntroAnimation = useEffectEvent((nextMagnets) => {
-    if (introHasPlayedRef.current) {
+    if (!introEnabledRef.current || introHasPlayedRef.current) {
       return;
     }
 
@@ -218,6 +225,7 @@ export default function MagnetCanvas({
       startTime,
       endTime: startTime + maxDelay + INTRO_DURATION_MS + 18,
     };
+    ambientFloatFadeStartRef.current = introAnimationRef.current.endTime;
     introHasPlayedRef.current = true;
   });
 
@@ -345,18 +353,28 @@ export default function MagnetCanvas({
       return magnet;
     }
 
+    const ambientFadeStart = ambientFloatFadeStartRef.current;
+    const ambientBlend = ambientFadeStart > 0
+      ? easeOutCubic(clamp((now - ambientFadeStart) / AMBIENT_FLOAT_FADE_MS, 0, 1))
+      : 1;
     const time = now / 1000;
     const allowAmbientMotion = hasAmbientMotion(profile);
     const idleX = allowAmbientMotion
-      ? Math.sin(time * profile.waveX + profile.phaseX) * profile.amplitudeX +
+      ? (
+        Math.sin(time * profile.waveX + profile.phaseX) * profile.amplitudeX +
         Math.cos(time * profile.driftX + profile.phaseDrift) * profile.amplitudeX * 0.36
+      ) * ambientBlend
       : 0;
     const idleY = allowAmbientMotion
-      ? Math.sin(time * profile.waveY + profile.phaseY) * profile.amplitudeY +
+      ? (
+        Math.sin(time * profile.waveY + profile.phaseY) * profile.amplitudeY +
         Math.cos(time * profile.driftY + profile.phaseDrift) * profile.amplitudeY * 0.32
+      ) * ambientBlend
       : 0;
     const idleRotation = allowAmbientMotion
-      ? Math.sin(time * profile.waveRotation + profile.phaseRotation) * profile.rotationAmplitude
+      ? Math.sin(time * profile.waveRotation + profile.phaseRotation) *
+        profile.rotationAmplitude *
+        ambientBlend
       : 0;
     const isHovered = hoverMagnetIdRef.current === magnet.id;
     const bounce = resolveBounceOffset(magnet, now);
@@ -405,6 +423,9 @@ export default function MagnetCanvas({
     ctx.clearRect(0, 0, width, height);
 
     const now = performance.now();
+    if (!localCoordinates && now < geometryTrackUntilRef.current) {
+      syncCanvasSize();
+    }
     const allowFloating = !prefersReducedMotionRef.current && !layoutEditing;
     const introActive = isIntroAnimating(now);
     let hasActiveIntroFrame = false;
@@ -422,7 +443,12 @@ export default function MagnetCanvas({
         hasActiveIntroFrame = true;
       }
 
-      drawMagnet(ctx, animatedMagnet, layerOriginRef.current, viewportRef.current);
+      drawMagnet(
+        ctx,
+        animatedMagnet,
+        localCoordinates ? { x: 0, y: 0 } : layerOriginRef.current,
+        viewportRef.current,
+      );
     }
 
     if (
@@ -476,8 +502,11 @@ export default function MagnetCanvas({
       return;
     }
 
+    const hoverableMagnets = magnetsRef.current.filter(
+      (magnet) => magnet.hoverable !== false,
+    );
     const hit = point
-      ? findTopMagnetAtPoint(magnetsRef.current, point, HIT_PADDING)
+      ? findTopMagnetAtPoint(hoverableMagnets, point, HIT_PADDING)
       : null;
     const nextHoverId = hit?.magnet.id ?? null;
     const previousHoverId = hoverMagnetIdRef.current;
@@ -542,7 +571,7 @@ export default function MagnetCanvas({
       return;
     }
 
-    const point = toDocumentPoint(event);
+    const point = toCanvasPoint(event, layerOriginRef.current, localCoordinates);
     const editableMagnets = magnetsRef.current
       .filter((magnet) => magnet.boardId === 'hero')
       .map((magnet) => resolveDragOverride(magnet));
@@ -586,7 +615,7 @@ export default function MagnetCanvas({
       return;
     }
 
-    const point = toDocumentPoint(event);
+    const point = toCanvasPoint(event, layerOriginRef.current, localCoordinates);
     const nextX = clamp(
       point.x - dragState.offsetX,
       dragState.bounds.left,
@@ -653,6 +682,21 @@ export default function MagnetCanvas({
   }, [drawScene, motionConfig, syncFloatProfiles]);
 
   useEffect(() => {
+    introEnabledRef.current = introEnabled;
+
+    if (!introEnabled) {
+      ambientFloatFadeStartRef.current = 0;
+      geometryTrackUntilRef.current = 0;
+      return;
+    }
+
+    geometryTrackUntilRef.current = performance.now() + GEOMETRY_TRACK_MS;
+    syncCanvasSize();
+    maybePrimeIntroAnimation(magnetsRef.current);
+    requestDraw();
+  }, [introEnabled, maybePrimeIntroAnimation, requestDraw, syncCanvasSize]);
+
+  useEffect(() => {
     if (!layoutEditing) {
       dragStateRef.current = null;
       dragOverridesRef.current = new Map();
@@ -661,6 +705,8 @@ export default function MagnetCanvas({
     }
 
     introAnimationRef.current = null;
+    ambientFloatFadeStartRef.current = 0;
+    geometryTrackUntilRef.current = 0;
     clearHoverState();
     bounceStatesRef.current.clear();
     requestDraw();
@@ -736,14 +782,14 @@ export default function MagnetCanvas({
         return;
       }
 
-      updateHoverTarget(toDocumentPoint(event));
+      updateHoverTarget(toCanvasPoint(event, layerOriginRef.current, localCoordinates));
     };
     const handleMouseMove = (event) => {
       if (supportsPointerEvents || isIntroAnimating()) {
         return;
       }
 
-      updateHoverTarget(toDocumentPoint(event));
+      updateHoverTarget(toCanvasPoint(event, layerOriginRef.current, localCoordinates));
     };
     const beginMouseDrag = (event) => {
       if (supportsPointerEvents) {
@@ -832,6 +878,7 @@ export default function MagnetCanvas({
     clearHoverState,
     endLayoutDrag,
     isIntroAnimating,
+    localCoordinates,
     syncCanvasSize,
     updateHoverTarget,
     updateLayoutDrag,
@@ -857,6 +904,19 @@ function toDocumentPoint(event) {
   return {
     x: (touch?.clientX ?? event.clientX) + window.scrollX,
     y: (touch?.clientY ?? event.clientY) + window.scrollY,
+  };
+}
+
+function toCanvasPoint(event, layerOrigin, localCoordinates) {
+  const point = toDocumentPoint(event);
+
+  if (!localCoordinates) {
+    return point;
+  }
+
+  return {
+    x: point.x - layerOrigin.x,
+    y: point.y - layerOrigin.y,
   };
 }
 

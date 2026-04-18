@@ -6,6 +6,8 @@ import MagnetCanvas from './components/MagnetCanvas.jsx';
 import { clamp, getMagnetWidthForLabel } from './components/magnetUtils.js';
 import {
   applyThemeTokens,
+  getPageNoiseOpacity,
+  getPageNoiseSize,
   getLevelControlFactors,
   LEVEL_CONTROL_DEFAULTS,
   LEVEL_CONTROL_STORAGE_KEY,
@@ -31,8 +33,8 @@ const EXAMPLE_TAB_VIEWPORT_HEIGHT =
   EXAMPLE_TAB_GAP * (EXAMPLE_TAB_VISIBLE_COUNT - 1);
 const EXAMPLE_TAB_TRANSITION_MS = 340;
 const EXAMPLE_TAB_WINDOW_START = -1;
-const EXAMPLE_TAB_WINDOW_END = EXAMPLE_TAB_VISIBLE_COUNT;
-const EXAMPLE_TAB_WINDOW_COUNT = EXAMPLE_TAB_VISIBLE_COUNT + 2;
+const EXAMPLE_TAB_WINDOW_END = (EXAMPLE_TAB_VISIBLE_COUNT * 2) - 2;
+const EXAMPLE_TAB_WINDOW_COUNT = EXAMPLE_TAB_WINDOW_END - EXAMPLE_TAB_WINDOW_START + 1;
 const HERO_CONTROL_STORAGE_KEY = 'eli5-hero-magnet-controls-v14';
 const HERO_LEGACY_CONTROL_STORAGE_KEYS = [
   'eli5-hero-magnet-controls-v13',
@@ -52,10 +54,48 @@ const HERO_LAYOUT_STORAGE_DEPRECATED_KEYS = [
 ];
 const HERO_CONTROL_WINDOW_NAME = 'eli5-hero-control-panel';
 const HERO_CONTROL_WINDOW_TITLE = "Config Panel for Explain It Like I'm Five";
+const CONTROL_PANEL_SECTION_STORAGE_KEY = 'eli5-control-panel-sections-v1';
 const APP_VIEWS = {
   home: 'home',
   depthLab: 'depth-lab',
 };
+const LOAD_CUES = {
+  header: 1,
+  heroBadge: 2,
+  heroTitle: 3,
+  heroNotes: 4,
+  breakHow: 5,
+  how: 6,
+  breakExamples: 7,
+  examples: 8,
+  breakInstall: 9,
+  install: 10,
+  breakScience: 11,
+  science: 12,
+  breakDownload: 13,
+  download: 14,
+  controls: 15,
+  controlDock: 16,
+};
+const LOAD_TIMELINE = [
+  { stage: LOAD_CUES.header, delay: 720 },
+  { stage: LOAD_CUES.heroBadge, delay: 1100 },
+  { stage: LOAD_CUES.heroTitle, delay: 1600 },
+  { stage: LOAD_CUES.heroNotes, delay: 2280 },
+  { stage: LOAD_CUES.breakHow, delay: 3260 },
+  { stage: LOAD_CUES.how, delay: 3480 },
+  { stage: LOAD_CUES.breakExamples, delay: 4100 },
+  { stage: LOAD_CUES.examples, delay: 4320 },
+  { stage: LOAD_CUES.breakInstall, delay: 4940 },
+  { stage: LOAD_CUES.install, delay: 5160 },
+  { stage: LOAD_CUES.breakScience, delay: 5780 },
+  { stage: LOAD_CUES.science, delay: 6000 },
+  { stage: LOAD_CUES.breakDownload, delay: 6620 },
+  { stage: LOAD_CUES.download, delay: 6840 },
+  { stage: LOAD_CUES.controls, delay: 7360 },
+  { stage: LOAD_CUES.controlDock, delay: 7520 },
+];
+const FINAL_LOAD_STAGE = LOAD_TIMELINE[LOAD_TIMELINE.length - 1]?.stage ?? 0;
 const HERO_TITLE_SLOT_PADDING_X = 28;
 const HERO_TITLE_SLOT_PADDING_Y = 24;
 const HERO_SLOT_MIN_HEIGHT = 238;
@@ -124,9 +164,9 @@ const BOARD_LAYOUTS = {
 const HERO_MAGNET_DEFAULTS = {
   size: HERO_DEFAULT_SIZE,
   floatRangeX: 1,
-  floatRangeY: 1,
-  floatSpeed: 1,
-  floatRotate: 1,
+  floatRangeY: 1.06,
+  floatSpeed: 1.1,
+  floatRotate: 1.18,
   hoverSink: 0.46,
   hoverLean: 2.24,
   bounceLift: 1.3,
@@ -160,13 +200,17 @@ const HERO_MAGNET_DEFAULTS = {
 };
 const HERO_CONTROL_SECTIONS = [
   {
+    id: 'hero-layout',
     title: 'Layout',
+    defaultCollapsed: true,
     fields: [
       { key: 'size', label: 'Size', min: HERO_SIZE_MIN, max: HERO_SIZE_MAX, step: 1, format: (value) => `${value}px` },
     ],
   },
   {
+    id: 'hero-float',
     title: 'Float',
+    defaultCollapsed: true,
     fields: [
       { key: 'floatRangeX', label: 'Float X', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
       { key: 'floatRangeY', label: 'Float Y', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
@@ -175,7 +219,9 @@ const HERO_CONTROL_SECTIONS = [
     ],
   },
   {
+    id: 'hero-hover-bounce',
     title: 'Hover Bounce',
+    defaultCollapsed: true,
     fields: [
       { key: 'hoverSink', label: 'Hover Sink', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
       { key: 'hoverLean', label: 'Hover Lean', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
@@ -186,7 +232,9 @@ const HERO_CONTROL_SECTIONS = [
     ],
   },
   {
+    id: 'hero-sticky-motion',
     title: 'Sticky Motion',
+    defaultCollapsed: true,
     fields: [
       { key: 'stickyEaseBand', label: 'Sticky Window', min: 64, max: 320, step: 1, format: (value) => `${Math.round(value)}px` },
       { key: 'stickyEaseEnterStrength', label: 'Catch Drift', min: 0, max: 2.2, step: 0.01, format: (value) => value.toFixed(2) },
@@ -194,7 +242,9 @@ const HERO_CONTROL_SECTIONS = [
     ],
   },
   {
+    id: 'hero-letters',
     title: 'Letters',
+    defaultCollapsed: true,
     fields: [
       { key: 'vibrance', label: 'Vibrance', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
     ],
@@ -204,23 +254,76 @@ const HERO_CONTROL_FIELDS = HERO_CONTROL_SECTIONS.flatMap((section) => section.f
 const HERO_CONTROL_KEYS = new Set(HERO_CONTROL_FIELDS.map((field) => field.key));
 const LEVEL_CONTROL_SECTIONS = [
   {
+    id: 'scene-geometry',
     title: 'Scene Geometry',
     fields: [
-      { key: 'sceneLevelSpacing', label: 'Level Spacing', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
+      { key: 'sceneLevelStep', label: 'Level Step', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
       { key: 'sceneInsetDepth', label: 'Inset Depth', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
     ],
   },
   {
-    title: 'Light and Material',
+    id: 'light-rig',
+    title: 'Light Rig',
     fields: [
-      { key: 'sceneContactFocus', label: 'Contact Focus', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
-      { key: 'sceneShadowFalloff', label: 'Shadow Falloff', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
-      { key: 'sceneLightStrength', label: 'Light Strength', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
-      { key: 'sceneMaterialContrast', label: 'Material Contrast', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
+      { key: 'sceneSunStrength', label: 'Sun Strength', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
+      { key: 'sceneSunSoftness', label: 'Sun Softness', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
+      { key: 'sceneAmbientFill', label: 'Ambient Fill', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
+      { key: 'sceneShadowDensity', label: 'Shadow Density', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
+    ],
+  },
+  {
+    id: 'material',
+    title: 'Material',
+    fields: [
+      { key: 'sceneEdgeRelief', label: 'Edge Relief', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
+      { key: 'sceneSurfaceContrast', label: 'Surface Contrast', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
+      { key: 'scenePaperNoise', label: 'Paper Noise', min: 0, max: 2.4, step: 0.01, format: (value) => `${Math.round(getPageNoiseOpacity({ scenePaperNoise: value }) * 100)}%` },
+      { key: 'scenePaperNoiseScale', label: 'Noise Tile', min: 0, max: 2.4, step: 0.01, format: (value) => `${Math.round(getPageNoiseSize({ scenePaperNoiseScale: value }))}px` },
     ],
   },
 ];
 const LEVEL_CONTROL_KEYS = new Set(Object.keys(LEVEL_CONTROL_DEFAULTS));
+const ALL_CONTROL_PANEL_SECTIONS = [
+  ...HERO_CONTROL_SECTIONS,
+  ...LEVEL_CONTROL_SECTIONS,
+];
+
+function getDefaultControlPanelSectionState() {
+  return Object.fromEntries(
+    ALL_CONTROL_PANEL_SECTIONS.map((section) => [section.id, Boolean(section.defaultCollapsed)]),
+  );
+}
+
+function sanitizeControlPanelSectionState(sectionState = {}) {
+  const defaults = getDefaultControlPanelSectionState();
+
+  return Object.fromEntries(
+    Object.entries(defaults).map(([sectionId, defaultValue]) => [
+      sectionId,
+      typeof sectionState[sectionId] === 'boolean'
+        ? sectionState[sectionId]
+        : defaultValue,
+    ]),
+  );
+}
+
+function loadControlPanelSectionState() {
+  if (typeof window === 'undefined') {
+    return getDefaultControlPanelSectionState();
+  }
+
+  try {
+    const raw = window.localStorage.getItem(CONTROL_PANEL_SECTION_STORAGE_KEY);
+
+    if (!raw) {
+      return getDefaultControlPanelSectionState();
+    }
+
+    return sanitizeControlPanelSectionState(JSON.parse(raw));
+  } catch {
+    return getDefaultControlPanelSectionState();
+  }
+}
 
 const HOW_EXAMPLE = {
   skill: "Explain It Like I'm Five",
@@ -250,6 +353,25 @@ function writeAppView(nextView) {
   }
 
   window.history.pushState({}, '', `${url.pathname}${url.search}${url.hash}`);
+}
+
+function getInitialLoadStage() {
+  if (typeof window === 'undefined') {
+    return FINAL_LOAD_STAGE;
+  }
+
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    ? FINAL_LOAD_STAGE
+    : 0;
+}
+
+function getLoadItemClass(baseClassName, isEntered, variantClassName = '') {
+  return [
+    baseClassName,
+    'eli5-load-item',
+    variantClassName,
+    isEntered ? 'is-entered' : '',
+  ].filter(Boolean).join(' ');
 }
 
 const HERO_COPY = {
@@ -602,7 +724,6 @@ const EXAMPLES = [
 
 const EXAMPLE_TAB_SLOT_SCALES = [0, 1, 0.97, 0.94, 0.91, 0.88, 0];
 const EXAMPLE_TAB_SLOT_TILTS = [-2, -4, 2, -2, 3, -1, 2];
-const EXAMPLE_TAB_SLOT_COLOR_INDEXES = [5, 0, 1, 2, 3, 4, 5];
 
 const SCIENCE_SOURCES = [
   {
@@ -1569,8 +1690,8 @@ function wrapIndex(index, length) {
 function getExampleTabSlotVisuals(slotIndex) {
   const boundedSlotIndex = clamp(
     slotIndex,
-    EXAMPLE_TAB_WINDOW_START,
-    EXAMPLE_TAB_WINDOW_END,
+    -1,
+    EXAMPLE_TAB_VISIBLE_COUNT,
   );
   const mapIndex = boundedSlotIndex - EXAMPLE_TAB_WINDOW_START;
   const layerSlotIndex = clamp(boundedSlotIndex, 0, EXAMPLE_TAB_VISIBLE_COUNT - 1);
@@ -1579,10 +1700,13 @@ function getExampleTabSlotVisuals(slotIndex) {
     offsetY: EXAMPLE_TAB_STEP * boundedSlotIndex,
     scale: EXAMPLE_TAB_SLOT_SCALES[mapIndex],
     tilt: EXAMPLE_TAB_SLOT_TILTS[mapIndex],
-    color: MAGNET_COLORS[EXAMPLE_TAB_SLOT_COLOR_INDEXES[mapIndex]],
     layer: String(30 - layerSlotIndex),
     isVisible: boundedSlotIndex >= 0 && boundedSlotIndex < EXAMPLE_TAB_VISIBLE_COUNT,
   };
+}
+
+function getExampleTabIdentityColor(exampleIndex) {
+  return MAGNET_COLORS[wrapIndex(exampleIndex, MAGNET_COLORS.length)];
 }
 
 function getExampleTabRingItems(examples, committedIndex) {
@@ -1782,7 +1906,10 @@ function buildCenteredHeroBoardRect(
   };
 }
 
-function buildHeroLetterLevelProps(levelControls, vibrance = HERO_MAGNET_DEFAULTS.vibrance) {
+function buildSharedMagnetVisualProps(
+  levelControls,
+  vibrance = HERO_MAGNET_DEFAULTS.vibrance,
+) {
   const level3 = getLevelControlFactors(levelControls, 'level3');
   const shadowStrengthDelta = level3.shadowStrength - 1;
   const shadowSoftnessDelta = level3.shadowSoftness - 1;
@@ -1907,7 +2034,10 @@ function buildAuthoredMagnets(
   levelControls = LEVEL_CONTROL_DEFAULTS,
 ) {
   const heroControls = sanitizeHeroMagnetControls(heroMagnetControls);
-  const sharedMagnetProps = buildHeroLetterLevelProps(levelControls, heroControls.vibrance);
+  const sharedMagnetProps = buildSharedMagnetVisualProps(
+    levelControls,
+    heroControls.vibrance,
+  );
 
   return [
     ...buildHeroTitleAuthoredMagnets(heroMagnetControls, sharedMagnetProps),
@@ -2164,18 +2294,157 @@ function ToolLogo({ toolKey }) {
   }
 }
 
-function SectionBreak({ color = SECTION_BREAK_COLORS.blue, tilt = -4, width = 106 }) {
+function SectionBreak({
+  className = 'eli5-section-break',
+  color = SECTION_BREAK_COLORS.blue,
+  tilt = -4,
+  width = 106,
+  heroMagnetControls = HERO_MAGNET_DEFAULTS,
+  levelControls = LEVEL_CONTROL_DEFAULTS,
+}) {
+  const pillMagnet = createShapeMagnet({
+    id: `section-break-${color}-${tilt}-${width}`,
+    shapeType: 'pill',
+    authorX: 0,
+    authorY: 0,
+    width,
+    height: 22,
+    rotation: tilt,
+    color,
+    magnetProps: {
+      ...buildSharedMagnetVisualProps(
+        levelControls,
+        getFiniteNumber(heroMagnetControls.vibrance, HERO_MAGNET_DEFAULTS.vibrance),
+      ),
+      x: 0,
+      y: 0,
+      zIndex: 1,
+      hoverable: false,
+    },
+  });
+  const visualPad = getHeroMagnetVisualPad(pillMagnet);
+  const floatRangeX = getFiniteNumber(
+    heroMagnetControls.floatRangeX,
+    HERO_MAGNET_DEFAULTS.floatRangeX,
+  );
+  const floatRangeY = getFiniteNumber(
+    heroMagnetControls.floatRangeY,
+    HERO_MAGNET_DEFAULTS.floatRangeY,
+  );
+  const slotWidth = Math.ceil(pillMagnet.width + visualPad * 2 + floatRangeX * 12);
+  const slotHeight = Math.ceil(pillMagnet.height + visualPad * 2 + floatRangeY * 22);
+  pillMagnet.x = (slotWidth - pillMagnet.width) / 2;
+  pillMagnet.y = (slotHeight - pillMagnet.height) / 2;
+
   return (
-    <div className="eli5-section-break" aria-hidden="true">
-      <span
-        className="eli5-section-break__magnet"
+    <div className={className} aria-hidden="true">
+      <span className="eli5-section-break__rail" />
+      <div
+        className="eli5-section-break__slot"
         style={{
-          '--divider-color': color,
-          '--divider-tilt': `${tilt}deg`,
-          '--divider-width': `${width}px`,
+          width: `${slotWidth}px`,
+          height: `${slotHeight}px`,
         }}
-      />
+      >
+        <MagnetCanvas
+          className="eli5-section-break__magnet"
+          magnets={[pillMagnet]}
+          motionConfig={heroMagnetControls}
+          localCoordinates
+        />
+      </div>
+      <span className="eli5-section-break__rail" />
     </div>
+  );
+}
+
+function RevealOnView({
+  as: Tag = 'div',
+  active = true,
+  children,
+  className = '',
+  delay = 0,
+  rootMargin = '0px 0px 6% 0px',
+  threshold = 0.12,
+  variantClassName = '',
+  style,
+  ...props
+}) {
+  const nodeRef = useRef(null);
+  const [isVisible, setIsVisible] = useState(() => {
+    if (typeof window === 'undefined') {
+      return true;
+    }
+
+    return active && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !active) {
+      return;
+    }
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setIsVisible(true);
+      return;
+    }
+
+    if (isVisible) {
+      return;
+    }
+
+    if (typeof IntersectionObserver !== 'function') {
+      setIsVisible(true);
+      return;
+    }
+
+    const node = nodeRef.current;
+
+    if (!node) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const nextEntry = entries[0];
+
+        if (!nextEntry?.isIntersecting) {
+          return;
+        }
+
+        setIsVisible(true);
+        observer.disconnect();
+      },
+      {
+        rootMargin,
+        threshold,
+      },
+    );
+
+    observer.observe(node);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [active, isVisible, rootMargin, threshold]);
+
+  return (
+    <Tag
+      ref={nodeRef}
+      className={[
+        className,
+        'eli5-reveal',
+        variantClassName,
+        isVisible ? 'is-visible' : '',
+      ].filter(Boolean).join(' ')}
+      style={{
+        ...style,
+        '--reveal-delay': `${delay}ms`,
+      }}
+      {...props}
+    >
+      {children}
+    </Tag>
   );
 }
 
@@ -2226,8 +2495,8 @@ function ensureHeroControlWindowHost(
       body.eli5-control-window {
         margin: 0;
         padding: 16px;
-        color: var(--ink);
-        background: var(--gradient-control-window);
+        color: var(--slate-900);
+        background: var(--slate-gradient-050);
       }
 
       body.eli5-control-window #eli5-control-host {
@@ -2261,9 +2530,11 @@ function ControlPanelSurface({
   caption,
   controls,
   sections,
+  collapsedSections,
   isLayoutEditing = false,
   onChange,
   onReset,
+  onToggleSection,
   onStartLayoutEdit,
   onSaveLayoutEdit,
   onCancelLayoutEdit,
@@ -2349,30 +2620,50 @@ function ControlPanelSurface({
       ) : null}
 
       <div className="eli5-control-panel__sections">
-        {sections.map((section) => (
-          <section key={section.title} className="eli5-control-section">
-            <h3>{section.title}</h3>
+        {sections.map((section) => {
+          const isCollapsed = Boolean(collapsedSections?.[section.id]);
 
-            <div className="eli5-control-panel__rows">
-              {section.fields.map((field) => (
-                <label key={field.key} className="eli5-control-row">
-                  <span className="eli5-control-row__top">
-                    <span>{field.label}</span>
-                    <span>{field.format(controls[field.key])}</span>
-                  </span>
-                  <input
-                    type="range"
-                    min={field.min}
-                    max={field.max}
-                    step={field.step}
-                    value={controls[field.key]}
-                    onChange={(event) => onChange(field.key, Number(event.target.value))}
-                  />
-                </label>
-              ))}
-            </div>
-          </section>
-        ))}
+          return (
+            <section
+              key={section.id}
+              className="eli5-control-section"
+              data-collapsed={isCollapsed ? 'true' : undefined}
+            >
+              <button
+                type="button"
+                className="eli5-control-section__toggle"
+                aria-expanded={!isCollapsed}
+                onClick={() => onToggleSection?.(section.id)}
+              >
+                <span>{section.title}</span>
+                <span className="eli5-control-section__toggle-state">
+                  {isCollapsed ? 'Show' : 'Hide'}
+                </span>
+              </button>
+
+              {!isCollapsed ? (
+                <div className="eli5-control-panel__rows">
+                  {section.fields.map((field) => (
+                    <label key={field.key} className="eli5-control-row">
+                      <span className="eli5-control-row__top">
+                        <span>{field.label}</span>
+                        <span>{field.format(controls[field.key])}</span>
+                      </span>
+                      <input
+                        type="range"
+                        min={field.min}
+                        max={field.max}
+                        step={field.step}
+                        value={controls[field.key]}
+                        onChange={(event) => onChange(field.key, Number(event.target.value))}
+                      />
+                    </label>
+                  ))}
+                </div>
+              ) : null}
+            </section>
+          );
+        })}
       </div>
     </aside>
   );
@@ -2401,10 +2692,9 @@ function DepthLabCard({
 }
 
 function DepthLabView({
-  controls,
-  sections,
-  onChange,
-  onReset,
+  isControlPanelVisible,
+  onToggleControlPanel,
+  panelSurface,
   onReturnHome,
 }) {
   return (
@@ -2422,13 +2712,23 @@ function DepthLabView({
               </p>
             </div>
 
-            <button
-              type="button"
-              className="eli5-button eli5-button--secondary"
-              onClick={onReturnHome}
-            >
-              Back to landing page
-            </button>
+            <div className="eli5-depth-lab__topbar-actions">
+              <button
+                type="button"
+                className="eli5-button eli5-button--secondary"
+                onClick={onToggleControlPanel}
+              >
+                {isControlPanelVisible ? 'Hide config panel' : 'Show config panel'}
+              </button>
+
+              <button
+                type="button"
+                className="eli5-button eli5-button--secondary"
+                onClick={onReturnHome}
+              >
+                Back to landing page
+              </button>
+            </div>
           </div>
 
           <div className="eli5-depth-lab__layout">
@@ -2441,7 +2741,7 @@ function DepthLabView({
                   tone="inset"
                 >
                   <div className="eli5-prompt-field__shell eli5-depth-lab__field-demo">
-                    <span className="eli5-prompt-field__skill">Skills for AI agents</span>
+                    <span className="eli5-prompt-field__skill eli5-prompt-field__skill--printed">Skills for AI agents</span>
                     <span className="eli5-depth-lab__field-copy">Inset form field</span>
                   </div>
                 </DepthLabCard>
@@ -2510,41 +2810,13 @@ function DepthLabView({
                 <DepthLabCard
                   level="Level 3"
                   title="Cursor reference"
-                  detail="Using the cursor as the level-3 reference for now. It stays on the top layer and reacts to the same level-3 depth controls."
+                  detail="Using the cursor as the level-3 reference for now. It stays on the top layer and reacts to the same scene-derived level-3 material."
                   tone="reference"
                 >
-                  <div className="eli5-depth-lab__reference-stack">
-                    <div className="eli5-depth-lab__reference-row">
-                      <div className="eli5-depth-lab__cursor-swatch" aria-hidden="true">
-                        <span className="eli5-depth-lab__cursor-glow" />
-                        <img src="/assets/cursors/pointer.png" alt="" draggable="false" />
-                      </div>
-                    </div>
-                    <div className="eli5-depth-lab__reference-grid" aria-hidden="true">
-                      <span
-                        className="eli5-depth-lab__reference-tile"
-                        style={{ '--reference-tile-fill': 'var(--magnet-coral)' }}
-                      >
-                        E
-                      </span>
-                      <span
-                        className="eli5-depth-lab__reference-tile"
-                        style={{ '--reference-tile-fill': 'var(--magnet-amber)' }}
-                      >
-                        L
-                      </span>
-                      <span
-                        className="eli5-depth-lab__reference-tile"
-                        style={{ '--reference-tile-fill': 'var(--magnet-mint)' }}
-                      >
-                        I
-                      </span>
-                      <span
-                        className="eli5-depth-lab__reference-tile"
-                        style={{ '--reference-tile-fill': 'var(--magnet-blue)' }}
-                      >
-                        5
-                      </span>
+                  <div className="eli5-depth-lab__reference-row">
+                    <div className="eli5-depth-lab__cursor-swatch" aria-hidden="true">
+                      <span className="eli5-depth-lab__cursor-glow" />
+                      <img src="/assets/cursors/pointer.png" alt="" draggable="false" />
                     </div>
                   </div>
                 </DepthLabCard>
@@ -2552,15 +2824,25 @@ function DepthLabView({
             </section>
 
             <div className="eli5-depth-lab__panel">
-              <ControlPanelSurface
-                eyebrow="Linked control panel"
-                title="Depth scene controls"
-                caption="These are the same saved scene controls the landing page uses. Change them here and the whole depth system stays in sync."
-                controls={controls}
-                sections={sections}
-                onChange={onChange}
-                onReset={onReset}
-              />
+              {isControlPanelVisible ? (
+                panelSurface
+              ) : (
+                <aside className="eli5-depth-lab__panel-placeholder" aria-label="Config panel placeholder">
+                  <p className="eli5-depth-lab__eyebrow">Main config panel</p>
+                  <h2>Use the same panel here.</h2>
+                  <p>
+                    Open the shared config panel in this rail, then collapse the hero groups while you tune depth, light, and material across the chrome.
+                  </p>
+
+                  <button
+                    type="button"
+                    className="eli5-button eli5-button--secondary"
+                    onClick={onToggleControlPanel}
+                  >
+                    Open config panel
+                  </button>
+                </aside>
+              )}
             </div>
           </div>
         </div>
@@ -2623,7 +2905,7 @@ function ExampleTopicTabs({
   const activeIndex = Math.max(0, examples.findIndex((example) => example.slug === activeSlug));
   const [committedIndex, setCommittedIndex] = useState(activeIndex);
   const [queuedSteps, setQueuedSteps] = useState(0);
-  const [direction, setDirection] = useState(0);
+  const [stepOffset, setStepOffset] = useState(0);
   const [phase, setPhase] = useState('idle');
   const isAnimating = phase === 'animating';
   const isResetting = phase === 'resetting';
@@ -2653,16 +2935,15 @@ function ExampleTopicTabs({
     });
   });
 
-  const finishTransition = useEffectEvent((stepDirection) => {
+  const finishTransition = useEffectEvent((completedOffset) => {
     clearPendingTransition();
-    const nextIndex = wrapIndex(committedIndex + stepDirection, examples.length);
-    const remainingSteps = queuedSteps - stepDirection;
+    const nextIndex = wrapIndex(committedIndex + completedOffset, examples.length);
 
     flushSync(() => {
       setPhase('resetting');
       setCommittedIndex(nextIndex);
-      setQueuedSteps(remainingSteps);
-      setDirection(0);
+      setQueuedSteps(0);
+      setStepOffset(0);
     });
 
     if (typeof window !== 'undefined') {
@@ -2670,7 +2951,7 @@ function ExampleTopicTabs({
         setPhase('idle');
         resetFrameRef.current = 0;
 
-        if (remainingSteps === 0 && focusTargetIndexRef.current === nextIndex) {
+        if (focusTargetIndexRef.current === nextIndex) {
           focusExampleIndex(nextIndex);
           focusTargetIndexRef.current = null;
         }
@@ -2678,7 +2959,7 @@ function ExampleTopicTabs({
     } else {
       setPhase('idle');
 
-      if (remainingSteps === 0 && focusTargetIndexRef.current === nextIndex) {
+      if (focusTargetIndexRef.current === nextIndex) {
         focusExampleIndex(nextIndex);
         focusTargetIndexRef.current = null;
       }
@@ -2711,24 +2992,24 @@ function ExampleTopicTabs({
       return;
     }
 
-    const nextDirection = queuedSteps > 0 ? 1 : -1;
-    const nextIndex = wrapIndex(committedIndex + nextDirection, examples.length);
+    const nextStepOffset = queuedSteps;
+    const nextIndex = wrapIndex(committedIndex + nextStepOffset, examples.length);
     const nextExample = examples[nextIndex];
 
     if (!nextExample) {
       return;
     }
 
-    setDirection(nextDirection);
+    setStepOffset(nextStepOffset);
     setPhase('animating');
 
     if (typeof window === 'undefined') {
-      finishTransition(nextDirection);
+      finishTransition(nextStepOffset);
       return;
     }
 
     transitionTimeoutRef.current = window.setTimeout(() => {
-      finishTransition(nextDirection);
+      finishTransition(nextStepOffset);
     }, EXAMPLE_TAB_TRANSITION_MS + 40);
   }, [
     committedIndex,
@@ -2749,7 +3030,7 @@ function ExampleTopicTabs({
     clearPendingTransition();
     focusTargetIndexRef.current = shouldFocus ? wrappedIndex : null;
     setQueuedSteps(0);
-    setDirection(0);
+    setStepOffset(0);
     setPhase('idle');
     setCommittedIndex(wrappedIndex);
     onSelect(targetExample.slug);
@@ -2759,7 +3040,28 @@ function ExampleTopicTabs({
     }
   };
 
-  const queueForwardSelection = (nextIndex, shouldFocus = true) => {
+  const queueStep = (offset, shouldFocus = false) => {
+    const nextIndex = wrapIndex(committedIndex + offset, examples.length);
+    const targetExample = examples[nextIndex];
+
+    if (!targetExample) {
+      return;
+    }
+
+    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      selectIndexImmediately(nextIndex, shouldFocus);
+      return;
+    }
+
+    if (phase !== 'idle' || queuedSteps !== 0) {
+      return;
+    }
+
+    focusTargetIndexRef.current = shouldFocus ? nextIndex : null;
+    setQueuedSteps(offset);
+  };
+
+  const queueSelection = (nextIndex, shouldFocus = false) => {
     const wrappedIndex = wrapIndex(nextIndex, examples.length);
     const targetExample = examples[wrappedIndex];
 
@@ -2787,27 +3089,6 @@ function ExampleTopicTabs({
 
     focusTargetIndexRef.current = shouldFocus ? wrappedIndex : null;
     setQueuedSteps(delta);
-  };
-
-  const queueStep = (direction, shouldFocus = false) => {
-    const nextIndex = wrapIndex(committedIndex + direction, examples.length);
-    const targetExample = examples[nextIndex];
-
-    if (!targetExample) {
-      return;
-    }
-
-    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      selectIndexImmediately(nextIndex, shouldFocus);
-      return;
-    }
-
-    if (phase !== 'idle' || queuedSteps !== 0) {
-      return;
-    }
-
-    focusTargetIndexRef.current = shouldFocus ? nextIndex : null;
-    setQueuedSteps(direction);
   };
 
   const handleTabKeyDown = (event, index) => {
@@ -2840,14 +3121,13 @@ function ExampleTopicTabs({
       return;
     }
 
-    finishTransition(direction);
+    finishTransition(stepOffset);
   };
 
   const tabTrack = getExampleTabRingItems(examples, committedIndex);
   const trackShift = isAnimating
-    ? `${-direction * EXAMPLE_TAB_STEP}px`
+    ? `${-stepOffset * EXAMPLE_TAB_STEP}px`
     : '0px';
-  const measureVisuals = getExampleTabSlotVisuals(0);
 
   return (
     <div
@@ -2861,13 +3141,13 @@ function ExampleTopicTabs({
     >
       <div className="eli5-example-tabs__viewport">
         <div className="eli5-example-tabs__measure" aria-hidden="true">
-          {examples.map((example) => {
+          {examples.map((example, exampleIndex) => {
             return (
               <span
                 key={`measure-${example.slug}`}
                 className="eli5-example-tab eli5-example-tab--measure"
                 style={{
-                  '--example-tab-color': measureVisuals.color,
+                  '--example-tab-color': getExampleTabIdentityColor(exampleIndex),
                   '--example-tab-tilt': '0deg',
                   '--example-tab-scale': '1',
                 }}
@@ -2897,9 +3177,10 @@ function ExampleTopicTabs({
             const isActive = example.slug === activeSlug;
             const sourceVisuals = getExampleTabSlotVisuals(slotIndex);
             const targetSlotIndex = isAnimating
-              ? slotIndex - direction
+              ? slotIndex - stepOffset
               : slotIndex;
             const visualState = getExampleTabSlotVisuals(targetSlotIndex);
+            const exampleColor = getExampleTabIdentityColor(exampleIndex);
             const isWithinVisibleRange = slotIndex >= 0 && slotIndex < EXAMPLE_TAB_VISIBLE_COUNT;
             const isAriaVisible = isAnimating
               ? visualState.isVisible
@@ -2925,13 +3206,13 @@ function ExampleTopicTabs({
                   aria-controls={`example-panel-${example.slug}`}
                   className={`eli5-example-tab${isActive ? ' is-active' : ''}${isResetting ? ' is-resetting' : ''}`}
                   style={{
-                    '--example-tab-color': visualState.color,
+                    '--example-tab-color': exampleColor,
                     '--example-tab-tilt': `${visualState.tilt}deg`,
                     '--example-tab-scale': visualState.scale.toFixed(3),
                   }}
                   onClick={() => {
                     if (phase === 'idle' && queuedSteps === 0) {
-                      queueForwardSelection(exampleIndex);
+                      queueSelection(exampleIndex, true);
                     }
                   }}
                   onKeyDown={(event) => handleTabKeyDown(event, exampleIndex)}
@@ -3144,7 +3425,6 @@ function ScrollScrubMedia({
 
 export default function App() {
   const heroStageRef = useRef(null);
-  const heroBoardRef = useRef(null);
   const playfieldBoardRef = useRef(null);
   const howSectionRef = useRef(null);
   const controlPanelWindowRef = useRef(null);
@@ -3166,9 +3446,12 @@ export default function App() {
     loadHeroLayout(),
   );
   const [isHeroLayoutEditing, setIsHeroLayoutEditing] = useState(false);
-  const [isAdvancedLevelsVisible, setIsAdvancedLevelsVisible] = useState(false);
+  const [collapsedControlSections, setCollapsedControlSections] = useState(() =>
+    loadControlPanelSectionState(),
+  );
   const [controlPanelHost, setControlPanelHost] = useState(null);
   const [isInlineFallbackOpen, setIsInlineFallbackOpen] = useState(false);
+  const [loadStage, setLoadStage] = useState(() => getInitialLoadStage());
   const [magnetSeed, setMagnetSeed] = useState([]);
   const activeHeroLayout = isHeroLayoutEditing
     ? heroDraftLayout
@@ -3181,14 +3464,6 @@ export default function App() {
           top: heroStageRef.current.getBoundingClientRect().top + window.scrollY,
           width: heroStageRef.current.getBoundingClientRect().width,
           height: heroStageRef.current.getBoundingClientRect().height,
-        }
-      : null;
-    const heroBoardRect = heroBoardRef.current
-      ? {
-          left: heroBoardRef.current.getBoundingClientRect().left + window.scrollX,
-          top: heroBoardRef.current.getBoundingClientRect().top + window.scrollY,
-          width: heroBoardRef.current.getBoundingClientRect().width,
-          height: heroBoardRef.current.getBoundingClientRect().height,
         }
       : null;
     const playfieldRect = playfieldBoardRef.current
@@ -3204,16 +3479,12 @@ export default function App() {
     const heroLayoutForRender = activeHeroLayout;
     const provisionalHeroSlot = buildHeroTitleSlot(resolvedHeroStageRect);
     const nextHeroSlot = provisionalHeroSlot;
-    const nextHeroRect = heroBoardRect
-      ? {
-          ...heroBoardRect,
-          height: nextHeroSlot.height,
-        }
-      : buildCenteredHeroBoardRect(
-          resolvedHeroStageRect,
-          heroMagnetControls,
-          nextHeroSlot,
-        );
+    const nextHeroRect = {
+      left: 0,
+      top: 0,
+      width: nextHeroSlot.width,
+      height: nextHeroSlot.height,
+    };
     const nextSeed = applyPersistedHeroLayout(
       buildRuntimeMagnets({
         hero: nextHeroRect,
@@ -3269,6 +3540,66 @@ export default function App() {
       return;
     }
 
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let timers = [];
+
+    const clearTimers = () => {
+      timers.forEach((timerId) => {
+        window.clearTimeout(timerId);
+      });
+      timers = [];
+    };
+
+    const startLoadSequence = () => {
+      clearTimers();
+
+      if (mediaQuery.matches) {
+        setLoadStage(FINAL_LOAD_STAGE);
+        return;
+      }
+
+      setLoadStage(0);
+      timers = LOAD_TIMELINE.map(({ stage, delay }) =>
+        window.setTimeout(() => {
+          setLoadStage((current) => (current < stage ? stage : current));
+        }, delay),
+      );
+    };
+
+    const handleMotionPreferenceChange = (event) => {
+      if (event.matches) {
+        clearTimers();
+        setLoadStage(FINAL_LOAD_STAGE);
+        return;
+      }
+
+      startLoadSequence();
+    };
+
+    startLoadSequence();
+
+    if (typeof mediaQuery.addEventListener === 'function') {
+      mediaQuery.addEventListener('change', handleMotionPreferenceChange);
+    } else {
+      mediaQuery.addListener(handleMotionPreferenceChange);
+    }
+
+    return () => {
+      clearTimers();
+
+      if (typeof mediaQuery.removeEventListener === 'function') {
+        mediaQuery.removeEventListener('change', handleMotionPreferenceChange);
+      } else {
+        mediaQuery.removeListener(handleMotionPreferenceChange);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
     applyThemeTokens(document.documentElement, { levelControls });
 
     if (controlPanelWindowRef.current && !controlPanelWindowRef.current.closed) {
@@ -3301,6 +3632,17 @@ export default function App() {
       JSON.stringify(levelControls),
     );
   }, [levelControls]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    window.localStorage.setItem(
+      CONTROL_PANEL_SECTION_STORAGE_KEY,
+      JSON.stringify(collapsedControlSections),
+    );
+  }, [collapsedControlSections]);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -3342,15 +3684,16 @@ export default function App() {
       return;
     }
 
-    setIsInlineFallbackOpen(false);
-    setControlPanelHost(null);
+    const shouldKeepPanelOpen = isInlineFallbackOpen || Boolean(controlPanelHost);
 
     if (controlPanelWindowRef.current && !controlPanelWindowRef.current.closed) {
       controlPanelWindowRef.current.close();
     }
 
     controlPanelWindowRef.current = null;
-  }, [appView]);
+    setControlPanelHost(null);
+    setIsInlineFallbackOpen(shouldKeepPanelOpen);
+  }, [appView, controlPanelHost, isInlineFallbackOpen]);
 
   const handlePanelControlChange = useEffectEvent((key, value) => {
     if (LEVEL_CONTROL_KEYS.has(key)) {
@@ -3376,12 +3719,13 @@ export default function App() {
     setLevelControls(LEVEL_CONTROL_DEFAULTS);
   });
 
-  const handleLevelControlReset = useEffectEvent(() => {
-    setLevelControls(LEVEL_CONTROL_DEFAULTS);
-  });
-
-  const handleToggleAdvancedLevels = useEffectEvent(() => {
-    setIsAdvancedLevelsVisible((current) => !current);
+  const handleToggleControlSection = useEffectEvent((sectionId) => {
+    setCollapsedControlSections((current) =>
+      sanitizeControlPanelSectionState({
+        ...current,
+        [sectionId]: !current[sectionId],
+      }),
+    );
   });
 
   const handleStartHeroLayoutEdit = useEffectEvent(() => {
@@ -3438,6 +3782,7 @@ export default function App() {
 
   const openExternalControlPanel = useEffectEvent(() => {
     if (appView === APP_VIEWS.depthLab) {
+      setIsInlineFallbackOpen(true);
       return;
     }
 
@@ -3470,6 +3815,7 @@ export default function App() {
 
   const toggleControlPanelVisibility = useEffectEvent(() => {
     if (appView === APP_VIEWS.depthLab) {
+      setIsInlineFallbackOpen((current) => !current);
       return;
     }
 
@@ -3510,10 +3856,6 @@ export default function App() {
 
   useEffect(() => {
     const handleKeyDown = (event) => {
-      if (appView === APP_VIEWS.depthLab) {
-        return;
-      }
-
       if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) {
         return;
       }
@@ -3546,36 +3888,48 @@ export default function App() {
   const panelSections = [
     ...HERO_CONTROL_SECTIONS,
     ...LEVEL_CONTROL_SECTIONS,
-    ...(isAdvancedLevelsVisible ? LEVEL_ADVANCED_SECTIONS : []),
   ];
-  const depthLabSections = [
-    ...LEVEL_CONTROL_SECTIONS,
-    ...(isAdvancedLevelsVisible ? LEVEL_ADVANCED_SECTIONS : []),
-  ];
+  const hasEnteredLoadCue = (cue) => loadStage >= cue;
   const isControlPanelVisible = isInlineFallbackOpen || Boolean(controlPanelHost);
   const isDepthLabView = appView === APP_VIEWS.depthLab;
+  const sharedPanelCaption =
+    'One shared light rig drives the page depth system. Sun, ambient fill, and material relief update the whole scene while layout and motion still drive the hero letters live.';
+  const sharedPanelProps = {
+    eyebrow: 'Linked control panel',
+    title: 'Live page controls',
+    caption: sharedPanelCaption,
+    controls: panelControls,
+    sections: panelSections,
+    collapsedSections: collapsedControlSections,
+    onChange: handlePanelControlChange,
+    onReset: handlePanelControlReset,
+    onToggleSection: handleToggleControlSection,
+  };
 
   if (isDepthLabView) {
     return (
       <DepthLabView
-        controls={levelControls}
-        sections={depthLabSections}
-        isAdvancedLevelsVisible={isAdvancedLevelsVisible}
-        onChange={handlePanelControlChange}
-        onReset={handleLevelControlReset}
-        onToggleAdvancedLevels={handleToggleAdvancedLevels}
+        isControlPanelVisible={isInlineFallbackOpen}
+        onToggleControlPanel={toggleControlPanelVisibility}
+        panelSurface={<ControlPanelSurface {...sharedPanelProps} />}
         onReturnHome={() => handleSetAppView(APP_VIEWS.home)}
       />
     );
   }
 
   return (
-    <div className="eli5-page">
+    <div className="eli5-page" data-load-stage={loadStage}>
       <CustomCursor />
       <main className="eli5-main">
         <div className="eli5-shell">
           <div className="eli5-surface">
-            <header className="eli5-header">
+            <header
+              className={getLoadItemClass(
+                'eli5-header',
+                hasEnteredLoadCue(LOAD_CUES.header),
+                'eli5-load-item--header',
+              )}
+            >
               <nav className="eli5-nav" aria-label="Primary">
                 <a href="#how">What it does</a>
                 <a href="#examples">See output</a>
@@ -3597,11 +3951,22 @@ export default function App() {
                   <div ref={heroStageRef} className="eli5-hero-stage">
                     <h1 className="eli5-sr-only">Explain It Like I&apos;m Five</h1>
 
-                    <div className="eli5-hero__badge">{HERO_COPY.badge}</div>
+                    <div
+                      className={getLoadItemClass(
+                        'eli5-hero__badge eli5-hero__badge--printed',
+                        hasEnteredLoadCue(LOAD_CUES.heroBadge),
+                        'eli5-load-item--badge',
+                      )}
+                    >
+                      {HERO_COPY.badge}
+                    </div>
 
                     <div
-                      ref={heroBoardRef}
-                      className="eli5-hero__magnet-slot"
+                      className={getLoadItemClass(
+                        'eli5-hero__magnet-slot',
+                        hasEnteredLoadCue(LOAD_CUES.heroTitle),
+                        'eli5-load-item--hero-title',
+                      )}
                       data-magnet-board="hero"
                       data-layout-editing={isHeroLayoutEditing ? 'true' : undefined}
                       aria-hidden="true"
@@ -3613,65 +3978,148 @@ export default function App() {
                         <MagnetCanvas
                           className={`eli5-magnet-layer${isHeroLayoutEditing ? ' is-layout-editing' : ''}`}
                           magnets={magnetSeed}
+                          introEnabled={hasEnteredLoadCue(LOAD_CUES.heroTitle)}
                           motionConfig={heroMagnetControls}
+                          localCoordinates
                           layoutEditing={isHeroLayoutEditing}
                           onLayoutCommit={handleHeroLayoutDraftCommit}
                         />
                       ) : null}
                     </div>
 
-                    <div className="eli5-hero__notes">
+                    <div
+                      className={getLoadItemClass(
+                        'eli5-hero__notes',
+                        hasEnteredLoadCue(LOAD_CUES.heroNotes),
+                        'eli5-load-item--hero-notes',
+                      )}
+                    >
                       <div className="eli5-hero__notes-copy">
-                        <p className="eli5-hero__summary">
+                        <RevealOnView
+                          as="p"
+                          active={hasEnteredLoadCue(LOAD_CUES.heroNotes)}
+                          className="eli5-hero__summary"
+                          delay={40}
+                          variantClassName="eli5-reveal--soft"
+                        >
                           {HERO_COPY.summary}
-                        </p>
-                        <p className="eli5-hero__detail">{HERO_COPY.detail}</p>
+                        </RevealOnView>
+                        <RevealOnView
+                          as="p"
+                          active={hasEnteredLoadCue(LOAD_CUES.heroNotes)}
+                          className="eli5-hero__detail"
+                          delay={170}
+                          variantClassName="eli5-reveal--soft"
+                        >
+                          {HERO_COPY.detail}
+                        </RevealOnView>
                       </div>
 
                       <div className="eli5-hero__compat" aria-label="Supported tools">
-                        <span className="eli5-hero__compat-label">{HERO_COPY.compatLabel}</span>
-                        {COMPAT_TOOLS.map((tool) => (
-                          <span key={tool.key} className="eli5-hero__compat-item">
+                        <RevealOnView
+                          as="span"
+                          active={hasEnteredLoadCue(LOAD_CUES.heroNotes)}
+                          className="eli5-hero__compat-label"
+                          delay={280}
+                          variantClassName="eli5-reveal--soft"
+                        >
+                          {HERO_COPY.compatLabel}
+                        </RevealOnView>
+                        {COMPAT_TOOLS.map((tool, index) => (
+                          <RevealOnView
+                            as="span"
+                            key={tool.key}
+                            active={hasEnteredLoadCue(LOAD_CUES.heroNotes)}
+                            className="eli5-hero__compat-item"
+                            delay={360 + index * 80}
+                            variantClassName="eli5-reveal--pill"
+                          >
                             <span className={`eli5-tool-logo eli5-tool-logo--${tool.key}`} aria-hidden="true">
                               <ToolLogo toolKey={tool.key} />
                             </span>
                             <span>{tool.label}</span>
-                          </span>
+                          </RevealOnView>
                         ))}
                       </div>
 
                       <div className="eli5-hero__actions">
-                        <DownloadLink className="eli5-button eli5-button--primary">
-                          Download the skill
-                        </DownloadLink>
-                        <a className="eli5-button eli5-button--secondary" href="#examples">
-                          See the output
-                        </a>
+                        <RevealOnView
+                          active={hasEnteredLoadCue(LOAD_CUES.heroNotes)}
+                          className="eli5-hero__action-reveal"
+                          delay={560}
+                          variantClassName="eli5-reveal--soft"
+                        >
+                          <DownloadLink className="eli5-button eli5-button--primary">
+                            Download the skill
+                          </DownloadLink>
+                        </RevealOnView>
+                        <RevealOnView
+                          active={hasEnteredLoadCue(LOAD_CUES.heroNotes)}
+                          className="eli5-hero__action-reveal"
+                          delay={680}
+                          variantClassName="eli5-reveal--soft"
+                        >
+                          <a className="eli5-button eli5-button--secondary" href="#examples">
+                            See the output
+                          </a>
+                        </RevealOnView>
                       </div>
                     </div>
                   </div>
                 </section>
 
-                <SectionBreak color={SECTION_BREAK_COLORS.orange} tilt={5} width={114} />
+                <SectionBreak
+                  className={getLoadItemClass(
+                    'eli5-section-break',
+                    hasEnteredLoadCue(LOAD_CUES.breakHow),
+                    'eli5-load-item--divider',
+                  )}
+                  color={SECTION_BREAK_COLORS.orange}
+                  tilt={5}
+                  width={114}
+                  heroMagnetControls={heroMagnetControls}
+                  levelControls={levelControls}
+                />
 
-                <section id="how" className="eli5-section eli5-section--how">
+                <section
+                  id="how"
+                  className={getLoadItemClass(
+                    'eli5-section eli5-section--how',
+                    hasEnteredLoadCue(LOAD_CUES.how),
+                    'eli5-load-item--section',
+                  )}
+                >
                   <div ref={howSectionRef} className="eli5-how">
                     <div className="eli5-how__copy">
-                      <h2>What this skill does</h2>
-                      <p className="eli5-how__lede">
-                        You ask one question and get the answer in five passes, starting with the quick shape first and building toward the fuller version as you keep reading. Much less &ldquo;can we circle back on that&rdquo; energy.
-                      </p>
+                      <RevealOnView
+                        active={hasEnteredLoadCue(LOAD_CUES.how)}
+                        className="eli5-how__intro"
+                        delay={80}
+                        variantClassName="eli5-reveal--soft"
+                      >
+                        <h2>What this skill does</h2>
+                        <p className="eli5-how__lede">
+                          You ask one question and get the answer in five passes, starting with the quick shape first and building toward the fuller version as you keep reading. Much less &ldquo;can we circle back on that&rdquo; energy.
+                        </p>
 
-                      <TypedPromptField
-                        label="What you ask"
-                        skill={HOW_EXAMPLE.skill}
-                        prompt={HOW_EXAMPLE.prompt}
-                        className="eli5-how__prompt"
-                      />
+                        <TypedPromptField
+                          label="What you ask"
+                          skill={HOW_EXAMPLE.skill}
+                          prompt={HOW_EXAMPLE.prompt}
+                          className="eli5-how__prompt"
+                        />
+                      </RevealOnView>
 
                       <div className="eli5-how__benefits">
-                        {HOW_BENEFITS.map((benefit) => (
-                          <article key={benefit.title} className="eli5-how-benefit">
+                        {HOW_BENEFITS.map((benefit, index) => (
+                          <RevealOnView
+                            as="article"
+                            key={benefit.title}
+                            active={hasEnteredLoadCue(LOAD_CUES.how)}
+                            className="eli5-how-benefit"
+                            delay={180 + index * 130}
+                            variantClassName="eli5-reveal--card"
+                          >
                             <div className="eli5-how-benefit__art" aria-hidden="true">
                               <img src={benefit.art} alt="" loading="lazy" />
                             </div>
@@ -3680,11 +4128,16 @@ export default function App() {
                               <h3>{benefit.title}</h3>
                               <p>{benefit.copy}</p>
                             </div>
-                          </article>
+                          </RevealOnView>
                         ))}
                       </div>
 
-                      <div className="eli5-how__use-cases">
+                      <RevealOnView
+                        active={hasEnteredLoadCue(LOAD_CUES.how)}
+                        className="eli5-how__use-cases"
+                        delay={620}
+                        variantClassName="eli5-reveal--soft"
+                      >
                         <p className="eli5-how__use-cases-label">Great for</p>
 
                         <div className="eli5-how__use-cases-list" aria-label="Best use cases">
@@ -3694,7 +4147,7 @@ export default function App() {
                             </span>
                           ))}
                         </div>
-                      </div>
+                      </RevealOnView>
                     </div>
 
                     <ScrollScrubMedia
@@ -3706,68 +4159,129 @@ export default function App() {
                   </div>
                 </section>
 
-                <SectionBreak color={SECTION_BREAK_COLORS.green} tilt={-3} width={101} />
+                <SectionBreak
+                  className={getLoadItemClass(
+                    'eli5-section-break',
+                    hasEnteredLoadCue(LOAD_CUES.breakExamples),
+                    'eli5-load-item--divider',
+                  )}
+                  color={SECTION_BREAK_COLORS.green}
+                  tilt={-3}
+                  width={101}
+                  heroMagnetControls={heroMagnetControls}
+                  levelControls={levelControls}
+                />
 
-                <section id="examples" className="eli5-section eli5-section--examples">
-                  <div className="eli5-section-heading">
+                <section
+                  id="examples"
+                  className={getLoadItemClass(
+                    'eli5-section eli5-section--examples',
+                    hasEnteredLoadCue(LOAD_CUES.examples),
+                    'eli5-load-item--section',
+                  )}
+                >
+                  <RevealOnView
+                    active={hasEnteredLoadCue(LOAD_CUES.examples)}
+                    className="eli5-section-heading"
+                    delay={80}
+                    variantClassName="eli5-reveal--soft"
+                  >
                     <h2>See the output.</h2>
                     <p>Pick a topic. The prompt stays short. The answer gets rewritten at ages 5, 7, 9, 12, and 16, without needing a second explanation meeting.</p>
-                  </div>
+                  </RevealOnView>
 
-                  <div ref={playfieldBoardRef} className="eli5-playfield" data-magnet-board="playfield">
-                    <ExampleTopicTabs
-                      examples={EXAMPLES}
-                      activeSlug={activeExample.slug}
-                      onSelect={setActiveExampleSlug}
-                    />
-
-                    <div
-                      id={`example-panel-${activeExample.slug}`}
-                      className="eli5-example-thread"
-                      role="tabpanel"
-                      aria-labelledby={`example-tab-${activeExample.slug}`}
-                    >
-                      <p className="eli5-example-thread__category">Example prompt</p>
-
-                      <TypedPromptField
-                        skill="Explain It Like I'm Five"
-                        prompt={getExamplePromptText(activeExample)}
-                        className="eli5-example-thread__prompt"
-                        ariaLabel={`Explain It Like I'm Five ${getExamplePromptText(activeExample)}`}
+                  <RevealOnView
+                    active={hasEnteredLoadCue(LOAD_CUES.examples)}
+                    className="eli5-playfield"
+                    data-magnet-board="playfield"
+                    delay={220}
+                    variantClassName="eli5-reveal--card"
+                  >
+                    <div ref={playfieldBoardRef} className="eli5-playfield__board">
+                      <ExampleTopicTabs
+                        examples={EXAMPLES}
+                        activeSlug={activeExample.slug}
+                        onSelect={setActiveExampleSlug}
                       />
 
-                      <div className="eli5-example-output">
-                        {activeExample.bands.map((band, index) => (
-                          <Fragment key={band.age}>
-                            <p className="eli5-example-output__entry">
-                              <span className="eli5-example-output__label">{band.age}:</span>
-                              {' '}
-                              {band.copy}
-                            </p>
+                      <div
+                        id={`example-panel-${activeExample.slug}`}
+                        className="eli5-example-thread"
+                        role="tabpanel"
+                        aria-labelledby={`example-tab-${activeExample.slug}`}
+                      >
+                        <p className="eli5-example-thread__category">Example prompt</p>
 
-                            {index < activeExample.bands.length - 1 ? (
-                              <p className="eli5-example-output__separator" aria-hidden="true">
-                                {EXAMPLE_SEPARATOR}
+                        <TypedPromptField
+                          skill="Explain It Like I'm Five"
+                          prompt={getExamplePromptText(activeExample)}
+                          className="eli5-example-thread__prompt"
+                          ariaLabel={`Explain It Like I'm Five ${getExamplePromptText(activeExample)}`}
+                        />
+
+                        <div className="eli5-example-output">
+                          {activeExample.bands.map((band, index) => (
+                            <Fragment key={band.age}>
+                              <p className="eli5-example-output__entry">
+                                <span className="eli5-example-output__label">{band.age}:</span>
+                                {' '}
+                                {band.copy}
                               </p>
-                            ) : null}
-                          </Fragment>
-                        ))}
+
+                              {index < activeExample.bands.length - 1 ? (
+                                <p className="eli5-example-output__separator" aria-hidden="true">
+                                  {EXAMPLE_SEPARATOR}
+                                </p>
+                              ) : null}
+                            </Fragment>
+                          ))}
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  </RevealOnView>
                 </section>
 
-                <SectionBreak color={SECTION_BREAK_COLORS.violet} tilt={4} width={109} />
+                <SectionBreak
+                  className={getLoadItemClass(
+                    'eli5-section-break',
+                    hasEnteredLoadCue(LOAD_CUES.breakInstall),
+                    'eli5-load-item--divider',
+                  )}
+                  color={SECTION_BREAK_COLORS.violet}
+                  tilt={4}
+                  width={109}
+                  heroMagnetControls={heroMagnetControls}
+                  levelControls={levelControls}
+                />
 
-                <section id="install" className="eli5-section eli5-section--install">
-                  <div className="eli5-section-heading">
+                <section
+                  id="install"
+                  className={getLoadItemClass(
+                    'eli5-section eli5-section--install',
+                    hasEnteredLoadCue(LOAD_CUES.install),
+                    'eli5-load-item--section',
+                  )}
+                >
+                  <RevealOnView
+                    active={hasEnteredLoadCue(LOAD_CUES.install)}
+                    className="eli5-section-heading"
+                    delay={80}
+                    variantClassName="eli5-reveal--soft"
+                  >
                     <h2>Add the skill in three short steps.</h2>
                     <p>This is a Markdown skill file for AI agents. Download it, add it to Codex, Claude Code, Cursor, or a similar setup, and ask your question as usual. No onboarding committee required.</p>
-                  </div>
+                  </RevealOnView>
 
                   <div className="eli5-install-grid">
                     {INSTALL_STEPS.map((step, index) => (
-                      <article key={step.title} className="eli5-install-step">
+                      <RevealOnView
+                        as="article"
+                        key={step.title}
+                        active={hasEnteredLoadCue(LOAD_CUES.install)}
+                        className="eli5-install-step"
+                        delay={220 + index * 140}
+                        variantClassName="eli5-reveal--card"
+                      >
                         <div className="eli5-install-step__art-frame">
                           <img
                             className="eli5-install-step__art"
@@ -3785,22 +4299,53 @@ export default function App() {
                           <h3>{step.title}</h3>
                           <p>{step.copy}</p>
                         </div>
-                      </article>
+                      </RevealOnView>
                     ))}
                   </div>
                 </section>
 
-                <SectionBreak color={SECTION_BREAK_COLORS.blue} tilt={-6} width={104} />
+                <SectionBreak
+                  className={getLoadItemClass(
+                    'eli5-section-break',
+                    hasEnteredLoadCue(LOAD_CUES.breakScience),
+                    'eli5-load-item--divider',
+                  )}
+                  color={SECTION_BREAK_COLORS.blue}
+                  tilt={-6}
+                  width={104}
+                  heroMagnetControls={heroMagnetControls}
+                  levelControls={levelControls}
+                />
 
-                <section id="science" className="eli5-section eli5-section--science" aria-label="The science">
-                  <div className="eli5-section-heading">
+                <section
+                  id="science"
+                  className={getLoadItemClass(
+                    'eli5-section eli5-section--science',
+                    hasEnteredLoadCue(LOAD_CUES.science),
+                    'eli5-load-item--section',
+                  )}
+                  aria-label="The science"
+                >
+                  <RevealOnView
+                    active={hasEnteredLoadCue(LOAD_CUES.science)}
+                    className="eli5-section-heading"
+                    delay={80}
+                    variantClassName="eli5-reveal--soft"
+                  >
                     <h2>Why this format works.</h2>
                     <p>The tone is cheeky. The method is not. Research on plain language, segmentation, scaffolding, and relevant humor points in the same direction: people stay oriented longer when explanations arrive in smaller, better-signposted chunks instead of one big verbal performance.</p>
-                  </div>
+                  </RevealOnView>
 
                   <div className="eli5-science-grid">
-                    {SCIENCE_PRINCIPLES.map((item) => (
-                      <article key={item.title} className="eli5-science-point">
+                    {SCIENCE_PRINCIPLES.map((item, index) => (
+                      <RevealOnView
+                        as="article"
+                        key={item.title}
+                        active={hasEnteredLoadCue(LOAD_CUES.science)}
+                        className="eli5-science-point"
+                        delay={220 + index * 120}
+                        variantClassName="eli5-reveal--card"
+                      >
                         <div>
                           <h3>{item.title}</h3>
                           <p>{item.copy}</p>
@@ -3830,44 +4375,115 @@ export default function App() {
                             </div>
                           </div>
                         </div>
-                      </article>
+                      </RevealOnView>
                     ))}
                   </div>
                 </section>
 
-                <SectionBreak color={SECTION_BREAK_COLORS.red} tilt={-2} width={107} />
+                <SectionBreak
+                  className={getLoadItemClass(
+                    'eli5-section-break',
+                    hasEnteredLoadCue(LOAD_CUES.breakDownload),
+                    'eli5-load-item--divider',
+                  )}
+                  color={SECTION_BREAK_COLORS.red}
+                  tilt={-2}
+                  width={107}
+                  heroMagnetControls={heroMagnetControls}
+                  levelControls={levelControls}
+                />
 
-                <section id="download" className="eli5-section eli5-section--download">
+                <section
+                  id="download"
+                  className={getLoadItemClass(
+                    'eli5-section eli5-section--download',
+                    hasEnteredLoadCue(LOAD_CUES.download),
+                    'eli5-load-item--section',
+                  )}
+                >
                   <div className="eli5-cta-end">
                     <div className="eli5-cta">
-                      <h2>Put it in your agent.</h2>
-                      <p className="eli5-cta__support">One question in. Five clearer versions out.</p>
-                      <p className="eli5-cta__body">
-                        This is a Markdown skill file for AI agents. Add it once, then use it whenever
-                        an answer starts sounding like somebody booked a meeting to explain a sentence.
-                      </p>
+                      <h2>Make the answer make sense.</h2>
+                      <RevealOnView
+                        as="p"
+                        active={hasEnteredLoadCue(LOAD_CUES.download)}
+                        className="eli5-cta__support"
+                        delay={100}
+                        variantClassName="eli5-reveal--soft"
+                      >
+                        One question in. Five clearer versions out.
+                      </RevealOnView>
+                      <RevealOnView
+                        as="p"
+                        active={hasEnteredLoadCue(LOAD_CUES.download)}
+                        className="eli5-cta__body"
+                        delay={220}
+                        variantClassName="eli5-reveal--soft"
+                      >
+                        Explain It Like I&apos;m Five is a Markdown skill file for AI agents. Add it
+                        once, then use it whenever an answer starts sounding polished, confident, and a
+                        little bit impossible to follow.
+                      </RevealOnView>
                       <ul className="eli5-cta__proof" aria-label="Why this skill helps">
-                        <li>One question</li>
-                        <li>Five levels</li>
-                        <li>Works in Codex, Claude Code, Cursor, and similar agents</li>
+                        <RevealOnView
+                          as="li"
+                          active={hasEnteredLoadCue(LOAD_CUES.download)}
+                          delay={330}
+                          variantClassName="eli5-reveal--pill"
+                        >
+                          One question
+                        </RevealOnView>
+                        <RevealOnView
+                          as="li"
+                          active={hasEnteredLoadCue(LOAD_CUES.download)}
+                          delay={430}
+                          variantClassName="eli5-reveal--pill"
+                        >
+                          Five levels
+                        </RevealOnView>
+                        <RevealOnView
+                          as="li"
+                          active={hasEnteredLoadCue(LOAD_CUES.download)}
+                          delay={530}
+                          variantClassName="eli5-reveal--pill"
+                        >
+                          Works in Codex, Claude Code, Cursor, and similar agents
+                        </RevealOnView>
                       </ul>
-                      <DownloadLink className="eli5-button eli5-button--primary eli5-button--large eli5-button--cta-download">
-                        Download the skill
-                      </DownloadLink>
+                      <RevealOnView
+                        active={hasEnteredLoadCue(LOAD_CUES.download)}
+                        delay={680}
+                        variantClassName="eli5-reveal--soft"
+                      >
+                        <DownloadLink className="eli5-button eli5-button--primary eli5-button--large eli5-button--cta-download">
+                          Download the skill
+                        </DownloadLink>
+                      </RevealOnView>
                     </div>
-                    <div className="eli5-cta-footer">
+                    <RevealOnView
+                      active={hasEnteredLoadCue(LOAD_CUES.download)}
+                      className="eli5-cta-footer"
+                      delay={820}
+                      variantClassName="eli5-reveal--soft"
+                    >
                       <p>Markdown skill file for AI agents</p>
                       <SupportLink className="eli5-cta-footer__link">
                         If it helped, buy me a coffee
                       </SupportLink>
-                    </div>
+                    </RevealOnView>
                   </div>
                 </section>
             </>
           </div>
         </div>
       </main>
-      <div className="eli5-control-launcher">
+      <div
+        className={getLoadItemClass(
+          'eli5-control-launcher',
+          hasEnteredLoadCue(LOAD_CUES.controls),
+          'eli5-load-item--floating-ui',
+        )}
+      >
         <button
           type="button"
           className="eli5-control-launcher__button"
@@ -3886,18 +4502,16 @@ export default function App() {
       </div>
 
       {isInlineFallbackOpen ? (
-        <div className="eli5-control-dock">
+        <div
+          className={getLoadItemClass(
+            'eli5-control-dock',
+            hasEnteredLoadCue(LOAD_CUES.controlDock),
+            'eli5-load-item--floating-ui',
+          )}
+        >
           <ControlPanelSurface
-            eyebrow="Linked control panel"
-            title="Live page controls"
-            caption="Levels tune the page depth system. Layout and motion still update the hero letters live."
-            controls={panelControls}
-            sections={panelSections}
-            isAdvancedLevelsVisible={isAdvancedLevelsVisible}
+            {...sharedPanelProps}
             isLayoutEditing={isHeroLayoutEditing}
-            onChange={handlePanelControlChange}
-            onReset={handlePanelControlReset}
-            onToggleAdvancedLevels={handleToggleAdvancedLevels}
             onStartLayoutEdit={handleStartHeroLayoutEdit}
             onSaveLayoutEdit={handleSaveHeroLayoutEdit}
             onCancelLayoutEdit={handleCancelHeroLayoutEdit}
@@ -3909,16 +4523,8 @@ export default function App() {
       {controlPanelHost
         ? createPortal(
             <ControlPanelSurface
-              eyebrow="Linked control panel"
-              title="Live page controls"
-              caption="Levels tune the page depth system. Layout and motion still update the hero letters live."
-              controls={panelControls}
-              sections={panelSections}
-              isAdvancedLevelsVisible={isAdvancedLevelsVisible}
+              {...sharedPanelProps}
               isLayoutEditing={isHeroLayoutEditing}
-              onChange={handlePanelControlChange}
-              onReset={handlePanelControlReset}
-              onToggleAdvancedLevels={handleToggleAdvancedLevels}
               onStartLayoutEdit={handleStartHeroLayoutEdit}
               onSaveLayoutEdit={handleSaveHeroLayoutEdit}
               onCancelLayoutEdit={handleCancelHeroLayoutEdit}

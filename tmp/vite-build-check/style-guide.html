@@ -208,7 +208,7 @@
 
       .gradient-columns {
         display: grid;
-        grid-template-columns: repeat(5, minmax(0, 1fr));
+        grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 10px;
       }
 
@@ -229,7 +229,7 @@
         color: var(--board-muted);
       }
 
-      @media (max-width: 1120px) {
+      @media (max-width: 1280px) {
         .content {
           grid-template-columns: 1fr 1fr;
           grid-template-areas:
@@ -243,7 +243,7 @@
         }
 
         .gradient-columns {
-          grid-template-columns: repeat(3, minmax(0, 1fr));
+          grid-template-columns: repeat(2, minmax(0, 1fr));
         }
       }
     </style>
@@ -268,7 +268,7 @@
           <div class="section-header">
             <p class="eyebrow">Neutrals</p>
             <h2>Ink, background, and structure</h2>
-            <p>One cool slate spectrum, arranged from the lightest paper value down to the deepest support surface.</p>
+            <p>The full neutral system: readable slates, cooler sands, frosts, separators, and dark support surfaces.</p>
           </div>
           <div class="token-grid token-grid--surfaces" id="neutrals-grid"></div>
         </section>
@@ -286,7 +286,7 @@
           <div class="section-header">
             <p class="eyebrow">Signals &amp; Action Cues</p>
             <h2>Accent and interface guidance</h2>
-            <p>Focus, action blue, and the cursor cue. Structural neutrals now stay in the slate family.</p>
+            <p>Focus, action blue, the shared cocoa outline, and the cursor cue.</p>
           </div>
           <div class="token-grid token-grid--interface" id="signals-grid"></div>
         </section>
@@ -295,7 +295,7 @@
           <div class="section-header">
             <p class="eyebrow">Gradients</p>
             <h2>Atmosphere and emphasis</h2>
-            <p>Slate structural gradients first, then the helper gradients and the two accent gradients that intentionally break out of the neutral system.</p>
+            <p>The runtime gradient set, reduced to structural surfaces, page atmosphere, and accent states.</p>
           </div>
           <div class="gradient-columns" id="gradient-columns"></div>
         </section>
@@ -311,17 +311,17 @@
       const VALUE_SPACES = /\s+/g;
       const COLOR_GROUPS = {
         neutrals: [
-          '--slate-highlight',
-          '--slate-050',
-          '--slate-surface',
-          '--slate-100',
-          '--slate-veil',
-          '--slate-200',
-          '--slate-300',
-          '--slate-500',
+          '--sand-100',
+          '--sand-200',
+          '--sand-300',
+          '--frost-highlight',
+          '--frost-200',
+          '--slate-a200',
+          '--slate-a300',
           '--slate-700',
           '--slate-900',
-          '--slate-950',
+          '--science-card-surface',
+          '--espresso-900',
         ],
         brand: [
           '--magnet-coral',
@@ -332,9 +332,9 @@
           '--magnet-violet',
           '--external-claude-500',
         ],
-        signals: ['--blue-a300', '--blue-500', '--cursor-glow-color'],
+        signals: ['--blue-a300', '--blue-500', '--cocoa-a150', '--cursor-glow-color'],
       };
-      const GRADIENT_GROUPS = ['--slate-gradient-050', '--slate-gradient-100', '--slate-gradient-200', '--slate-gradient-300', '--slate-gradient-900', '--slate-gradient-sheen', '--slate-gradient-overlay', '--signal-gradient-gold', '--signal-gradient-violet'];
+      const GRADIENT_GROUPS = ['--gradient-page', '--gradient-grid', '--gradient-surface', '--gradient-floating', '--gradient-dark', '--gradient-accent-gold', '--gradient-accent-violet'];
 
       function normalizeValue(value) {
         return value.replace(VALUE_SPACES, ' ').trim();

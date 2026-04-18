@@ -9,6 +9,10 @@ const LETTER_LAYOUT_CACHE = new Map();
 const LETTER_LAYOUT_CACHE_LIMIT = 160;
 const LETTER_SPRITE_CACHE = new Map();
 const LETTER_SPRITE_CACHE_LIMIT = 140;
+const LETTER_SPRITE_CACHE_VERSION = 'v2';
+const SHAPE_SPRITE_CACHE = new Map();
+const SHAPE_SPRITE_CACHE_LIMIT = 80;
+const SHAPE_SPRITE_CACHE_VERSION = 'v1';
 let measureCanvas = null;
 
 const SINGLE_LETTER_WIDTH_SCALE = {
@@ -96,6 +100,7 @@ export function cloneMagnetList(magnets = []) {
 export function invalidateMagnetRenderCaches() {
   LETTER_LAYOUT_CACHE.clear();
   LETTER_SPRITE_CACHE.clear();
+  SHAPE_SPRITE_CACHE.clear();
 }
 
 export function getMagnetWidthScale(label = '') {
@@ -242,10 +247,39 @@ export function drawMagnet(ctx, magnet, scrollPosition, viewport) {
   const groundShadow2OffsetY = magnet.groundShadow2OffsetY ?? 26;
   const groundShadow2Blur = magnet.groundShadow2Blur ?? 30;
   const baseColor = saturateColor(magnet.color, vibrance);
-  const thickness = magnet.height * depth * (0.024 + roundness * 0.022);
-  const faceTop = shiftColor(baseColor, 0.05 + faceContrast * 0.095);
-  const faceMid = shiftColor(baseColor, 0.012 + faceContrast * 0.026);
-  const faceBottom = shiftColor(baseColor, -0.08 - faceContrast * 0.058);
+  const faceStyle = {
+    baseColor,
+    depth,
+    roundness,
+    shadowOpacity,
+    shadowOffset,
+    shadowBlur,
+    shadowLayers,
+    highlightStrength,
+    faceContrast,
+    innerLightOpacity,
+    innerLightOffsetY,
+    innerLightBlur,
+    innerShadeOpacity,
+    innerShadeOffsetX,
+    innerShadeOffsetY,
+    innerShadeBlur,
+    depthContrast,
+    depthOffsetX,
+    depthOffsetY,
+    depthSpread,
+    groundShadow1Opacity,
+    groundShadow1OffsetX,
+    groundShadow1OffsetY,
+    groundShadow1Blur,
+    groundShadow2Opacity,
+    groundShadow2OffsetX,
+    groundShadow2OffsetY,
+    groundShadow2Blur,
+    faceTop: shiftColor(baseColor, 0.05 + faceContrast * 0.095),
+    faceMid: shiftColor(baseColor, 0.012 + faceContrast * 0.026),
+    faceBottom: shiftColor(baseColor, -0.08 - faceContrast * 0.058),
+  };
 
   ctx.save();
   ctx.translate(centerX, centerY);
@@ -257,35 +291,10 @@ export function drawMagnet(ctx, magnet, scrollPosition, viewport) {
   ctx.miterLimit = 2;
 
   if (magnet.shapeType) {
-    const shapePath = getShapePath(magnet);
-    drawShapeShadow(ctx, shapePath, magnet, thickness, shadowOpacity, shadowBlur);
-    drawShapeFace(ctx, shapePath, magnet, faceTop, faceMid, faceBottom);
-    drawShapeHighlight(ctx, shapePath, magnet, highlightStrength);
+    drawShapeSprite(ctx, magnet, faceStyle);
   } else {
     const labelLayout = getLabelLayout(magnet);
-    drawLetterSprite(ctx, magnet, labelLayout, {
-      baseColor,
-      faceContrast,
-      innerLightOpacity,
-      innerLightOffsetY,
-      innerLightBlur,
-      innerShadeOpacity,
-      innerShadeOffsetX,
-      innerShadeOffsetY,
-      innerShadeBlur,
-      depthContrast,
-      depthOffsetX,
-      depthOffsetY,
-      depthSpread,
-      groundShadow1Opacity,
-      groundShadow1OffsetX,
-      groundShadow1OffsetY,
-      groundShadow1Blur,
-      groundShadow2Opacity,
-      groundShadow2OffsetX,
-      groundShadow2OffsetY,
-      groundShadow2Blur,
-    });
+    drawLetterSprite(ctx, magnet, labelLayout, faceStyle);
   }
   ctx.restore();
 }
@@ -295,13 +304,13 @@ function drawLetterSprite(ctx, magnet, layout, style) {
   const cached = LETTER_SPRITE_CACHE.get(cacheKey);
 
   if (cached) {
-    drawCachedLetterSprite(ctx, cached);
+    drawCachedSprite(ctx, cached);
     return;
   }
 
   const sprite = buildLetterSprite(magnet, layout, style);
   cacheSetWithLimit(LETTER_SPRITE_CACHE, cacheKey, sprite, LETTER_SPRITE_CACHE_LIMIT);
-  drawCachedLetterSprite(ctx, sprite);
+  drawCachedSprite(ctx, sprite);
 }
 
 function buildLetterSprite(
@@ -396,10 +405,10 @@ function buildLetterSprite(
     toX: textX + scaledMagnet.width * 0.22,
     toY: textY + scaledMagnet.height * 0.78,
     stops: [
-      { position: 0, color: shiftColor(style.baseColor, 0.06 + style.faceContrast * 0.08) },
-      { position: 0.42, color: shiftColor(style.baseColor, 0.01 + style.faceContrast * 0.018) },
-      { position: 0.68, color: shiftColor(style.baseColor, -(style.faceContrast * 0.014)) },
-      { position: 1, color: shiftColor(style.baseColor, -(0.08 + style.faceContrast * 0.11)) },
+      { position: 0, color: shiftColor(style.baseColor, 0.072 + style.faceContrast * 0.092) },
+      { position: 0.38, color: shiftColor(style.baseColor, 0.018 + style.faceContrast * 0.024) },
+      { position: 0.7, color: shiftColor(style.baseColor, -(0.014 + style.faceContrast * 0.02)) },
+      { position: 1, color: shiftColor(style.baseColor, -(0.096 + style.faceContrast * 0.126)) },
     ],
   });
   const faceCtx = faceCanvas.getContext('2d');
@@ -436,7 +445,144 @@ function buildLetterSprite(
   };
 }
 
-function drawCachedLetterSprite(ctx, sprite) {
+function drawShapeSprite(ctx, magnet, style) {
+  const cacheKey = getShapeSpriteCacheKey(magnet, style);
+  const cached = SHAPE_SPRITE_CACHE.get(cacheKey);
+
+  if (cached) {
+    drawCachedSprite(ctx, cached);
+    return;
+  }
+
+  const sprite = buildShapeSprite(magnet, style);
+  cacheSetWithLimit(SHAPE_SPRITE_CACHE, cacheKey, sprite, SHAPE_SPRITE_CACHE_LIMIT);
+  drawCachedSprite(ctx, sprite);
+}
+
+function buildShapeSprite(magnet, style) {
+  const scaledMagnet = {
+    ...magnet,
+    width: magnet.width * LETTER_SPRITE_SCALE,
+    height: magnet.height * LETTER_SPRITE_SCALE,
+  };
+  const scaledInnerLightOffsetY = style.innerLightOffsetY * LETTER_SPRITE_SCALE;
+  const scaledInnerLightBlur = style.innerLightBlur * LETTER_SPRITE_SCALE;
+  const scaledInnerShadeOffsetX = style.innerShadeOffsetX * LETTER_SPRITE_SCALE;
+  const scaledInnerShadeOffsetY = style.innerShadeOffsetY * LETTER_SPRITE_SCALE;
+  const scaledInnerShadeBlur = style.innerShadeBlur * LETTER_SPRITE_SCALE;
+  const scaledDepthOffsetX = style.depthOffsetX * LETTER_SPRITE_SCALE;
+  const scaledDepthOffsetY = style.depthOffsetY * LETTER_SPRITE_SCALE;
+  const scaledDepthSpread = style.depthSpread * LETTER_SPRITE_SCALE;
+  const scaledGroundShadow1OffsetX = style.groundShadow1OffsetX * LETTER_SPRITE_SCALE;
+  const scaledGroundShadow1OffsetY = style.groundShadow1OffsetY * LETTER_SPRITE_SCALE;
+  const scaledGroundShadow1Blur = style.groundShadow1Blur * LETTER_SPRITE_SCALE;
+  const scaledGroundShadow2OffsetX = style.groundShadow2OffsetX * LETTER_SPRITE_SCALE;
+  const scaledGroundShadow2OffsetY = style.groundShadow2OffsetY * LETTER_SPRITE_SCALE;
+  const scaledGroundShadow2Blur = style.groundShadow2Blur * LETTER_SPRITE_SCALE;
+  const pad = Math.ceil(
+    Math.max(
+      5,
+      Math.abs(scaledDepthOffsetX) + scaledDepthSpread * 2 + 4,
+      Math.abs(scaledDepthOffsetY) + scaledDepthSpread * 2 + 4,
+      scaledGroundShadow1OffsetX + scaledGroundShadow1Blur * 2.8 + 4,
+      scaledGroundShadow1OffsetY + scaledGroundShadow1Blur * 2.8 + 4,
+      scaledGroundShadow2OffsetX + scaledGroundShadow2Blur * 2.8 + 4,
+      scaledGroundShadow2OffsetY + scaledGroundShadow2Blur * 2.8 + 4,
+      scaledInnerLightOffsetY + scaledInnerLightBlur * 2 + 4,
+      Math.max(scaledInnerShadeOffsetX, scaledInnerShadeOffsetY) + scaledInnerShadeBlur * 2 + 4,
+    ),
+  );
+
+  const width = Math.max(1, Math.ceil(scaledMagnet.width + pad * 2));
+  const height = Math.max(1, Math.ceil(scaledMagnet.height + pad * 2));
+  const canvas = createWorkingCanvas(width, height);
+  const canvasCtx = canvas.getContext('2d');
+
+  if (!canvasCtx) {
+    return {
+      canvas,
+      offsetX: -pad / LETTER_SPRITE_SCALE,
+      offsetY: -pad / LETTER_SPRITE_SCALE,
+      width: width / LETTER_SPRITE_SCALE,
+      height: height / LETTER_SPRITE_SCALE,
+    };
+  }
+
+  const maskCanvas = createShapeMaskCanvas(width, height, scaledMagnet, pad);
+
+  canvasCtx.clearRect(0, 0, width, height);
+  canvasCtx.imageSmoothingEnabled = true;
+  canvasCtx.imageSmoothingQuality = 'high';
+  drawOffsetGlyphLayer(canvasCtx, maskCanvas, width, height, {
+    fill: toAlphaColor(MAGNET_RENDER_THEME.shadow, style.groundShadow1Opacity),
+    offsetX: scaledGroundShadow1OffsetX,
+    offsetY: scaledGroundShadow1OffsetY,
+    blur: scaledGroundShadow1Blur,
+  });
+  drawOffsetGlyphLayer(canvasCtx, maskCanvas, width, height, {
+    fill: toAlphaColor(MAGNET_RENDER_THEME.shadowSoft, style.groundShadow2Opacity),
+    offsetX: scaledGroundShadow2OffsetX,
+    offsetY: scaledGroundShadow2OffsetY,
+    blur: scaledGroundShadow2Blur,
+  });
+  drawExtrudedGlyphDepth(canvasCtx, maskCanvas, width, height, {
+    baseColor: style.baseColor,
+    depthContrast: style.depthContrast,
+    offsetX: scaledDepthOffsetX,
+    offsetY: scaledDepthOffsetY,
+    spread: scaledDepthSpread,
+  });
+
+  const faceCanvas = buildGradientGlyphCanvas(maskCanvas, width, height, {
+    fromX: pad - scaledMagnet.width * 0.18,
+    fromY: pad - scaledMagnet.height * 0.62,
+    toX: pad + scaledMagnet.width * 1.22,
+    toY: pad + scaledMagnet.height * 0.78,
+    stops: [
+      { position: 0, color: style.faceTop },
+      { position: 0.38, color: style.faceMid },
+      { position: 0.7, color: shiftColor(style.baseColor, -(0.014 + style.faceContrast * 0.02)) },
+      { position: 1, color: style.faceBottom },
+    ],
+  });
+  const faceCtx = faceCanvas.getContext('2d');
+
+  if (faceCtx) {
+    drawInnerGlyphShadow(faceCtx, maskCanvas, width, height, {
+      fill: toAlphaColor(MAGNET_RENDER_THEME.highlight, style.innerLightOpacity),
+      cutoutX: 0,
+      cutoutY: scaledInnerLightOffsetY,
+      blur: scaledInnerLightBlur,
+    });
+    drawInnerGlyphShadow(faceCtx, maskCanvas, width, height, {
+      fill: toAlphaColor(
+        mixColors(style.baseColor, MAGNET_RENDER_THEME.shadow, 0.72),
+        style.innerShadeOpacity,
+      ),
+      cutoutX: -scaledInnerShadeOffsetX,
+      cutoutY: -scaledInnerShadeOffsetY,
+      blur: scaledInnerShadeBlur,
+    });
+
+    canvasCtx.drawImage(faceCanvas, 0, 0);
+  } else {
+    canvasCtx.save();
+    canvasCtx.translate(pad, pad);
+    canvasCtx.fillStyle = style.baseColor;
+    canvasCtx.fill(getShapePath(scaledMagnet));
+    canvasCtx.restore();
+  }
+
+  return {
+    canvas,
+    offsetX: -pad / LETTER_SPRITE_SCALE,
+    offsetY: -pad / LETTER_SPRITE_SCALE,
+    width: width / LETTER_SPRITE_SCALE,
+    height: height / LETTER_SPRITE_SCALE,
+  };
+}
+
+function drawCachedSprite(ctx, sprite) {
   ctx.save();
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
@@ -538,8 +684,41 @@ function getLetterSpriteCacheKey(magnet, layout, style) {
   const width = Math.round(magnet.width);
   const height = Math.round(magnet.height);
   return [
+    LETTER_SPRITE_CACHE_VERSION,
     layout.label,
     layout.font,
+    width,
+    height,
+    style.baseColor,
+    getCacheKeyNumber(style.faceContrast),
+    getCacheKeyNumber(style.innerLightOpacity),
+    getCacheKeyNumber(style.innerLightOffsetY),
+    getCacheKeyNumber(style.innerLightBlur),
+    getCacheKeyNumber(style.innerShadeOpacity),
+    getCacheKeyNumber(style.innerShadeOffsetX),
+    getCacheKeyNumber(style.innerShadeOffsetY),
+    getCacheKeyNumber(style.innerShadeBlur),
+    getCacheKeyNumber(style.depthContrast),
+    getCacheKeyNumber(style.depthOffsetX),
+    getCacheKeyNumber(style.depthOffsetY),
+    getCacheKeyNumber(style.depthSpread),
+    getCacheKeyNumber(style.groundShadow1Opacity),
+    getCacheKeyNumber(style.groundShadow1OffsetX),
+    getCacheKeyNumber(style.groundShadow1OffsetY),
+    getCacheKeyNumber(style.groundShadow1Blur),
+    getCacheKeyNumber(style.groundShadow2Opacity),
+    getCacheKeyNumber(style.groundShadow2OffsetX),
+    getCacheKeyNumber(style.groundShadow2OffsetY),
+    getCacheKeyNumber(style.groundShadow2Blur),
+  ].join('|');
+}
+
+function getShapeSpriteCacheKey(magnet, style) {
+  const width = Math.round(magnet.width);
+  const height = Math.round(magnet.height);
+  return [
+    SHAPE_SPRITE_CACHE_VERSION,
+    magnet.shapeType ?? 'shape',
     width,
     height,
     style.baseColor,
@@ -674,6 +853,24 @@ function createGlyphMaskCanvas(width, height, layout, textX, textY) {
   maskCtx.font = layout.font;
   maskCtx.fillStyle = MAGNET_RENDER_THEME.mask;
   maskCtx.fillText(layout.label, textX, textY);
+
+  return maskCanvas;
+}
+
+function createShapeMaskCanvas(width, height, magnet, pad) {
+  const maskCanvas = createWorkingCanvas(width, height);
+  const maskCtx = maskCanvas.getContext('2d');
+
+  if (!maskCtx) {
+    return maskCanvas;
+  }
+
+  maskCtx.clearRect(0, 0, width, height);
+  maskCtx.imageSmoothingEnabled = true;
+  maskCtx.imageSmoothingQuality = 'high';
+  maskCtx.fillStyle = MAGNET_RENDER_THEME.mask;
+  maskCtx.translate(pad, pad);
+  maskCtx.fill(getShapePath(magnet));
 
   return maskCanvas;
 }
