@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useEffectEvent, useRef, useState } from 'react';
+import { Fragment, useEffect, useEffectEvent, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import MagnetCanvas from './components/MagnetCanvas.jsx';
@@ -26,14 +26,27 @@ const EXAMPLE_TAB_MAX_POSITION = EXAMPLE_TAB_VISIBLE_COUNT;
 const EXAMPLE_TAB_VIEWPORT_HEIGHT =
   EXAMPLE_TAB_HEIGHT * EXAMPLE_TAB_VISIBLE_COUNT +
   EXAMPLE_TAB_GAP * (EXAMPLE_TAB_VISIBLE_COUNT - 1);
-const HERO_CONTROL_STORAGE_KEY = 'eli5-hero-magnet-controls-v9';
-const HERO_LAYOUT_STORAGE_KEY = 'eli5-hero-custom-layout-v2';
+const HERO_CONTROL_STORAGE_KEY = 'eli5-hero-magnet-controls-v11';
+const HERO_LEGACY_CONTROL_STORAGE_KEY = 'eli5-hero-magnet-controls-v10';
+const HERO_CONTROL_STORAGE_DEPRECATED_KEYS = [
+  'eli5-hero-magnet-controls-v8',
+  'eli5-hero-magnet-controls-v9',
+  HERO_LEGACY_CONTROL_STORAGE_KEY,
+];
+const HERO_LAYOUT_STORAGE_KEY = 'eli5-hero-custom-layout-v3';
 const HERO_CONTROL_WINDOW_NAME = 'eli5-hero-control-panel';
 const HERO_CONTROL_WINDOW_TITLE = "Config Panel for Explain It Like I'm Five";
 const HERO_TITLE_SLOT_PADDING_X = 28;
 const HERO_TITLE_SLOT_PADDING_Y = 24;
 const HERO_SLOT_MIN_HEIGHT = 238;
 const HERO_SLOT_FLOAT_BUFFER = 28;
+const HERO_VISUAL_PAD_SCALE = 1.65;
+const HERO_VISUAL_PAD_BASE = 4 / HERO_VISUAL_PAD_SCALE;
+const HERO_VISUAL_PAD_MIN = 5 / HERO_VISUAL_PAD_SCALE;
+const HERO_SIZE_UPSCALE = 1.1;
+const HERO_AUTHORED_LETTER_GAP = -48;
+const HERO_AUTHORED_WORD_GAP = 0.07;
+const HERO_AUTHORED_LINE_GAP = 120;
 
 const HERO_REFERENCE_LAYOUT = {
   'hero-0-0-E': { cx: 0.105, cy: 0.258, rotation: -4.4 },
@@ -83,63 +96,47 @@ const BOARD_LAYOUTS = {
 };
 
 const HERO_MAGNET_DEFAULTS = {
-  size: 226,
-  letterGap: -48,
-  wordGap: 0.07,
-  lineGap: 120,
-  tilt: 0,
-  scatter: 0,
-  groupRotation: 0,
-  offsetX: 0,
-  offsetY: -2,
+  size: Math.round(226 * HERO_SIZE_UPSCALE),
   floatRangeX: 1,
   floatRangeY: 1,
   floatSpeed: 1,
   floatRotate: 1,
-  hoverSink: 1,
-  hoverLean: 1,
-  bounceLift: 1,
-  bounceTwist: 1,
-  bounceSpeed: 1,
-  bounceDamping: 1,
+  hoverSink: 0.46,
+  hoverLean: 2.24,
+  bounceLift: 1.3,
+  bounceTwist: 1.88,
+  bounceSpeed: 0.37,
+  bounceDamping: 1.43,
   stickyEaseBand: 196,
   stickyEaseEnterStrength: 1.36,
   stickyEaseReleaseStrength: 1.24,
-  vibrance: 1.18,
-  faceContrast: 0.9,
-  innerLightOpacity: 0.58,
-  innerLightOffsetY: 1.6,
-  innerLightBlur: 3,
-  innerShadeOpacity: 0.52,
-  innerShadeOffsetX: 1.8,
+  vibrance: 2.17,
+  faceContrast: 1.26,
+  innerLightOpacity: 1,
+  innerLightOffsetY: 3.4,
+  innerLightBlur: 1,
+  innerShadeOpacity: 1,
+  innerShadeOffsetX: 2.5,
   innerShadeOffsetY: 2.8,
-  innerShadeBlur: 4,
-  depthContrast: 0.82,
-  depthOffsetX: 1.4,
-  depthOffsetY: 6.6,
-  depthSpread: 1,
-  groundShadow1Opacity: 0.24,
-  groundShadow1OffsetX: 4,
-  groundShadow1OffsetY: 13,
-  groundShadow1Blur: 14,
-  groundShadow2Opacity: 0.14,
-  groundShadow2OffsetX: 7,
-  groundShadow2OffsetY: 26,
-  groundShadow2Blur: 30,
+  innerShadeBlur: 3.5,
+  depthContrast: 0.57,
+  depthOffsetX: 2,
+  depthOffsetY: 3.8,
+  depthSpread: 0,
+  groundShadow1Opacity: 0.2,
+  groundShadow1OffsetX: 2.3,
+  groundShadow1OffsetY: 11.1,
+  groundShadow1Blur: 3.1,
+  groundShadow2Opacity: 0.2,
+  groundShadow2OffsetX: 3,
+  groundShadow2OffsetY: 26.7,
+  groundShadow2Blur: 7,
 };
 const HERO_CONTROL_SECTIONS = [
   {
     title: 'Layout',
     fields: [
       { key: 'size', label: 'Size', min: 72, max: 300, step: 1, format: (value) => `${value}px` },
-      { key: 'letterGap', label: 'Letter Gap', min: -60, max: 24, step: 1, format: (value) => `${value}px` },
-      { key: 'wordGap', label: 'Word Gap', min: 0.02, max: 0.44, step: 0.01, format: (value) => value.toFixed(2) },
-      { key: 'lineGap', label: 'Line Gap', min: 48, max: 200, step: 1, format: (value) => `${value}px` },
-      { key: 'tilt', label: 'Tilt', min: 0, max: 4.4, step: 0.05, format: (value) => value.toFixed(2) },
-      { key: 'scatter', label: 'Scatter', min: 0, max: 2.8, step: 0.05, format: (value) => value.toFixed(2) },
-      { key: 'groupRotation', label: 'Title Rotation', min: -24, max: 24, step: 0.1, format: (value) => `${value.toFixed(1)}deg` },
-      { key: 'offsetX', label: 'Offset X', min: -140, max: 140, step: 1, format: (value) => `${value}px` },
-      { key: 'offsetY', label: 'Offset Y', min: -120, max: 180, step: 1, format: (value) => `${value}px` },
     ],
   },
   {
@@ -818,14 +815,6 @@ function getFiniteNumber(value, fallback) {
 function sanitizeHeroMagnetControls(controls = {}) {
   return {
     size: Math.round(clamp(getFiniteNumber(controls.size, HERO_MAGNET_DEFAULTS.size), 72, 300)),
-    letterGap: Math.round(clamp(getFiniteNumber(controls.letterGap, HERO_MAGNET_DEFAULTS.letterGap), -60, 24)),
-    wordGap: clamp(getFiniteNumber(controls.wordGap, HERO_MAGNET_DEFAULTS.wordGap), 0.02, 0.44),
-    lineGap: Math.round(clamp(getFiniteNumber(controls.lineGap, HERO_MAGNET_DEFAULTS.lineGap), 48, 200)),
-    tilt: clamp(getFiniteNumber(controls.tilt, HERO_MAGNET_DEFAULTS.tilt), 0, 4.4),
-    scatter: clamp(getFiniteNumber(controls.scatter, HERO_MAGNET_DEFAULTS.scatter), 0, 2.8),
-    groupRotation: clamp(getFiniteNumber(controls.groupRotation, HERO_MAGNET_DEFAULTS.groupRotation), -24, 24),
-    offsetX: Math.round(clamp(getFiniteNumber(controls.offsetX, HERO_MAGNET_DEFAULTS.offsetX), -140, 140)),
-    offsetY: Math.round(clamp(getFiniteNumber(controls.offsetY, HERO_MAGNET_DEFAULTS.offsetY), -120, 180)),
     floatRangeX: clamp(getFiniteNumber(controls.floatRangeX, HERO_MAGNET_DEFAULTS.floatRangeX), 0, 2.4),
     floatRangeY: clamp(getFiniteNumber(controls.floatRangeY, HERO_MAGNET_DEFAULTS.floatRangeY), 0, 2.4),
     floatSpeed: clamp(getFiniteNumber(controls.floatSpeed, HERO_MAGNET_DEFAULTS.floatSpeed), 0, 2.4),
@@ -863,6 +852,16 @@ function sanitizeHeroMagnetControls(controls = {}) {
   };
 }
 
+function migrateLegacyHeroMagnetControls(controls = {}) {
+  return sanitizeHeroMagnetControls({
+    ...controls,
+    size: Math.round(
+      getFiniteNumber(controls.size, HERO_MAGNET_DEFAULTS.size / HERO_SIZE_UPSCALE) *
+        HERO_SIZE_UPSCALE,
+    ),
+  });
+}
+
 function loadHeroMagnetControls() {
   if (typeof window === 'undefined') {
     return HERO_MAGNET_DEFAULTS;
@@ -871,11 +870,17 @@ function loadHeroMagnetControls() {
   try {
     const raw = window.localStorage.getItem(HERO_CONTROL_STORAGE_KEY);
 
-    if (!raw) {
+    if (raw) {
+      return sanitizeHeroMagnetControls(JSON.parse(raw));
+    }
+
+    const legacyRaw = window.localStorage.getItem(HERO_LEGACY_CONTROL_STORAGE_KEY);
+
+    if (!legacyRaw) {
       return HERO_MAGNET_DEFAULTS;
     }
 
-    return sanitizeHeroMagnetControls(JSON.parse(raw));
+    return migrateLegacyHeroMagnetControls(JSON.parse(legacyRaw));
   } catch {
     return HERO_MAGNET_DEFAULTS;
   }
@@ -1140,10 +1145,91 @@ function smootherstep(value) {
   );
 }
 
-function getStickyEaseOffset(distance, band, strength) {
-  const progress = 1 - clamp(distance / band, 0, 1);
+function getStickyTrackProgress(trackRect, stickyHeight, stickyTop) {
+  const scrollSpan = Math.max(trackRect.height - stickyHeight, 1);
+  const rawProgress = (stickyTop - trackRect.top) / scrollSpan;
 
-  return distance * smootherstep(progress) * strength;
+  return {
+    rawProgress,
+    progress: clamp(rawProgress, 0, 1),
+    scrollSpan,
+  };
+}
+
+function interpolateHermite(position, startPosition, endPosition, startValue, endValue, startSlope, endSlope) {
+  const span = endPosition - startPosition;
+
+  if (!Number.isFinite(span) || Math.abs(span) < 0.001) {
+    return endValue;
+  }
+
+  const progress = clamp((position - startPosition) / span, 0, 1);
+  const progressSquared = progress * progress;
+  const progressCubed = progressSquared * progress;
+  const basis0 = 2 * progressCubed - 3 * progressSquared + 1;
+  const basis1 = progressCubed - 2 * progressSquared + progress;
+  const basis2 = -2 * progressCubed + 3 * progressSquared;
+  const basis3 = progressCubed - progressSquared;
+
+  return (
+    basis0 * startValue +
+    basis1 * span * startSlope +
+    basis2 * endValue +
+    basis3 * span * endSlope
+  );
+}
+
+function getStickyBoundaryOffset(position, window, startValue, endValue, startSlope, endSlope, naturalValue) {
+  if (window <= 0 || position <= -window || position >= window) {
+    return 0;
+  }
+
+  const smoothedValue = interpolateHermite(
+    position,
+    -window,
+    window,
+    startValue,
+    endValue,
+    startSlope,
+    endSlope,
+  );
+
+  return smoothedValue - naturalValue;
+}
+
+function getStickyTravelOffset({
+  enterDistance,
+  releaseDistance,
+  band,
+  enterStrength,
+  releaseStrength,
+}) {
+  const entryWindow = band * enterStrength * 0.5;
+  const releaseWindow = band * releaseStrength * 0.5;
+  const entryPosition = -enterDistance;
+  const releasePosition = -releaseDistance;
+  const entryNaturalValue = entryPosition < 0 ? -entryPosition : 0;
+  const releaseNaturalValue = releasePosition > 0 ? -releasePosition : 0;
+  const entryOffset = getStickyBoundaryOffset(
+    entryPosition,
+    entryWindow,
+    entryWindow,
+    0,
+    -1,
+    0,
+    entryNaturalValue,
+  );
+  const releaseOffset = getStickyBoundaryOffset(
+    releasePosition,
+    releaseWindow,
+    0,
+    -releaseWindow,
+    0,
+    -1,
+    releaseNaturalValue,
+  );
+
+  return entryOffset + releaseOffset;
 }
 
 function useStickyEase({
@@ -1195,11 +1281,13 @@ function useStickyEase({
         const enterDistance = shellRect.top - stickyTop;
         const releaseDistance = trackRect.bottom - stickyHeight - stickyTop;
 
-        if (enterDistance > 0) {
-          nextOffset = -getStickyEaseOffset(enterDistance, stickyBand, enterStrength);
-        } else if (releaseDistance > 0) {
-          nextOffset = getStickyEaseOffset(releaseDistance, stickyBand, releaseStrength);
-        }
+        nextOffset = getStickyTravelOffset({
+          enterDistance,
+          releaseDistance,
+          band: stickyBand,
+          enterStrength,
+          releaseStrength,
+        });
       }
     }
 
@@ -1348,7 +1436,7 @@ function ExampleChevronIcon({ className = '' }) {
 function buildHeroTitleAuthoredMagnets(heroMagnetControls, magnetProps = {}) {
   const heroControls = sanitizeHeroMagnetControls(heroMagnetControls);
 
-  const baselineMagnets = createPhraseMagnets({
+  return createPhraseMagnets({
     boardId: 'hero',
     lines: ['EXPLAIN IT', "LIKE I'M", 'FIVE…'],
     startX: 0,
@@ -1356,11 +1444,11 @@ function buildHeroTitleAuthoredMagnets(heroMagnetControls, magnetProps = {}) {
     offsetX: 0,
     offsetY: 0,
     size: heroControls.size,
-    gap: heroControls.letterGap,
-    lineGap: heroControls.lineGap,
+    gap: HERO_AUTHORED_LETTER_GAP,
+    lineGap: HERO_AUTHORED_LINE_GAP,
     align: 'center',
-    spaceScale: heroControls.wordGap,
-    rotationScale: heroControls.tilt,
+    spaceScale: HERO_AUTHORED_WORD_GAP,
+    rotationScale: 0,
     getNudge: ({ label, line, lineIndex, charIndex, size, tilt }) =>
       getHeroMagnetNudge({
         label,
@@ -1368,13 +1456,11 @@ function buildHeroTitleAuthoredMagnets(heroMagnetControls, magnetProps = {}) {
         lineIndex,
         charIndex,
         size,
-        scatter: heroControls.scatter,
+        scatter: 0,
         tilt,
       }),
     magnetProps,
   });
-
-  return rotateMagnetsAroundCenter(baselineMagnets, heroControls.groupRotation);
 }
 
 function getAuthorMagnetBounds(magnets = []) {
@@ -1466,12 +1552,66 @@ function getHeroRuntimeBounds(magnets = []) {
   });
 }
 
+function getHeroMagnetVisualPad(magnet) {
+  const depthOffsetX = Math.abs(getFiniteNumber(magnet.depthOffsetX, 1.4));
+  const depthOffsetY = Math.abs(getFiniteNumber(magnet.depthOffsetY, 6.6));
+  const depthSpread = Math.max(0, getFiniteNumber(magnet.depthSpread, 1));
+  const groundShadow1OffsetX = Math.abs(getFiniteNumber(magnet.groundShadow1OffsetX, 4));
+  const groundShadow1OffsetY = Math.abs(getFiniteNumber(magnet.groundShadow1OffsetY, 13));
+  const groundShadow1Blur = Math.max(0, getFiniteNumber(magnet.groundShadow1Blur, 14));
+  const groundShadow2OffsetX = Math.abs(getFiniteNumber(magnet.groundShadow2OffsetX, 7));
+  const groundShadow2OffsetY = Math.abs(getFiniteNumber(magnet.groundShadow2OffsetY, 26));
+  const groundShadow2Blur = Math.max(0, getFiniteNumber(magnet.groundShadow2Blur, 30));
+  const innerLightOffsetY = Math.abs(getFiniteNumber(magnet.innerLightOffsetY, 1.6));
+  const innerLightBlur = Math.max(0, getFiniteNumber(magnet.innerLightBlur, 3));
+  const innerShadeOffsetX = Math.abs(getFiniteNumber(magnet.innerShadeOffsetX, 1.8));
+  const innerShadeOffsetY = Math.abs(getFiniteNumber(magnet.innerShadeOffsetY, 2.8));
+  const innerShadeBlur = Math.max(0, getFiniteNumber(magnet.innerShadeBlur, 4));
+
+  return Math.max(
+    HERO_VISUAL_PAD_MIN,
+    depthOffsetX + depthSpread * 2 + HERO_VISUAL_PAD_BASE,
+    depthOffsetY + depthSpread * 2 + HERO_VISUAL_PAD_BASE,
+    groundShadow1OffsetX + groundShadow1Blur * 2.8 + HERO_VISUAL_PAD_BASE,
+    groundShadow1OffsetY + groundShadow1Blur * 2.8 + HERO_VISUAL_PAD_BASE,
+    groundShadow2OffsetX + groundShadow2Blur * 2.8 + HERO_VISUAL_PAD_BASE,
+    groundShadow2OffsetY + groundShadow2Blur * 2.8 + HERO_VISUAL_PAD_BASE,
+    innerLightOffsetY + innerLightBlur * 2 + HERO_VISUAL_PAD_BASE,
+    Math.max(innerShadeOffsetX, innerShadeOffsetY) + innerShadeBlur * 2 + HERO_VISUAL_PAD_BASE,
+  );
+}
+
+function getHeroVisualBounds(magnets = []) {
+  const heroMagnets = magnets.filter((magnet) => magnet.boardId === 'hero');
+
+  if (heroMagnets.length === 0) {
+    return null;
+  }
+
+  return heroMagnets.reduce((acc, magnet) => {
+    const { width, height } = getMagnetDimensions(magnet);
+    const visualPad = getHeroMagnetVisualPad(magnet);
+
+    return {
+      left: Math.min(acc.left, magnet.x - visualPad),
+      top: Math.min(acc.top, magnet.y - visualPad),
+      right: Math.max(acc.right, magnet.x + width + visualPad),
+      bottom: Math.max(acc.bottom, magnet.y + height + visualPad),
+    };
+  }, {
+    left: Number.POSITIVE_INFINITY,
+    top: Number.POSITIVE_INFINITY,
+    right: Number.NEGATIVE_INFINITY,
+    bottom: Number.NEGATIVE_INFINITY,
+  });
+}
+
 function buildHeroTitleSlotFromRuntimeMagnets(
   magnets,
   heroStageRect,
   heroMagnetControls = HERO_MAGNET_DEFAULTS,
 ) {
-  const bounds = getHeroRuntimeBounds(magnets);
+  const bounds = getHeroVisualBounds(magnets);
 
   if (!bounds || !heroStageRect) {
     return { width: 0, height: 0 };
@@ -1626,8 +1766,8 @@ function buildRuntimeMagnets(boardRects, heroMagnetControls = HERO_MAGNET_DEFAUL
 
       return {
         ...magnet,
-        x: heroContentRect.left + (magnet.authorX - heroAuthorBounds.left) * slotScale + heroControls.offsetX,
-        y: heroContentRect.top + (magnet.authorY - heroAuthorBounds.top) * slotScale + heroControls.offsetY,
+        x: heroContentRect.left + (magnet.authorX - heroAuthorBounds.left) * slotScale,
+        y: heroContentRect.top + (magnet.authorY - heroAuthorBounds.top) * slotScale,
         size: magnet.size ? magnet.size * slotScale : magnet.size,
         width: magnet.width ? magnet.width * slotScale : magnet.width,
         height: magnet.height ? magnet.height * slotScale : magnet.height,
@@ -1661,7 +1801,7 @@ function applyPersistedHeroLayout(
     return magnets;
   }
 
-  return magnets.map((magnet) => {
+  const positionedMagnets = magnets.map((magnet) => {
     if (magnet.boardId !== 'hero') {
       return magnet;
     }
@@ -1694,6 +1834,45 @@ function applyPersistedHeroLayout(
       userPlaced: true,
     };
   });
+
+  const heroBounds = getHeroVisualBounds(positionedMagnets);
+
+  if (!heroBounds) {
+    return positionedMagnets;
+  }
+
+  const desiredShiftX =
+    heroRect.left + heroRect.width / 2 - (heroBounds.left + heroBounds.right) / 2;
+  const desiredShiftY =
+    heroRect.top + heroRect.height / 2 - (heroBounds.top + heroBounds.bottom) / 2;
+  const minShiftX = heroRect.left - heroBounds.left;
+  const maxShiftX = heroRect.left + heroRect.width - heroBounds.right;
+  const minShiftY = heroRect.top - heroBounds.top;
+  const maxShiftY = heroRect.top + heroRect.height - heroBounds.bottom;
+  const shiftX =
+    heroBounds.right - heroBounds.left <= heroRect.width
+      ? clamp(desiredShiftX, minShiftX, maxShiftX)
+      : desiredShiftX;
+  const shiftY =
+    heroBounds.bottom - heroBounds.top <= heroRect.height
+      ? clamp(desiredShiftY, minShiftY, maxShiftY)
+      : desiredShiftY;
+
+  if (Math.abs(shiftX) < 0.01 && Math.abs(shiftY) < 0.01) {
+    return positionedMagnets;
+  }
+
+  return positionedMagnets.map((magnet) => {
+    if (magnet.boardId !== 'hero') {
+      return magnet;
+    }
+
+    return {
+      ...magnet,
+      x: magnet.x + shiftX,
+      y: magnet.y + shiftY,
+    };
+  });
 }
 
 function buildFallbackBoardRects() {
@@ -1701,7 +1880,8 @@ function buildFallbackBoardRects() {
     return {};
   }
 
-  const shellWidth = Math.min(1200, window.innerWidth - 32);
+  const shellMaxWidth = Math.min(Math.max(1120, window.innerWidth * 0.72), 1380);
+  const shellWidth = Math.min(shellMaxWidth, window.innerWidth - 32);
   const heroLeft = Math.max((window.innerWidth - shellWidth) / 2, 16);
 
   return {
@@ -1869,8 +2049,13 @@ function ControlPanelSurface({
   caption,
   controls,
   sections,
+  isLayoutEditing = false,
   onChange,
   onReset,
+  onStartLayoutEdit,
+  onSaveLayoutEdit,
+  onCancelLayoutEdit,
+  onResetLayout,
   onClose,
 }) {
   return (
@@ -1902,6 +2087,54 @@ function ControlPanelSurface({
           ) : null}
         </div>
       </div>
+
+      {onStartLayoutEdit || onSaveLayoutEdit || onResetLayout ? (
+        <div className="eli5-control-panel__layout-tools">
+          <p className="eli5-control-panel__layout-caption">
+            {isLayoutEditing
+              ? 'Drag the hero letters on the page, then save this composition as the new resting layout.'
+              : 'Use Edit Layout to drag the hero letters into place, then save that composition as the new default.'}
+          </p>
+
+          <div className="eli5-control-panel__layout-actions">
+            {isLayoutEditing ? (
+              <>
+                <button
+                  type="button"
+                  className="eli5-control-panel__close"
+                  onClick={onSaveLayoutEdit}
+                >
+                  Save Layout
+                </button>
+                <button
+                  type="button"
+                  className="eli5-control-panel__reset"
+                  onClick={onCancelLayoutEdit}
+                >
+                  Cancel Edit
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className="eli5-control-panel__close"
+                  onClick={onStartLayoutEdit}
+                >
+                  Edit Layout
+                </button>
+                <button
+                  type="button"
+                  className="eli5-control-panel__reset"
+                  onClick={onResetLayout}
+                >
+                  Use Reference
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      ) : null}
 
       <div className="eli5-control-panel__sections">
         {sections.map((section) => (
@@ -2042,6 +2275,29 @@ function ExampleTopicTabs({
       }}
     >
       <div className="eli5-example-tabs__viewport">
+        <div className="eli5-example-tabs__measure" aria-hidden="true">
+          {examples.map((example, index) => {
+            const tabStyle = EXAMPLE_TAB_STYLES[index % EXAMPLE_TAB_STYLES.length];
+
+            return (
+              <span
+                key={`measure-${example.slug}`}
+                className="eli5-example-tab eli5-example-tab--measure"
+                style={{
+                  '--example-tab-color': tabStyle.color,
+                  '--example-tab-tilt': '0deg',
+                  '--example-tab-scale': '1',
+                  '--example-tab-opacity': '1',
+                  '--example-tab-offset-x': '0px',
+                  '--example-tab-offset-y': '0px',
+                }}
+              >
+                {example.subject}
+              </span>
+            );
+          })}
+        </div>
+
         <div
           className="eli5-example-tabs__list"
           role="tablist"
@@ -2153,9 +2409,8 @@ function ScrollScrubMedia({
 
     const trackRect = trackNode.getBoundingClientRect();
     const stickyHeight = wrapNode.offsetHeight;
-    const scrollSpan = Math.max(trackRect.height - stickyHeight, 1);
     const stickyTop = window.innerHeight * (topVh / 100);
-    const progress = clamp((stickyTop - trackRect.top) / scrollSpan, 0, 1);
+    const { progress } = getStickyTrackProgress(trackRect, stickyHeight, stickyTop);
     const nextTime = progress * duration;
 
     if (Math.abs(videoNode.currentTime - nextTime) < 1 / 30) {
@@ -2254,21 +2509,19 @@ export default function App() {
   const [heroMagnetControls, setHeroMagnetControls] = useState(() =>
     loadHeroMagnetControls(),
   );
-  const [heroSavedLayout] = useState(() =>
+  const [heroSavedLayout, setHeroSavedLayout] = useState(() =>
     loadHeroLayout(),
   );
+  const [heroDraftLayout, setHeroDraftLayout] = useState(() =>
+    loadHeroLayout(),
+  );
+  const [isHeroLayoutEditing, setIsHeroLayoutEditing] = useState(false);
   const [controlPanelHost, setControlPanelHost] = useState(null);
   const [isInlineFallbackOpen, setIsInlineFallbackOpen] = useState(false);
-  const [magnetSeed, setMagnetSeed] = useState(() =>
-    applyPersistedHeroLayout(
-      buildRuntimeMagnets({
-        ...buildFallbackBoardRects(),
-        hero: buildFallbackHeroBoardRect(loadHeroMagnetControls()),
-      }, loadHeroMagnetControls()),
-      buildFallbackHeroBoardRect(loadHeroMagnetControls()),
-      loadHeroLayout(),
-    ),
-  );
+  const [magnetSeed, setMagnetSeed] = useState([]);
+  const activeHeroLayout = isHeroLayoutEditing
+    ? heroDraftLayout
+    : heroSavedLayout;
 
   const syncMagnetSeed = useEffectEvent(() => {
     const heroStageRect = heroStageRef.current
@@ -2298,40 +2551,41 @@ export default function App() {
 
     const resolvedHeroStageRect = heroStageRect ?? buildFallbackBoardRects().hero;
     const provisionalHeroSlot = buildHeroTitleSlot(resolvedHeroStageRect, heroMagnetControls);
-    const provisionalHeroRect =
-      heroBoardRect ??
-      buildCenteredHeroBoardRect(
-        resolvedHeroStageRect,
-        heroMagnetControls,
-        provisionalHeroSlot,
-      );
+    const provisionalHeroRect = heroBoardRect ?? buildCenteredHeroBoardRect(
+      resolvedHeroStageRect,
+      heroMagnetControls,
+      provisionalHeroSlot,
+    );
     const provisionalSeed = applyPersistedHeroLayout(
       buildRuntimeMagnets({
         hero: provisionalHeroRect,
         playfield: playfieldRect,
       }, heroMagnetControls),
       provisionalHeroRect,
-      heroSavedLayout,
+      activeHeroLayout,
     );
     const nextHeroSlot = buildHeroTitleSlotFromRuntimeMagnets(
       provisionalSeed,
       resolvedHeroStageRect,
       heroMagnetControls,
     );
-    const nextHeroRect =
-      heroBoardRect ??
-      buildCenteredHeroBoardRect(
-        resolvedHeroStageRect,
-        heroMagnetControls,
-        nextHeroSlot,
-      );
+    const nextHeroRect = heroBoardRect
+      ? {
+          ...heroBoardRect,
+          height: nextHeroSlot.height,
+        }
+      : buildCenteredHeroBoardRect(
+          resolvedHeroStageRect,
+          heroMagnetControls,
+          nextHeroSlot,
+        );
     const nextSeed = applyPersistedHeroLayout(
       buildRuntimeMagnets({
         hero: nextHeroRect,
         playfield: playfieldRect,
       }, heroMagnetControls),
       nextHeroRect,
-      heroSavedLayout,
+      activeHeroLayout,
     );
 
     setHeroTitleSlot(nextHeroSlot);
@@ -2343,16 +2597,12 @@ export default function App() {
     setMagnetSeed(nextSeed);
   });
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     syncMagnetSeed();
 
     const resizeObserver = typeof ResizeObserver === 'function'
       ? new ResizeObserver(() => syncMagnetSeed())
       : null;
-
-    if (heroBoardRef.current) {
-      resizeObserver?.observe(heroBoardRef.current);
-    }
 
     if (heroStageRef.current) {
       resizeObserver?.observe(heroStageRef.current);
@@ -2375,9 +2625,9 @@ export default function App() {
     };
   }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     syncMagnetSeed();
-  }, [heroMagnetControls, heroSavedLayout]);
+  }, [activeHeroLayout, heroMagnetControls]);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -2388,6 +2638,10 @@ export default function App() {
       HERO_CONTROL_STORAGE_KEY,
       JSON.stringify(heroMagnetControls),
     );
+
+    HERO_CONTROL_STORAGE_DEPRECATED_KEYS.forEach((storageKey) => {
+      window.localStorage.removeItem(storageKey);
+    });
   }, [heroMagnetControls]);
 
   useEffect(() => {
@@ -2417,6 +2671,39 @@ export default function App() {
 
   const handleHeroControlReset = useEffectEvent(() => {
     setHeroMagnetControls(HERO_MAGNET_DEFAULTS);
+  });
+
+  const handleStartHeroLayoutEdit = useEffectEvent(() => {
+    setHeroDraftLayout(sanitizeHeroLayout(heroSavedLayout));
+    setIsHeroLayoutEditing(true);
+  });
+
+  const handleCancelHeroLayoutEdit = useEffectEvent(() => {
+    setHeroDraftLayout(sanitizeHeroLayout(heroSavedLayout));
+    setIsHeroLayoutEditing(false);
+  });
+
+  const handleSaveHeroLayoutEdit = useEffectEvent(() => {
+    const nextLayout = sanitizeHeroLayout(heroDraftLayout);
+    setHeroSavedLayout(nextLayout);
+    setHeroDraftLayout(nextLayout);
+    setIsHeroLayoutEditing(false);
+  });
+
+  const handleResetHeroLayout = useEffectEvent(() => {
+    const referenceLayout = sanitizeHeroLayout(HERO_REFERENCE_LAYOUT);
+    setHeroSavedLayout(referenceLayout);
+    setHeroDraftLayout(referenceLayout);
+    setIsHeroLayoutEditing(false);
+  });
+
+  const handleHeroLayoutDraftCommit = useEffectEvent((layoutPatch) => {
+    setHeroDraftLayout((current) =>
+      sanitizeHeroLayout({
+        ...current,
+        ...layoutPatch,
+      }),
+    );
   });
 
   const handleExternalPanelClose = useEffectEvent(() => {
@@ -2478,20 +2765,20 @@ export default function App() {
         <div className="eli5-shell">
           <div className="eli5-surface">
             <header className="eli5-header">
-              <a className="eli5-brand" href="#hero" aria-label="Explain It Like I'm Five">
-                <span className="eli5-brand__lead">Explain It Like I&apos;m</span>
-                <span className="eli5-brand__accent">Five</span>
-              </a>
-
               <nav className="eli5-nav" aria-label="Primary">
                 <a href="#how">What it does</a>
                 <a href="#examples">See output</a>
                 <a href="#install">Install</a>
               </nav>
 
-              <DownloadLink className="eli5-button eli5-button--primary eli5-button--header">
-                Download the skill
-              </DownloadLink>
+              <div className="eli5-header__actions">
+                <DownloadLink className="eli5-button eli5-button--primary eli5-button--header">
+                  Download
+                </DownloadLink>
+                <SupportLink className="eli5-button eli5-button--coffee eli5-button--header">
+                  Buy me a coffee
+                </SupportLink>
+              </div>
             </header>
 
             <>
@@ -2512,9 +2799,11 @@ export default function App() {
                     >
                       {magnetSeed.length > 0 ? (
                         <MagnetCanvas
-                          className="eli5-magnet-layer"
+                          className={`eli5-magnet-layer${isHeroLayoutEditing ? ' is-layout-editing' : ''}`}
                           magnets={magnetSeed}
                           motionConfig={heroMagnetControls}
+                          layoutEditing={isHeroLayoutEditing}
+                          onLayoutCommit={handleHeroLayoutDraftCommit}
                         />
                       ) : null}
                     </div>
@@ -2784,8 +3073,13 @@ export default function App() {
             caption="Hero letters and the Michael Scott sticky motion update live on this page."
             controls={heroMagnetControls}
             sections={HERO_CONTROL_SECTIONS}
+            isLayoutEditing={isHeroLayoutEditing}
             onChange={handleHeroControlChange}
             onReset={handleHeroControlReset}
+            onStartLayoutEdit={handleStartHeroLayoutEdit}
+            onSaveLayoutEdit={handleSaveHeroLayoutEdit}
+            onCancelLayoutEdit={handleCancelHeroLayoutEdit}
+            onResetLayout={handleResetHeroLayout}
           />
         </div>
       ) : null}
@@ -2798,8 +3092,13 @@ export default function App() {
               caption="Hero letters and the Michael Scott sticky motion update live on this page."
               controls={heroMagnetControls}
               sections={HERO_CONTROL_SECTIONS}
+              isLayoutEditing={isHeroLayoutEditing}
               onChange={handleHeroControlChange}
               onReset={handleHeroControlReset}
+              onStartLayoutEdit={handleStartHeroLayoutEdit}
+              onSaveLayoutEdit={handleSaveHeroLayoutEdit}
+              onCancelLayoutEdit={handleCancelHeroLayoutEdit}
+              onResetLayout={handleResetHeroLayout}
               onClose={handleExternalPanelClose}
             />,
             controlPanelHost,

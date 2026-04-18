@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent, useRef } from 'react';
+import { useEffect, useEffectEvent, useLayoutEffect, useRef } from 'react';
 
 import {
   clamp,
@@ -14,6 +14,12 @@ const LAYER_STYLE = {
   pointerEvents: 'none',
   contain: 'strict',
   willChange: 'transform',
+};
+const EDIT_LAYER_STYLE = {
+  ...LAYER_STYLE,
+  pointerEvents: 'auto',
+  cursor: 'grab',
+  touchAction: 'none',
 };
 const HIT_PADDING = 8;
 const INTRO_STAGGER_MS = 22;
@@ -38,6 +44,8 @@ export default function MagnetCanvas({
   className,
   pixelRatioCap = 1.6,
   motionConfig = DEFAULT_MOTION_CONFIG,
+  layoutEditing = false,
+  onLayoutCommit,
 }) {
   const canvasRef = useRef(null);
   const contextRef = useRef(null);
@@ -57,6 +65,8 @@ export default function MagnetCanvas({
   const sessionPhaseRef = useRef(Math.random() * Math.PI * 2);
   const motionConfigRef = useRef(resolveMotionConfig(motionConfig));
   const ambientMotionEnabledRef = useRef(true);
+  const dragStateRef = useRef(null);
+  const dragOverridesRef = useRef(new Map());
   const isControlled = magnets != null;
 
   const requestDraw = useEffectEvent(() => {
@@ -216,6 +226,9 @@ export default function MagnetCanvas({
     const nextMagnets = normalizeMagnetList(sourceMagnets);
     magnetsRef.current = nextMagnets;
     sortedMagnetsRef.current = sortMagnetsForPaint(nextMagnets);
+    if (!dragStateRef.current) {
+      dragOverridesRef.current = new Map();
+    }
     syncFloatProfiles(nextMagnets);
     pruneBounceStates(nextMagnets);
     maybePrimeIntroAnimation(nextMagnets);
@@ -361,6 +374,20 @@ export default function MagnetCanvas({
     };
   });
 
+  const resolveDragOverride = useEffectEvent((magnet) => {
+    const override = dragOverridesRef.current.get(magnet.id);
+
+    if (!override) {
+      return magnet;
+    }
+
+    return {
+      ...magnet,
+      x: override.x,
+      y: override.y,
+    };
+  });
+
   const drawScene = useEffectEvent(() => {
     const canvas = canvasRef.current;
 
@@ -379,12 +406,16 @@ export default function MagnetCanvas({
     ctx.clearRect(0, 0, width, height);
 
     const now = performance.now();
-    const allowFloating = !prefersReducedMotionRef.current;
+    const allowFloating = !prefersReducedMotionRef.current && !layoutEditing;
+    const introActive = isIntroAnimating(now);
     let hasActiveIntroFrame = false;
 
     for (const magnet of sortedMagnetsRef.current) {
-      const introMagnet = resolveIntroMagnet(magnet, now);
-      const animatedMagnet = allowFloating
+      const baseMagnet = resolveDragOverride(magnet);
+      const introMagnet = layoutEditing
+        ? baseMagnet
+        : resolveIntroMagnet(baseMagnet, now);
+      const animatedMagnet = allowFloating && !introActive
         ? resolveFloatingMagnet(introMagnet, now)
         : introMagnet;
 
@@ -435,6 +466,11 @@ export default function MagnetCanvas({
   });
 
   const updateHoverTarget = useEffectEvent((point) => {
+    if (layoutEditing) {
+      pointerPointRef.current = null;
+      return;
+    }
+
     pointerPointRef.current = point;
 
     if (prefersReducedMotionRef.current) {
@@ -469,23 +505,160 @@ export default function MagnetCanvas({
     requestDraw();
   });
 
-  useEffect(() => {
+  const commitDraggedLayout = useEffectEvent((magnetId, nextPosition) => {
+    if (!onLayoutCommit || !nextPosition) {
+      return;
+    }
+
+    const magnet = magnetsRef.current.find((entry) => entry.id === magnetId);
+
+    if (!magnet || magnet.boardId !== 'hero' || !magnet.bounds) {
+      return;
+    }
+
+    const { width, height } = getMagnetDimensions(magnet);
+    const boundsWidth = Math.max(magnet.bounds.right - magnet.bounds.left, 1);
+    const boundsHeight = Math.max(magnet.bounds.bottom - magnet.bounds.top, 1);
+
+    onLayoutCommit({
+      [magnetId]: {
+        cx: clamp(
+          (nextPosition.x + width / 2 - magnet.bounds.left) / boundsWidth,
+          0,
+          1,
+        ),
+        cy: clamp(
+          (nextPosition.y + height / 2 - magnet.bounds.top) / boundsHeight,
+          0,
+          1,
+        ),
+        rotation: magnet.rotation,
+      },
+    });
+  });
+
+  const beginLayoutDrag = useEffectEvent((event) => {
+    if (!layoutEditing || isIntroAnimating()) {
+      return;
+    }
+
+    const point = toDocumentPoint(event);
+    const editableMagnets = magnetsRef.current
+      .filter((magnet) => magnet.boardId === 'hero')
+      .map((magnet) => resolveDragOverride(magnet));
+    const hit = findTopMagnetAtPoint(editableMagnets, point, HIT_PADDING);
+    const magnet = hit?.magnet;
+
+    if (!magnet || !magnet.bounds) {
+      return;
+    }
+
+    const { width, height } = getMagnetDimensions(magnet);
+
+    dragStateRef.current = {
+      pointerId: event.pointerId,
+      magnetId: magnet.id,
+      width,
+      height,
+      bounds: magnet.bounds,
+      offsetX: point.x - magnet.x,
+      offsetY: point.y - magnet.y,
+    };
+    dragOverridesRef.current.set(magnet.id, {
+      x: magnet.x,
+      y: magnet.y,
+    });
+    pointerPointRef.current = null;
+    hoverMagnetIdRef.current = null;
+    bounceStatesRef.current.clear();
+    canvasRef.current?.setPointerCapture?.(event.pointerId);
+    event.preventDefault();
+    requestDraw();
+  });
+
+  const updateLayoutDrag = useEffectEvent((event) => {
+    const dragState = dragStateRef.current;
+
+    if (!dragState || event.pointerId !== dragState.pointerId) {
+      return;
+    }
+
+    const point = toDocumentPoint(event);
+    const nextX = clamp(
+      point.x - dragState.offsetX,
+      dragState.bounds.left,
+      dragState.bounds.right - dragState.width,
+    );
+    const nextY = clamp(
+      point.y - dragState.offsetY,
+      dragState.bounds.top,
+      dragState.bounds.bottom - dragState.height,
+    );
+
+    dragOverridesRef.current.set(dragState.magnetId, {
+      x: nextX,
+      y: nextY,
+    });
+    event.preventDefault();
+    requestDraw();
+  });
+
+  const endLayoutDrag = useEffectEvent((event) => {
+    const dragState = dragStateRef.current;
+
+    if (!dragState || event.pointerId !== dragState.pointerId) {
+      return;
+    }
+
+    const nextPosition = dragOverridesRef.current.get(dragState.magnetId);
+
+    dragStateRef.current = null;
+    canvasRef.current?.releasePointerCapture?.(event.pointerId);
+    commitDraggedLayout(dragState.magnetId, nextPosition);
+    requestDraw();
+  });
+
+  useLayoutEffect(() => {
+    syncCanvasSize();
+
     if (isControlled) {
       syncExternalMagnets(magnets);
+      drawScene();
       return;
     }
 
     if (!didHydrateInitialMagnetsRef.current || magnetsRef.current.length === 0) {
       didHydrateInitialMagnetsRef.current = true;
       syncExternalMagnets(initialMagnets);
+      drawScene();
     }
-  }, [initialMagnets, isControlled, magnets, syncExternalMagnets]);
+  }, [
+    drawScene,
+    initialMagnets,
+    isControlled,
+    magnets,
+    syncCanvasSize,
+    syncExternalMagnets,
+  ]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     motionConfigRef.current = resolveMotionConfig(motionConfig);
     syncFloatProfiles(magnetsRef.current);
+    drawScene();
+  }, [drawScene, motionConfig, syncFloatProfiles]);
+
+  useEffect(() => {
+    if (!layoutEditing) {
+      dragStateRef.current = null;
+      dragOverridesRef.current = new Map();
+      requestDraw();
+      return;
+    }
+
+    clearHoverState();
+    bounceStatesRef.current.clear();
     requestDraw();
-  }, [motionConfig, requestDraw, syncFloatProfiles]);
+  }, [clearHoverState, layoutEditing, requestDraw]);
 
   useEffect(() => {
     if (typeof document === 'undefined' || !document.fonts) {
@@ -541,6 +714,7 @@ export default function MagnetCanvas({
   useEffect(() => {
     syncCanvasSize();
     const layer = canvasRef.current?.parentElement ?? null;
+    const canvas = canvasRef.current;
     const resizeObserver = layer && typeof ResizeObserver === 'function'
       ? new ResizeObserver(() => syncCanvasSize())
       : null;
@@ -560,12 +734,20 @@ export default function MagnetCanvas({
     window.addEventListener('resize', syncCanvasSize);
     window.addEventListener('pointermove', handlePointerMove, { passive: true });
     window.addEventListener('blur', clearHoverState);
+    canvas?.addEventListener('pointerdown', beginLayoutDrag);
+    window.addEventListener('pointermove', updateLayoutDrag);
+    window.addEventListener('pointerup', endLayoutDrag);
+    window.addEventListener('pointercancel', endLayoutDrag);
 
     return () => {
       resizeObserver?.disconnect();
       window.removeEventListener('resize', syncCanvasSize);
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('blur', clearHoverState);
+      canvas?.removeEventListener('pointerdown', beginLayoutDrag);
+      window.removeEventListener('pointermove', updateLayoutDrag);
+      window.removeEventListener('pointerup', endLayoutDrag);
+      window.removeEventListener('pointercancel', endLayoutDrag);
 
       if (drawFrameRef.current) {
         window.cancelAnimationFrame(drawFrameRef.current);
@@ -573,14 +755,21 @@ export default function MagnetCanvas({
       }
     };
   }, [
+    beginLayoutDrag,
     clearHoverState,
+    endLayoutDrag,
     isIntroAnimating,
     syncCanvasSize,
     updateHoverTarget,
+    updateLayoutDrag,
   ]);
 
   return (
-    <div aria-hidden="true" className={className} style={LAYER_STYLE}>
+    <div
+      aria-hidden="true"
+      className={className}
+      style={layoutEditing ? EDIT_LAYER_STYLE : LAYER_STYLE}
+    >
       <canvas ref={canvasRef} />
     </div>
   );

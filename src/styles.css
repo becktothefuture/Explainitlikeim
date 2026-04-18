@@ -3,7 +3,8 @@
   --radius-pill: 999px;
   --radius-card: 28px;
   --radius-surface: 42px;
-  --shell: min(1020px, calc(100vw - 88px));
+  --shell-max: 1020px;
+  --shell: min(var(--shell-max), calc(100vw - 88px));
   --font-ui: 'Outfit', 'Inter', 'Segoe UI', sans-serif;
   --font-magnet: 'Fredoka', 'Arial Rounded MT Bold', sans-serif;
   --ui-duration: 180ms;
@@ -14,6 +15,7 @@
 }
 
 html {
+  font-size: 16px;
   color-scheme: light;
   scroll-behavior: smooth;
 }
@@ -443,6 +445,13 @@ select {
   backdrop-filter: blur(12px);
 }
 
+.eli5-header__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: nowrap;
+}
+
 .eli5-brand {
   display: inline-flex;
   align-items: baseline;
@@ -535,6 +544,17 @@ select {
   box-shadow: var(--shadow-button-soft);
 }
 
+.eli5-button--coffee {
+  color: #151515;
+  border-color: rgba(26, 26, 26, 0.12);
+  background: linear-gradient(180deg, #ffdd00 0%, #ffd21f 100%);
+  box-shadow:
+    0 6px 0 rgba(100, 69, 30, 0.1),
+    0 16px 18px rgba(73, 53, 28, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -1px 0 rgba(185, 151, 0, 0.22);
+}
+
 .eli5-button--header {
   min-height: 42px;
   padding-inline: 16px;
@@ -596,7 +616,7 @@ select {
   width: 100%;
   height: clamp(200px, 26vw, 300px);
   max-width: 100%;
-  overflow: hidden;
+  overflow: visible;
   pointer-events: none;
 }
 
@@ -1121,7 +1141,7 @@ select {
 .eli5-playfield {
   position: relative;
   display: grid;
-  grid-template-columns: 252px minmax(0, 1fr);
+  grid-template-columns: max-content minmax(0, 1fr);
   align-items: start;
   align-content: start;
   gap: 28px;
@@ -1131,12 +1151,15 @@ select {
 }
 
 .eli5-example-tabs {
+  --example-tab-safe-inline: 18px;
+  --example-tab-max-shift: 12px;
   position: relative;
   z-index: 2;
   display: grid;
   align-content: start;
   gap: 10px;
-  width: min(100%, 252px);
+  width: fit-content;
+  max-width: 100%;
   padding-top: 4px;
   align-self: start;
 }
@@ -1144,7 +1167,7 @@ select {
 .eli5-example-tabs__viewport {
   position: relative;
   height: var(--example-tab-viewport-height, 328px);
-  overflow: hidden;
+  overflow: visible;
   padding-block: 0;
 }
 
@@ -1157,12 +1180,24 @@ select {
   min-height: 100%;
 }
 
+.eli5-example-tabs__measure {
+  display: grid;
+  width: max-content;
+  max-width: 100%;
+  height: 0;
+  padding-inline:
+    var(--example-tab-safe-inline, 18px)
+    calc(var(--example-tab-safe-inline, 18px) + var(--example-tab-max-shift, 12px));
+  overflow: visible;
+  visibility: hidden;
+  pointer-events: none;
+}
+
 .eli5-example-tab {
   position: absolute;
   top: 0;
-  left: 0;
+  left: var(--example-tab-safe-inline, 18px);
   width: max-content;
-  max-width: 100%;
   justify-self: start;
   height: var(--example-tab-item-height, 56px);
   padding: 0 20px;
@@ -1186,6 +1221,13 @@ select {
     transform calc(var(--ui-duration) * 1.8) var(--ui-ease),
     box-shadow var(--ui-duration) var(--ui-ease);
   will-change: transform;
+}
+
+.eli5-example-tab--measure {
+  position: static;
+  transform: none;
+  box-shadow: none;
+  opacity: 1;
 }
 
 .eli5-example-tab.is-active {
@@ -1470,6 +1512,133 @@ select {
   }
 }
 
+@media (min-width: 1200px) {
+  :root {
+    --shell-max: clamp(1120px, 72vw, 1380px);
+  }
+
+  html {
+    font-size: clamp(17px, calc(12.5px + 0.35vw), 19px);
+  }
+
+  .eli5-shell {
+    padding: 24px 0 48px;
+  }
+
+  .eli5-surface {
+    padding: 30px clamp(30px, 4vw, 72px) 100px;
+  }
+
+  .eli5-header {
+    max-width: min(calc(100% - 18px), 1080px);
+  }
+
+  .eli5-button {
+    min-height: 60px;
+    padding: 0 26px;
+  }
+
+  .eli5-button--header {
+    min-height: 44px;
+    padding-inline: 17px;
+  }
+
+  .eli5-button--large {
+    min-height: 68px;
+    padding-inline: 32px;
+  }
+
+  .eli5-hero {
+    padding: 30px 0 22px;
+  }
+
+  .eli5-hero-stage {
+    gap: 16px;
+    min-height: clamp(460px, calc(100svh - 300px), 620px);
+    padding: 48px 0 16px;
+  }
+
+  .eli5-hero__badge {
+    min-height: 36px;
+    padding: 0 16px;
+    font-size: 0.88rem;
+  }
+
+  .eli5-hero__notes {
+    width: min(100%, 40rem);
+    gap: 14px;
+  }
+
+  .eli5-hero__magnet-slot {
+    height: clamp(224px, 28vw, 340px);
+  }
+
+  .eli5-hero__notes-copy {
+    max-width: 40rem;
+  }
+
+  .eli5-hero__summary {
+    font-size: clamp(1.45rem, 2.05vw, 1.82rem);
+  }
+
+  .eli5-hero__detail {
+    max-width: 29rem;
+    font-size: clamp(1.02rem, 1.22vw, 1.12rem);
+  }
+
+  .eli5-hero__compat {
+    max-width: 58rem;
+    padding-block: 14px;
+    font-size: 0.96rem;
+  }
+
+  .eli5-section-break {
+    padding: 84px 0 156px;
+  }
+
+  .eli5-how {
+    gap: 60px;
+  }
+
+  .eli5-how__lede,
+  .eli5-section-heading p {
+    max-width: 38rem;
+  }
+
+  .eli5-prompt-field__shell {
+    min-height: 60px;
+    padding: 12px 16px;
+  }
+
+  .eli5-example-thread__prompt {
+    width: min(100%, 48rem);
+  }
+
+  .eli5-example-output {
+    max-width: 60rem;
+  }
+
+  .eli5-science-grid {
+    gap: 20px;
+    max-width: 1080px;
+  }
+
+  .eli5-section--install .eli5-section-heading {
+    max-width: 700px;
+  }
+
+  .eli5-cta p {
+    max-width: 38rem;
+  }
+
+  .eli5-button--cta-download,
+  .eli5-button--cta-support {
+    min-width: 240px;
+    min-height: 74px;
+    padding-inline: 34px;
+  }
+}
+
 @media (max-width: 980px) {
   .eli5-control-dock {
     right: 12px;
@@ -1502,7 +1671,8 @@ select {
   .eli5-example-tabs {
     position: relative;
     top: auto;
-    width: min(100%, 280px);
+    --example-tab-safe-inline: 20px;
+    --example-tab-max-shift: 12px;
   }
 
   .eli5-example-thread {
@@ -1537,7 +1707,7 @@ select {
 
 @media (max-width: 720px) {
   :root {
-    --shell: min(1020px, calc(100vw - 32px));
+    --shell: min(var(--shell-max), calc(100vw - 32px));
   }
 
   .eli5-control-launcher,
@@ -1567,8 +1737,15 @@ select {
   .eli5-header {
     top: 8px;
     max-width: calc(100% - 8px);
+    justify-content: center;
+    flex-wrap: wrap;
     gap: 10px 12px;
     padding: 9px 12px;
+  }
+
+  .eli5-header__actions {
+    width: 100%;
+    justify-content: center;
   }
 
   .eli5-brand {
