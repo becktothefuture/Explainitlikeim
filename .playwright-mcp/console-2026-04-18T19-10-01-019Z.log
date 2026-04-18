@@ -1,0 +1,10 @@
+[  277878ms] ReferenceError: getMagnetDimensions is not defined
+    at http://127.0.0.1:4176/src/components/MagnetCanvas.jsx?t=1776539523252:432:31
+    at HTMLDivElement.<anonymous> (http://127.0.0.1:4176/node_modules/.vite/deps/react-dom_client.js?v=6eebb024:6454:27)
+[  295129ms] ReferenceError: getMagnetDimensions is not defined
+    at http://127.0.0.1:4176/src/components/MagnetCanvas.jsx?t=1776539523252:432:31
+    at HTMLDivElement.<anonymous> (http://127.0.0.1:4176/node_modules/.vite/deps/react-dom_client.js?v=6eebb024:6454:27)
+[  325314ms] ReferenceError: getMagnetDimensions is not defined
+    at http://127.0.0.1:4176/src/components/MagnetCanvas.jsx?t=1776539523252:432:31
+    at HTMLDivElement.<anonymous> (http://127.0.0.1:4176/node_modules/.vite/deps/react-dom_client.js?v=6eebb024:6454:27)
+[  507606ms] [LOG] [vite] server connection lost. Polling for restart... @ http://127.0.0.1:4176/@vite/client:864

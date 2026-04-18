@@ -18,7 +18,6 @@ const LAYER_STYLE = {
 const EDIT_LAYER_STYLE = {
   ...LAYER_STYLE,
   pointerEvents: 'auto',
-  cursor: 'grab',
   touchAction: 'none',
 };
 const HIT_PADDING = 8;
@@ -517,18 +516,19 @@ export default function MagnetCanvas({
     }
 
     const { width, height } = getMagnetDimensions(magnet);
-    const boundsWidth = Math.max(magnet.bounds.right - magnet.bounds.left, 1);
-    const boundsHeight = Math.max(magnet.bounds.bottom - magnet.bounds.top, 1);
+    const insetBounds = getHeroDragInsetBounds(magnet.bounds, width, height);
+    const boundsWidth = Math.max(insetBounds.right - insetBounds.left, 1);
+    const boundsHeight = Math.max(insetBounds.bottom - insetBounds.top, 1);
 
     onLayoutCommit({
       [magnetId]: {
         cx: clamp(
-          (nextPosition.x + width / 2 - magnet.bounds.left) / boundsWidth,
+          (nextPosition.x + width / 2 - insetBounds.left) / boundsWidth,
           0,
           1,
         ),
         cy: clamp(
-          (nextPosition.y + height / 2 - magnet.bounds.top) / boundsHeight,
+          (nextPosition.y + height / 2 - insetBounds.top) / boundsHeight,
           0,
           1,
         ),
@@ -538,7 +538,7 @@ export default function MagnetCanvas({
   });
 
   const beginLayoutDrag = useEffectEvent((event) => {
-    if (!layoutEditing || isIntroAnimating()) {
+    if (!layoutEditing) {
       return;
     }
 
@@ -554,13 +554,14 @@ export default function MagnetCanvas({
     }
 
     const { width, height } = getMagnetDimensions(magnet);
+    const insetBounds = getHeroDragInsetBounds(magnet.bounds, width, height);
 
     dragStateRef.current = {
-      pointerId: event.pointerId,
+      dragId: getDragEventId(event),
       magnetId: magnet.id,
       width,
       height,
-      bounds: magnet.bounds,
+      bounds: insetBounds,
       offsetX: point.x - magnet.x,
       offsetY: point.y - magnet.y,
     };
@@ -571,7 +572,9 @@ export default function MagnetCanvas({
     pointerPointRef.current = null;
     hoverMagnetIdRef.current = null;
     bounceStatesRef.current.clear();
-    canvasRef.current?.setPointerCapture?.(event.pointerId);
+    if ('pointerId' in event) {
+      canvasRef.current?.setPointerCapture?.(event.pointerId);
+    }
     event.preventDefault();
     requestDraw();
   });
@@ -579,7 +582,7 @@ export default function MagnetCanvas({
   const updateLayoutDrag = useEffectEvent((event) => {
     const dragState = dragStateRef.current;
 
-    if (!dragState || event.pointerId !== dragState.pointerId) {
+    if (!dragState || !matchesDragEvent(event, dragState.dragId)) {
       return;
     }
 
@@ -606,14 +609,16 @@ export default function MagnetCanvas({
   const endLayoutDrag = useEffectEvent((event) => {
     const dragState = dragStateRef.current;
 
-    if (!dragState || event.pointerId !== dragState.pointerId) {
+    if (!dragState || !matchesDragEvent(event, dragState.dragId)) {
       return;
     }
 
     const nextPosition = dragOverridesRef.current.get(dragState.magnetId);
 
     dragStateRef.current = null;
-    canvasRef.current?.releasePointerCapture?.(event.pointerId);
+    if ('pointerId' in event) {
+      canvasRef.current?.releasePointerCapture?.(event.pointerId);
+    }
     commitDraggedLayout(dragState.magnetId, nextPosition);
     requestDraw();
   });
@@ -655,6 +660,7 @@ export default function MagnetCanvas({
       return;
     }
 
+    introAnimationRef.current = null;
     clearHoverState();
     bounceStatesRef.current.clear();
     requestDraw();
@@ -715,6 +721,8 @@ export default function MagnetCanvas({
     syncCanvasSize();
     const layer = canvasRef.current?.parentElement ?? null;
     const canvas = canvasRef.current;
+    const interactionTarget = layer ?? canvas;
+    const supportsPointerEvents = typeof window !== 'undefined' && 'PointerEvent' in window;
     const resizeObserver = layer && typeof ResizeObserver === 'function'
       ? new ResizeObserver(() => syncCanvasSize())
       : null;
@@ -730,24 +738,89 @@ export default function MagnetCanvas({
 
       updateHoverTarget(toDocumentPoint(event));
     };
+    const handleMouseMove = (event) => {
+      if (supportsPointerEvents || isIntroAnimating()) {
+        return;
+      }
+
+      updateHoverTarget(toDocumentPoint(event));
+    };
+    const beginMouseDrag = (event) => {
+      if (supportsPointerEvents) {
+        return;
+      }
+
+      beginLayoutDrag(event);
+    };
+    const updateMouseDrag = (event) => {
+      if (supportsPointerEvents) {
+        return;
+      }
+
+      updateLayoutDrag(event);
+    };
+    const endMouseDrag = (event) => {
+      if (supportsPointerEvents) {
+        return;
+      }
+
+      endLayoutDrag(event);
+    };
+    const beginTouchDrag = (event) => {
+      if (supportsPointerEvents) {
+        return;
+      }
+
+      beginLayoutDrag(event);
+    };
+    const updateTouchDrag = (event) => {
+      if (supportsPointerEvents) {
+        return;
+      }
+
+      updateLayoutDrag(event);
+    };
+    const endTouchDrag = (event) => {
+      if (supportsPointerEvents) {
+        return;
+      }
+
+      endLayoutDrag(event);
+    };
 
     window.addEventListener('resize', syncCanvasSize);
     window.addEventListener('pointermove', handlePointerMove, { passive: true });
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
     window.addEventListener('blur', clearHoverState);
-    canvas?.addEventListener('pointerdown', beginLayoutDrag);
+    interactionTarget?.addEventListener('pointerdown', beginLayoutDrag);
+    interactionTarget?.addEventListener('mousedown', beginMouseDrag);
+    interactionTarget?.addEventListener('touchstart', beginTouchDrag, { passive: false });
     window.addEventListener('pointermove', updateLayoutDrag);
     window.addEventListener('pointerup', endLayoutDrag);
     window.addEventListener('pointercancel', endLayoutDrag);
+    window.addEventListener('mousemove', updateMouseDrag);
+    window.addEventListener('mouseup', endMouseDrag);
+    window.addEventListener('touchmove', updateTouchDrag, { passive: false });
+    window.addEventListener('touchend', endTouchDrag);
+    window.addEventListener('touchcancel', endTouchDrag);
 
     return () => {
       resizeObserver?.disconnect();
       window.removeEventListener('resize', syncCanvasSize);
       window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('blur', clearHoverState);
-      canvas?.removeEventListener('pointerdown', beginLayoutDrag);
+      interactionTarget?.removeEventListener('pointerdown', beginLayoutDrag);
+      interactionTarget?.removeEventListener('mousedown', beginMouseDrag);
+      interactionTarget?.removeEventListener('touchstart', beginTouchDrag);
       window.removeEventListener('pointermove', updateLayoutDrag);
       window.removeEventListener('pointerup', endLayoutDrag);
       window.removeEventListener('pointercancel', endLayoutDrag);
+      window.removeEventListener('mousemove', updateMouseDrag);
+      window.removeEventListener('mouseup', endMouseDrag);
+      window.removeEventListener('touchmove', updateTouchDrag);
+      window.removeEventListener('touchend', endTouchDrag);
+      window.removeEventListener('touchcancel', endTouchDrag);
 
       if (drawFrameRef.current) {
         window.cancelAnimationFrame(drawFrameRef.current);
@@ -776,9 +849,84 @@ export default function MagnetCanvas({
 }
 
 function toDocumentPoint(event) {
+  const touch =
+    ('touches' in event && event.touches?.[0]) ||
+    ('changedTouches' in event && event.changedTouches?.[0]) ||
+    null;
+
   return {
-    x: event.clientX + window.scrollX,
-    y: event.clientY + window.scrollY,
+    x: (touch?.clientX ?? event.clientX) + window.scrollX,
+    y: (touch?.clientY ?? event.clientY) + window.scrollY,
+  };
+}
+
+function getDragEventId(event) {
+  if ('pointerId' in event) {
+    return `pointer:${event.pointerId}`;
+  }
+
+  const touch =
+    ('changedTouches' in event && event.changedTouches?.[0]) ||
+    ('touches' in event && event.touches?.[0]) ||
+    null;
+
+  if (touch) {
+    return `touch:${touch.identifier}`;
+  }
+
+  return 'mouse';
+}
+
+function matchesDragEvent(event, dragId) {
+  if (!dragId) {
+    return false;
+  }
+
+  if (dragId === 'mouse') {
+    return !('pointerId' in event) && !('touches' in event) && !('changedTouches' in event);
+  }
+
+  if (dragId.startsWith('pointer:')) {
+    return 'pointerId' in event && `pointer:${event.pointerId}` === dragId;
+  }
+
+  if (!dragId.startsWith('touch:')) {
+    return false;
+  }
+
+  const touchId = Number(dragId.slice(6));
+  const touches = [
+    ...(('touches' in event && event.touches) ? Array.from(event.touches) : []),
+    ...(('changedTouches' in event && event.changedTouches) ? Array.from(event.changedTouches) : []),
+  ];
+
+  return touches.some((touch) => touch.identifier === touchId);
+}
+
+function getHeroDragInsetBounds(bounds, width, height) {
+  const boundsWidth = Math.max(bounds.right - bounds.left, width);
+  const boundsHeight = Math.max(bounds.bottom - bounds.top, height);
+  const insetX = Math.min(
+    Math.max(14, width * 0.08),
+    Math.max((boundsWidth - width) / 2, 0),
+  );
+  const insetY = Math.min(
+    Math.max(18, height * 0.12),
+    Math.max((boundsHeight - height) / 2, 0),
+  );
+
+  return {
+    left: bounds.left + insetX,
+    top: bounds.top + insetY,
+    right: bounds.right - insetX,
+    bottom: bounds.bottom - insetY,
+  };
+}
+
+function getMagnetDimensions(magnet) {
+  return {
+    width: Math.max(28, magnet.width ?? magnet.size ?? magnet.height ?? 68),
+    height: Math.max(28, magnet.height ?? magnet.size ?? 68),
   };
 }
 

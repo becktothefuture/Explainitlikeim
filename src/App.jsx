@@ -6,7 +6,12 @@ import { clamp, getMagnetWidthForLabel } from './components/magnetUtils.js';
 import {
   applyThemeTokens,
   EXAMPLE_TAB_COLORS,
+  getLevelControlFactors,
+  LEVEL_CONTROL_DEFAULTS,
+  LEVEL_CONTROL_STORAGE_KEY,
+  loadLevelControls,
   MAGNET_COLORS,
+  sanitizeLevelControls,
   SECTION_BREAK_COLORS,
 } from './theme.js';
 
@@ -17,36 +22,50 @@ const HOW_GIF_VIDEO = './assets/how/michael-scott-waiting.mp4';
 const HOW_GIF_POSTER = './assets/how/michael-scott-waiting-poster.jpg';
 const HOW_GIF_STICKY_TOP_VH = 35;
 const EXAMPLE_SEPARATOR = '---------------';
-const EXAMPLE_TAB_VISIBLE_COUNT = 6;
+const EXAMPLE_TAB_VISIBLE_COUNT = 5;
 const EXAMPLE_TAB_HEIGHT = 56;
 const EXAMPLE_TAB_GAP = 12;
 const EXAMPLE_TAB_STEP = EXAMPLE_TAB_HEIGHT + EXAMPLE_TAB_GAP;
-const EXAMPLE_TAB_MIN_POSITION = -1;
-const EXAMPLE_TAB_MAX_POSITION = EXAMPLE_TAB_VISIBLE_COUNT;
 const EXAMPLE_TAB_VIEWPORT_HEIGHT =
   EXAMPLE_TAB_HEIGHT * EXAMPLE_TAB_VISIBLE_COUNT +
   EXAMPLE_TAB_GAP * (EXAMPLE_TAB_VISIBLE_COUNT - 1);
-const HERO_CONTROL_STORAGE_KEY = 'eli5-hero-magnet-controls-v11';
-const HERO_LEGACY_CONTROL_STORAGE_KEY = 'eli5-hero-magnet-controls-v10';
+const EXAMPLE_TAB_TRANSITION_MS = 340;
+const HERO_CONTROL_STORAGE_KEY = 'eli5-hero-magnet-controls-v14';
+const HERO_LEGACY_CONTROL_STORAGE_KEYS = [
+  'eli5-hero-magnet-controls-v13',
+  'eli5-hero-magnet-controls-v12',
+  'eli5-hero-magnet-controls-v11',
+  'eli5-hero-magnet-controls-v10',
+];
 const HERO_CONTROL_STORAGE_DEPRECATED_KEYS = [
   'eli5-hero-magnet-controls-v8',
   'eli5-hero-magnet-controls-v9',
-  HERO_LEGACY_CONTROL_STORAGE_KEY,
+  ...HERO_LEGACY_CONTROL_STORAGE_KEYS,
 ];
-const HERO_LAYOUT_STORAGE_KEY = 'eli5-hero-custom-layout-v3';
+const HERO_LAYOUT_STORAGE_KEY = 'eli5-hero-custom-layout-v5';
+const HERO_LAYOUT_STORAGE_DEPRECATED_KEYS = [
+  'eli5-hero-custom-layout-v4',
+  'eli5-hero-custom-layout-v3',
+];
 const HERO_CONTROL_WINDOW_NAME = 'eli5-hero-control-panel';
 const HERO_CONTROL_WINDOW_TITLE = "Config Panel for Explain It Like I'm Five";
 const HERO_TITLE_SLOT_PADDING_X = 28;
 const HERO_TITLE_SLOT_PADDING_Y = 24;
 const HERO_SLOT_MIN_HEIGHT = 238;
-const HERO_SLOT_FLOAT_BUFFER = 28;
+const HERO_SLOT_ASPECT_RATIO = 2.35;
+const HERO_SLOT_HEIGHT_SCALE = 1.25;
 const HERO_VISUAL_PAD_SCALE = 1.65;
 const HERO_VISUAL_PAD_BASE = 4 / HERO_VISUAL_PAD_SCALE;
 const HERO_VISUAL_PAD_MIN = 5 / HERO_VISUAL_PAD_SCALE;
-const HERO_SIZE_UPSCALE = 1.1;
+const HERO_SIZE_MIN = 72;
+const HERO_SIZE_MAX = 560;
+const HERO_LAYOUT_REFERENCE_SIZE = 269;
+const HERO_DEFAULT_SIZE = Math.round(HERO_LAYOUT_REFERENCE_SIZE * 1.26);
+const HERO_LAYOUT_VERTICAL_COMPRESSION = 0.4;
+const HERO_LAYOUT_MIGRATION_EXPANSION = 1.35;
 const HERO_AUTHORED_LETTER_GAP = -48;
 const HERO_AUTHORED_WORD_GAP = 0.07;
-const HERO_AUTHORED_LINE_GAP = 120;
+const HERO_AUTHORED_LINE_GAP = 48;
 
 const HERO_REFERENCE_LAYOUT = {
   'hero-0-0-E': { cx: 0.105, cy: 0.258, rotation: -4.4 },
@@ -96,7 +115,7 @@ const BOARD_LAYOUTS = {
 };
 
 const HERO_MAGNET_DEFAULTS = {
-  size: Math.round(226 * HERO_SIZE_UPSCALE),
+  size: HERO_DEFAULT_SIZE,
   floatRangeX: 1,
   floatRangeY: 1,
   floatSpeed: 1,
@@ -136,7 +155,7 @@ const HERO_CONTROL_SECTIONS = [
   {
     title: 'Layout',
     fields: [
-      { key: 'size', label: 'Size', min: 72, max: 300, step: 1, format: (value) => `${value}px` },
+      { key: 'size', label: 'Size', min: HERO_SIZE_MIN, max: HERO_SIZE_MAX, step: 1, format: (value) => `${value}px` },
     ],
   },
   {
@@ -168,54 +187,62 @@ const HERO_CONTROL_SECTIONS = [
     ],
   },
   {
-    title: 'Face',
+    title: 'Letters',
     fields: [
       { key: 'vibrance', label: 'Vibrance', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
-      { key: 'faceContrast', label: 'Face Contrast', min: 0, max: 2, step: 0.01, format: (value) => value.toFixed(2) },
-      { key: 'innerLightOpacity', label: 'Top Light Opacity', min: 0, max: 1, step: 0.01, format: (value) => value.toFixed(2) },
-      { key: 'innerLightOffsetY', label: 'Top Light Offset', min: 0, max: 12, step: 0.1, format: (value) => `${value.toFixed(1)}px` },
-      { key: 'innerLightBlur', label: 'Top Light Blur', min: 0, max: 16, step: 0.1, format: (value) => `${value.toFixed(1)}px` },
-      { key: 'innerShadeOpacity', label: 'Bottom Right Opacity', min: 0, max: 1, step: 0.01, format: (value) => value.toFixed(2) },
-      { key: 'innerShadeOffsetX', label: 'Bottom Right X', min: 0, max: 12, step: 0.1, format: (value) => `${value.toFixed(1)}px` },
-      { key: 'innerShadeOffsetY', label: 'Bottom Right Y', min: 0, max: 12, step: 0.1, format: (value) => `${value.toFixed(1)}px` },
-      { key: 'innerShadeBlur', label: 'Bottom Right Blur', min: 0, max: 16, step: 0.1, format: (value) => `${value.toFixed(1)}px` },
-    ],
-  },
-  {
-    title: 'Depth',
-    fields: [
-      { key: 'depthContrast', label: 'Depth Contrast', min: 0, max: 2, step: 0.01, format: (value) => value.toFixed(2) },
-      { key: 'depthOffsetX', label: 'Depth X', min: 0, max: 12, step: 0.1, format: (value) => `${value.toFixed(1)}px` },
-      { key: 'depthOffsetY', label: 'Depth Y', min: 0, max: 20, step: 0.1, format: (value) => `${value.toFixed(1)}px` },
-      { key: 'depthSpread', label: 'Depth Spread', min: 0, max: 6, step: 1, format: (value) => `${value}px` },
-    ],
-  },
-  {
-    title: 'Ground Shadow',
-    fields: [
-      { key: 'groundShadow1Opacity', label: 'Layer 1 Opacity', min: 0, max: 1, step: 0.01, format: (value) => value.toFixed(2) },
-      { key: 'groundShadow1OffsetX', label: 'Layer 1 X', min: 0, max: 24, step: 0.1, format: (value) => `${value.toFixed(1)}px` },
-      { key: 'groundShadow1OffsetY', label: 'Layer 1 Y', min: 0, max: 40, step: 0.1, format: (value) => `${value.toFixed(1)}px` },
-      { key: 'groundShadow1Blur', label: 'Layer 1 Blur', min: 0, max: 40, step: 0.1, format: (value) => `${value.toFixed(1)}px` },
-      { key: 'groundShadow2Opacity', label: 'Layer 2 Opacity', min: 0, max: 1, step: 0.01, format: (value) => value.toFixed(2) },
-      { key: 'groundShadow2OffsetX', label: 'Layer 2 X', min: 0, max: 36, step: 0.1, format: (value) => `${value.toFixed(1)}px` },
-      { key: 'groundShadow2OffsetY', label: 'Layer 2 Y', min: 0, max: 56, step: 0.1, format: (value) => `${value.toFixed(1)}px` },
-      { key: 'groundShadow2Blur', label: 'Layer 2 Blur', min: 0, max: 72, step: 0.1, format: (value) => `${value.toFixed(1)}px` },
     ],
   },
 ];
 const HERO_CONTROL_FIELDS = HERO_CONTROL_SECTIONS.flatMap((section) => section.fields);
 const HERO_CONTROL_KEYS = new Set(HERO_CONTROL_FIELDS.map((field) => field.key));
+const LEVEL_CONTROL_SECTIONS = [
+  {
+    title: 'Levels',
+    fields: [
+      { key: 'levelMinus1Amount', label: 'Level -1', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
+      { key: 'level0Amount', label: 'Level 0', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
+      { key: 'level1Amount', label: 'Level 1', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
+      { key: 'level2Amount', label: 'Level 2', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
+      { key: 'level3Amount', label: 'Level 3', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
+    ],
+  },
+  {
+    title: 'Responses',
+    fields: [
+      { key: 'responseShadowStrength', label: 'Shadow Strength', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
+      { key: 'responseShadowSoftness', label: 'Shadow Softness', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
+      { key: 'responseLightStrength', label: 'Light Strength', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
+      { key: 'responseFillContrast', label: 'Fill Contrast', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
+    ],
+  },
+];
+const LEVEL_ADVANCED_META = [
+  { prefix: 'levelMinus1', title: 'Advanced: Level -1' },
+  { prefix: 'level0', title: 'Advanced: Level 0' },
+  { prefix: 'level1', title: 'Advanced: Level 1' },
+  { prefix: 'level2', title: 'Advanced: Level 2' },
+  { prefix: 'level3', title: 'Advanced: Level 3' },
+];
+const LEVEL_ADVANCED_SECTIONS = LEVEL_ADVANCED_META.map(({ prefix, title }) => ({
+  title,
+  fields: [
+    { key: `${prefix}ShadowTrim`, label: 'Shadow Trim', min: -0.75, max: 0.75, step: 0.01, format: (value) => value.toFixed(2) },
+    { key: `${prefix}LightTrim`, label: 'Light Trim', min: -0.75, max: 0.75, step: 0.01, format: (value) => value.toFixed(2) },
+    { key: `${prefix}FillTrim`, label: 'Fill Trim', min: -0.75, max: 0.75, step: 0.01, format: (value) => value.toFixed(2) },
+  ],
+}));
+const LEVEL_CONTROL_KEYS = new Set(Object.keys(LEVEL_CONTROL_DEFAULTS));
 
 const HOW_EXAMPLE = {
   skill: "Explain It Like I'm Five",
-  prompt: 'merge conflict',
+  prompt: 'why do we have a surplus?',
 };
+const HOW_STORY_EXAMPLE_SLUG = 'budget-surplus';
 
 const HERO_COPY = {
   badge: 'Skill for AI agents',
   summary: 'An AI skill for answers you can follow.',
-  detail: 'Install it in any AI agent. Ask one question. Get five versions of the answer, from simple to precise.',
+  detail: 'Install it in any AI agent. Ask one question. Get five versions of the answer, from simple to precise. Less waffle. More point.',
   compatLabel: 'Use it with',
 };
 
@@ -223,25 +250,25 @@ const HOW_BENEFITS = [
   {
     title: 'You get the version your brain wanted first.',
     copy:
-      'The first pass gives you the shape of the answer quickly, before the denser language turns up.',
+      'The first pass gives you the shape of the answer quickly, before the denser language books a meeting room.',
     art: '/assets/how/how-benefit-start.png',
   },
   {
     title: 'The proper detail still shows up.',
     copy:
-      'Each pass adds back the real terms, mechanism, and caveats, so the useful detail stays intact.',
+      'Each pass adds back the real terms, mechanism, and caveats, so the useful detail stays intact instead of wandering off into waffle.',
     art: '/assets/how/how-benefit-detail.png',
   },
   {
     title: 'It works on code, docs, papers, plans, and odd questions.',
     copy:
-      'Anything that is correct but annoyingly dense gets easier when the answer arrives in steps instead of one long slab.',
+      'Anything that is correct but annoyingly dense gets easier when the answer arrives in steps instead of one long slab with lanyard energy.',
     art: '/assets/how/how-benefit-anywhere.png',
   },
   {
     title: 'It saves your next prompt for something better.',
     copy:
-      'You spend less time asking for a rewrite and more time deciding what to do with the answer.',
+      'You spend less time asking for a rewrite and more time deciding what to do with the answer, instead of writing the prompt equivalent of a polite follow-up email.',
     art: '/assets/how/how-benefit-reprompt.png',
   },
 ];
@@ -260,7 +287,7 @@ const EXAMPLES = [
     slug: 'budget-surplus',
     category: 'Money',
     subject: 'Why Do We Have A Surplus?',
-    prompt: 'Explain a budget surplus in simple steps from age 5 to 16.',
+    prompt: 'Explain why a budget can end with a surplus in simple steps from age 5 to 16.',
     bands: [
       {
         age: '5',
@@ -288,7 +315,7 @@ const EXAMPLES = [
     slug: 'inflation',
     category: 'Economics',
     subject: 'Inflation',
-    prompt: 'Explain inflation in simple steps from age 5 to 16.',
+    prompt: 'Explain why prices keep rising in simple steps from age 5 to 16.',
     bands: [
       { age: '5', copy: 'Prices creep up, so your coins buy a little less than before.' },
       {
@@ -313,7 +340,7 @@ const EXAMPLES = [
     slug: 'photosynthesis',
     category: 'Science',
     subject: 'Photosynthesis',
-    prompt: 'Explain photosynthesis in simple steps from age 5 to 16.',
+    prompt: 'Explain how plants make food in simple steps from age 5 to 16.',
     bands: [
       { age: '5', copy: 'Plants make their own food from sunlight, water, and air.' },
       {
@@ -338,7 +365,7 @@ const EXAMPLES = [
     slug: 'tax-brackets',
     category: 'Economics',
     subject: 'Tax Brackets',
-    prompt: 'Explain tax brackets in simple steps from age 5 to 16.',
+    prompt: 'Explain tax brackets and why a higher bracket does not tax all of your income at that higher rate, in simple steps from age 5 to 16.',
     bands: [
       {
         age: '5',
@@ -366,7 +393,7 @@ const EXAMPLES = [
     slug: 'measles-outbreak',
     category: 'Health',
     subject: 'Measles Outbreak',
-    prompt: 'Explain a measles outbreak in simple steps from age 5 to 16.',
+    prompt: 'Explain a measles outbreak and why it spreads so quickly in simple steps from age 5 to 16.',
     bands: [
       {
         age: '5',
@@ -394,7 +421,7 @@ const EXAMPLES = [
     slug: 'tariffs-prices',
     category: 'Economics',
     subject: 'Tariffs & Prices',
-    prompt: 'Explain tariffs and prices in simple steps from age 5 to 16.',
+    prompt: 'Explain tariffs and why they can raise prices in simple steps from age 5 to 16.',
     bands: [
       {
         age: '5',
@@ -422,7 +449,7 @@ const EXAMPLES = [
     slug: 'merge-conflicts',
     category: 'Code',
     subject: 'Merge Conflicts',
-    prompt: 'Explain merge conflicts in simple steps from age 5 to 16.',
+    prompt: 'Explain merge conflicts and why Git stops to ask for help in simple steps from age 5 to 16.',
     bands: [
       {
         age: '5',
@@ -450,7 +477,7 @@ const EXAMPLES = [
     slug: 'api-rate-limits',
     category: 'Software',
     subject: 'API Rate Limits',
-    prompt: 'Explain API rate limits in simple steps from age 5 to 16.',
+    prompt: 'Explain API rate limits and why a service tells you to slow down in simple steps from age 5 to 16.',
     bands: [
       {
         age: '5',
@@ -478,7 +505,7 @@ const EXAMPLES = [
     slug: 'peer-review',
     category: 'Research',
     subject: 'Peer Review',
-    prompt: 'Explain peer review in simple steps from age 5 to 16.',
+    prompt: 'Explain peer review and who checks research before publication in simple steps from age 5 to 16.',
     bands: [
       {
         age: '5',
@@ -506,7 +533,7 @@ const EXAMPLES = [
     slug: 'interest-rates',
     category: 'Economics',
     subject: 'Interest Rates',
-    prompt: 'Explain interest rates in simple steps from age 5 to 16.',
+    prompt: 'Explain interest rates and why they go up or down in simple steps from age 5 to 16.',
     bands: [
       {
         age: '5',
@@ -534,7 +561,7 @@ const EXAMPLES = [
     slug: 'technical-debt',
     category: 'Code',
     subject: 'Technical Debt',
-    prompt: 'Explain technical debt in simple steps from age 5 to 16.',
+    prompt: 'Explain technical debt and why rushed code gets harder to change later in simple steps from age 5 to 16.',
     bands: [
       {
         age: '5',
@@ -814,7 +841,7 @@ function getFiniteNumber(value, fallback) {
 
 function sanitizeHeroMagnetControls(controls = {}) {
   return {
-    size: Math.round(clamp(getFiniteNumber(controls.size, HERO_MAGNET_DEFAULTS.size), 72, 300)),
+    size: Math.round(clamp(getFiniteNumber(controls.size, HERO_MAGNET_DEFAULTS.size), HERO_SIZE_MIN, HERO_SIZE_MAX)),
     floatRangeX: clamp(getFiniteNumber(controls.floatRangeX, HERO_MAGNET_DEFAULTS.floatRangeX), 0, 2.4),
     floatRangeY: clamp(getFiniteNumber(controls.floatRangeY, HERO_MAGNET_DEFAULTS.floatRangeY), 0, 2.4),
     floatSpeed: clamp(getFiniteNumber(controls.floatSpeed, HERO_MAGNET_DEFAULTS.floatSpeed), 0, 2.4),
@@ -852,13 +879,25 @@ function sanitizeHeroMagnetControls(controls = {}) {
   };
 }
 
-function migrateLegacyHeroMagnetControls(controls = {}) {
+function migrateLegacyHeroMagnetControls(controls = {}, sourceKey = '') {
+  const legacyDefaultSize =
+    sourceKey === 'eli5-hero-magnet-controls-v10'
+      ? 226
+      : sourceKey === 'eli5-hero-magnet-controls-v11'
+        ? 249
+        : HERO_LAYOUT_REFERENCE_SIZE;
+  const legacySize = getFiniteNumber(controls.size, legacyDefaultSize);
+  const sizeMultiplier =
+    sourceKey === 'eli5-hero-magnet-controls-v10' ||
+    sourceKey === 'eli5-hero-magnet-controls-v11'
+      ? 1.2
+      : sourceKey === 'eli5-hero-magnet-controls-v13'
+        ? 1.06
+        : 1;
+
   return sanitizeHeroMagnetControls({
     ...controls,
-    size: Math.round(
-      getFiniteNumber(controls.size, HERO_MAGNET_DEFAULTS.size / HERO_SIZE_UPSCALE) *
-        HERO_SIZE_UPSCALE,
-    ),
+    size: Math.round(legacySize * sizeMultiplier),
   });
 }
 
@@ -874,31 +913,20 @@ function loadHeroMagnetControls() {
       return sanitizeHeroMagnetControls(JSON.parse(raw));
     }
 
-    const legacyRaw = window.localStorage.getItem(HERO_LEGACY_CONTROL_STORAGE_KEY);
+    for (const storageKey of HERO_LEGACY_CONTROL_STORAGE_KEYS) {
+      const legacyRaw = window.localStorage.getItem(storageKey);
 
-    if (!legacyRaw) {
-      return HERO_MAGNET_DEFAULTS;
+      if (!legacyRaw) {
+        continue;
+      }
+
+      return migrateLegacyHeroMagnetControls(JSON.parse(legacyRaw), storageKey);
     }
 
-    return migrateLegacyHeroMagnetControls(JSON.parse(legacyRaw));
+    return HERO_MAGNET_DEFAULTS;
   } catch {
     return HERO_MAGNET_DEFAULTS;
   }
-}
-
-function getHeroMotionBuffer(heroMagnetControls, baseHeight) {
-  const heroControls = sanitizeHeroMagnetControls(heroMagnetControls);
-
-  return Math.max(
-    HERO_SLOT_FLOAT_BUFFER,
-    Math.round(
-      Math.max(baseHeight, 0) *
-        (0.14 +
-          heroControls.floatRangeY * 0.018 +
-          heroControls.hoverSink * 0.012 +
-          heroControls.bounceLift * 0.035),
-    ),
-  );
 }
 
 function sanitizeHeroLayout(layout = {}) {
@@ -945,8 +973,67 @@ function sanitizeHeroLayout(layout = {}) {
   );
 }
 
+function scaleHeroLayoutVertical(layout = {}, factor = 1) {
+  const sanitizedLayout = sanitizeHeroLayout(layout);
+  const entries = Object.entries(sanitizedLayout);
+
+  if (entries.length === 0) {
+    return sanitizedLayout;
+  }
+
+  const verticalValues = entries.map(([, value]) => (
+    Number.isFinite(value.cy) ? value.cy : value.y
+  ));
+  const minY = Math.min(...verticalValues);
+  const maxY = Math.max(...verticalValues);
+  const centerY = (minY + maxY) / 2;
+
+  return Object.fromEntries(entries.map(([id, value]) => {
+    if (Number.isFinite(value.cy)) {
+      return [
+        id,
+        {
+          ...value,
+          cy: clamp(centerY + (value.cy - centerY) * factor, 0, 1),
+        },
+      ];
+    }
+
+    return [
+      id,
+      {
+        ...value,
+        y: clamp(centerY + (value.y - centerY) * factor, 0, 1),
+      },
+    ];
+  }));
+}
+
+function compactHeroLayoutVertical(layout = {}, factor = HERO_LAYOUT_VERTICAL_COMPRESSION) {
+  return scaleHeroLayoutVertical(layout, factor);
+}
+
+function expandHeroLayoutVertical(layout = {}, factor = HERO_LAYOUT_MIGRATION_EXPANSION) {
+  return scaleHeroLayoutVertical(layout, factor);
+}
+
+function getReferenceHeroLayout() {
+  return compactHeroLayoutVertical(HERO_REFERENCE_LAYOUT);
+}
+
+function getHeroLayoutRenderExpansion(heroMagnetControls = HERO_MAGNET_DEFAULTS) {
+  const heroControls = sanitizeHeroMagnetControls(heroMagnetControls);
+  const sizeRatio = heroControls.size / HERO_LAYOUT_REFERENCE_SIZE;
+
+  if (sizeRatio <= 1) {
+    return 1;
+  }
+
+  return 1 + (sizeRatio - 1) * 0.9;
+}
+
 function loadHeroLayout() {
-  const fallbackLayout = sanitizeHeroLayout(HERO_REFERENCE_LAYOUT);
+  const fallbackLayout = getReferenceHeroLayout();
 
   if (typeof window === 'undefined') {
     return fallbackLayout;
@@ -955,12 +1042,23 @@ function loadHeroLayout() {
   try {
     const raw = window.localStorage.getItem(HERO_LAYOUT_STORAGE_KEY);
 
-    if (!raw) {
-      return fallbackLayout;
+    if (raw) {
+      const parsed = sanitizeHeroLayout(JSON.parse(raw));
+      return Object.keys(parsed).length > 0 ? parsed : fallbackLayout;
     }
 
-    const parsed = sanitizeHeroLayout(JSON.parse(raw));
-    return Object.keys(parsed).length > 0 ? parsed : fallbackLayout;
+    for (const storageKey of HERO_LAYOUT_STORAGE_DEPRECATED_KEYS) {
+      const legacyRaw = window.localStorage.getItem(storageKey);
+
+      if (!legacyRaw) {
+        continue;
+      }
+
+      const migratedLayout = expandHeroLayoutVertical(JSON.parse(legacyRaw));
+      return Object.keys(migratedLayout).length > 0 ? migratedLayout : fallbackLayout;
+    }
+
+    return fallbackLayout;
   } catch {
     return fallbackLayout;
   }
@@ -1120,11 +1218,11 @@ function getTypedPromptText(prompt) {
 }
 
 function getExamplePromptText(example) {
-  if (!example?.subject) {
+  if (!example?.prompt && !example?.subject) {
     return '';
   }
 
-  return example.subject.toLowerCase();
+  return example.prompt ?? example.subject;
 }
 
 function getMotionBehavior() {
@@ -1198,16 +1296,16 @@ function getStickyBoundaryOffset(position, window, startValue, endValue, startSl
 }
 
 function getStickyTravelOffset({
-  enterDistance,
-  releaseDistance,
+  rawProgress,
+  scrollSpan,
   band,
   enterStrength,
   releaseStrength,
 }) {
-  const entryWindow = band * enterStrength * 0.5;
-  const releaseWindow = band * releaseStrength * 0.5;
-  const entryPosition = -enterDistance;
-  const releasePosition = -releaseDistance;
+  const entryWindow = band * enterStrength;
+  const releaseWindow = band * releaseStrength;
+  const entryPosition = rawProgress * scrollSpan;
+  const releasePosition = (rawProgress - 1) * scrollSpan;
   const entryNaturalValue = entryPosition < 0 ? -entryPosition : 0;
   const releaseNaturalValue = releasePosition > 0 ? -releasePosition : 0;
   const entryOffset = getStickyBoundaryOffset(
@@ -1232,13 +1330,68 @@ function getStickyTravelOffset({
   return entryOffset + releaseOffset;
 }
 
+const STICKY_EASE_SETTLE_MS = 180;
+
 function useStickyEase({
   shellRef,
   contentRef,
   trackRef,
   motionControls = HERO_MAGNET_DEFAULTS,
 }) {
-  const lastOffsetRef = useRef(Number.NaN);
+  const renderedOffsetRef = useRef(Number.NaN);
+  const targetOffsetRef = useRef(0);
+  const animationFrameRef = useRef(0);
+  const lastFrameTimeRef = useRef(0);
+
+  const writeStickyEaseOffset = useEffectEvent((offset) => {
+    const contentNode = contentRef.current;
+
+    if (!contentNode) {
+      return;
+    }
+
+    if (Math.abs(offset - renderedOffsetRef.current) < 0.02) {
+      return;
+    }
+
+    contentNode.style.setProperty('--eli5-sticky-ease-y', `${offset.toFixed(2)}px`);
+    renderedOffsetRef.current = offset;
+  });
+
+  const animateStickyEase = useEffectEvent((timestamp) => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const currentOffset = Number.isFinite(renderedOffsetRef.current)
+      ? renderedOffsetRef.current
+      : targetOffsetRef.current;
+    const elapsed = lastFrameTimeRef.current > 0
+      ? Math.min(timestamp - lastFrameTimeRef.current, 48)
+      : 16;
+    const blend = 1 - Math.exp(-elapsed / STICKY_EASE_SETTLE_MS);
+    const nextOffset = currentOffset + (targetOffsetRef.current - currentOffset) * blend;
+
+    lastFrameTimeRef.current = timestamp;
+
+    if (Math.abs(targetOffsetRef.current - nextOffset) < 0.05) {
+      writeStickyEaseOffset(targetOffsetRef.current);
+      animationFrameRef.current = 0;
+      lastFrameTimeRef.current = 0;
+      return;
+    }
+
+    writeStickyEaseOffset(nextOffset);
+    animationFrameRef.current = window.requestAnimationFrame(animateStickyEase);
+  });
+
+  const ensureStickyEaseAnimation = useEffectEvent(() => {
+    if (typeof window === 'undefined' || animationFrameRef.current) {
+      return;
+    }
+
+    animationFrameRef.current = window.requestAnimationFrame(animateStickyEase);
+  });
 
   const syncStickyEase = useEffectEvent(() => {
     if (typeof window === 'undefined') {
@@ -1276,14 +1429,16 @@ function useStickyEase({
 
       if (shellStyle.position === 'sticky' && Number.isFinite(stickyTop)) {
         const trackRect = trackNode.getBoundingClientRect();
-        const shellRect = shellNode.getBoundingClientRect();
         const stickyHeight = shellNode.offsetHeight;
-        const enterDistance = shellRect.top - stickyTop;
-        const releaseDistance = trackRect.bottom - stickyHeight - stickyTop;
+        const { rawProgress, scrollSpan } = getStickyTrackProgress(
+          trackRect,
+          stickyHeight,
+          stickyTop,
+        );
 
         nextOffset = getStickyTravelOffset({
-          enterDistance,
-          releaseDistance,
+          rawProgress,
+          scrollSpan,
           band: stickyBand,
           enterStrength,
           releaseStrength,
@@ -1291,12 +1446,24 @@ function useStickyEase({
       }
     }
 
-    if (Math.abs(nextOffset - lastOffsetRef.current) < 0.1) {
+    targetOffsetRef.current = nextOffset;
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      writeStickyEaseOffset(nextOffset);
       return;
     }
 
-    contentNode.style.setProperty('--eli5-sticky-ease-y', `${nextOffset.toFixed(2)}px`);
-    lastOffsetRef.current = nextOffset;
+    if (!Number.isFinite(renderedOffsetRef.current)) {
+      writeStickyEaseOffset(nextOffset);
+      return;
+    }
+
+    if (Math.abs(nextOffset - renderedOffsetRef.current) < 0.05) {
+      writeStickyEaseOffset(nextOffset);
+      return;
+    }
+
+    ensureStickyEaseAnimation();
   });
 
   useEffect(() => {
@@ -1305,7 +1472,7 @@ function useStickyEase({
     }
 
     let frameRequested = false;
-    let frameId = 0;
+    let measureFrameId = 0;
 
     const requestSync = () => {
       if (frameRequested) {
@@ -1313,7 +1480,7 @@ function useStickyEase({
       }
 
       frameRequested = true;
-      frameId = window.requestAnimationFrame(() => {
+      measureFrameId = window.requestAnimationFrame(() => {
         frameRequested = false;
         syncStickyEase();
       });
@@ -1364,7 +1531,10 @@ function useStickyEase({
       }
 
       resizeObserver?.disconnect();
-      window.cancelAnimationFrame(frameId);
+      window.cancelAnimationFrame(measureFrameId);
+      window.cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = 0;
+      lastFrameTimeRef.current = 0;
     };
   }, [contentRef, shellRef, trackRef, syncStickyEase]);
 
@@ -1378,31 +1548,16 @@ function useStickyEase({
   ]);
 }
 
-function getExampleTabVisuals(index) {
-  switch (index) {
-    case EXAMPLE_TAB_MIN_POSITION:
-      return { offsetY: -EXAMPLE_TAB_STEP, scale: 0, opacity: 0 };
-    case 0:
-      return { offsetY: 0, scale: 1, opacity: 1 };
-    case 1:
-      return { offsetY: EXAMPLE_TAB_STEP, scale: 0.98, opacity: 1 };
-    case 2:
-      return { offsetY: EXAMPLE_TAB_STEP * 2, scale: 0.96, opacity: 1 };
-    case 3:
-      return { offsetY: EXAMPLE_TAB_STEP * 3, scale: 0.94, opacity: 1 };
-    case 4:
-      return { offsetY: EXAMPLE_TAB_STEP * 4, scale: 0.92, opacity: 1 };
-    case 5:
-      return { offsetY: EXAMPLE_TAB_STEP * 5, scale: 0.9, opacity: 1 };
-    case EXAMPLE_TAB_MAX_POSITION:
-      return { offsetY: EXAMPLE_TAB_STEP * EXAMPLE_TAB_MAX_POSITION, scale: 0, opacity: 0 };
-    default:
-      return {
-        offsetY: EXAMPLE_TAB_STEP * EXAMPLE_TAB_MAX_POSITION,
-        scale: 0,
-        opacity: 0,
-      };
-  }
+function getExampleTabVisuals(slotIndex) {
+  const scales = [1, 0.97, 0.94, 0.91, 0.88];
+  const scale = slotIndex >= 0 && slotIndex < scales.length
+    ? scales[slotIndex]
+    : 0;
+
+  return {
+    offsetY: EXAMPLE_TAB_STEP * slotIndex,
+    scale,
+  };
 }
 
 function wrapIndex(index, length) {
@@ -1411,6 +1566,24 @@ function wrapIndex(index, length) {
   }
 
   return ((index % length) + length) % length;
+}
+
+function getExampleTabTrackItems(examples, startIndex) {
+  if (examples.length === 0) {
+    return [];
+  }
+
+  return Array.from({ length: EXAMPLE_TAB_VISIBLE_COUNT + 2 }, (_, offset) => {
+    const slotIndex = offset - 1;
+    const exampleIndex = wrapIndex(startIndex + slotIndex, examples.length);
+    const example = examples[exampleIndex];
+
+    return {
+      example,
+      exampleIndex,
+      slotIndex,
+    };
+  }).filter(({ example }) => Boolean(example));
 }
 
 function ExampleChevronIcon({ className = '' }) {
@@ -1497,59 +1670,28 @@ function getAuthorMagnetBounds(magnets = []) {
   };
 }
 
-function buildHeroTitleSlot(boardRect, heroMagnetControls = HERO_MAGNET_DEFAULTS) {
-  const layout = BOARD_LAYOUTS.hero;
-  const slotBoost = 1.12;
+function getHeroReferenceAuthorBounds() {
+  return getAuthorMagnetBounds(
+    buildHeroTitleAuthoredMagnets(
+      { ...HERO_MAGNET_DEFAULTS, size: HERO_LAYOUT_REFERENCE_SIZE },
+    ),
+  );
+}
 
-  if (!boardRect || !layout) {
+function buildHeroTitleSlot(boardRect) {
+  if (!boardRect) {
     return { width: 0, height: 0 };
   }
-
-  const bounds = getAuthorMagnetBounds(buildHeroTitleAuthoredMagnets(heroMagnetControls));
-  const motionBuffer = getHeroMotionBuffer(
-    heroMagnetControls,
-    sanitizeHeroMagnetControls(heroMagnetControls).size,
-  );
-  const innerWidth = boardRect.width - layout.padding.left - layout.padding.right;
-  const innerHeight = boardRect.height - layout.padding.top - layout.padding.bottom;
-  const scale = Math.min(
-    Math.max(innerWidth / layout.authorWidth, 0),
-    Math.max(innerHeight / layout.authorHeight, 0),
-  );
 
   return {
     width: Math.round(Math.max(boardRect.width, 0)),
     height: Math.round(
-      Math.min(
-        innerHeight,
-        (bounds.height + HERO_TITLE_SLOT_PADDING_Y * 2 + motionBuffer * 2) * scale * slotBoost,
+      Math.max(
+        HERO_SLOT_MIN_HEIGHT,
+        (boardRect.width / HERO_SLOT_ASPECT_RATIO) * HERO_SLOT_HEIGHT_SCALE,
       ),
     ),
   };
-}
-
-function getHeroRuntimeBounds(magnets = []) {
-  const heroMagnets = magnets.filter((magnet) => magnet.boardId === 'hero');
-
-  if (heroMagnets.length === 0) {
-    return null;
-  }
-
-  return heroMagnets.reduce((acc, magnet) => {
-    const { width, height } = getMagnetDimensions(magnet);
-
-    return {
-      left: Math.min(acc.left, magnet.x),
-      top: Math.min(acc.top, magnet.y),
-      right: Math.max(acc.right, magnet.x + width),
-      bottom: Math.max(acc.bottom, magnet.y + height),
-    };
-  }, {
-    left: Number.POSITIVE_INFINITY,
-    top: Number.POSITIVE_INFINITY,
-    right: Number.NEGATIVE_INFINITY,
-    bottom: Number.NEGATIVE_INFINITY,
-  });
 }
 
 function getHeroMagnetVisualPad(magnet) {
@@ -1606,50 +1748,10 @@ function getHeroVisualBounds(magnets = []) {
   });
 }
 
-function buildHeroTitleSlotFromRuntimeMagnets(
-  magnets,
-  heroStageRect,
-  heroMagnetControls = HERO_MAGNET_DEFAULTS,
-) {
-  const bounds = getHeroVisualBounds(magnets);
-
-  if (!bounds || !heroStageRect) {
-    return { width: 0, height: 0 };
-  }
-
-  const averageHeight =
-    magnets
-      .filter((magnet) => magnet.boardId === 'hero')
-      .reduce((sum, magnet) => sum + getMagnetDimensions(magnet).height, 0) /
-    Math.max(magnets.filter((magnet) => magnet.boardId === 'hero').length, 1);
-  const comfortBuffer = Math.max(
-    getHeroMotionBuffer(heroMagnetControls, averageHeight),
-    Math.round(averageHeight * 0.18),
-  );
-
-  return {
-    width: Math.round(Math.max(heroStageRect.width, 0)),
-    height: Math.round(
-      clamp(
-        bounds.bottom - bounds.top + comfortBuffer * 2,
-        HERO_SLOT_MIN_HEIGHT,
-        heroStageRect.height,
-      ),
-    ),
-  };
-}
-
-function buildFallbackHeroBoardRect(heroMagnetControls = HERO_MAGNET_DEFAULTS) {
-  return buildCenteredHeroBoardRect(
-    buildFallbackBoardRects().hero,
-    heroMagnetControls,
-  );
-}
-
 function buildCenteredHeroBoardRect(
   heroStageRect,
   heroMagnetControls = HERO_MAGNET_DEFAULTS,
-  heroTitleSlot = buildHeroTitleSlot(heroStageRect, heroMagnetControls),
+  heroTitleSlot = buildHeroTitleSlot(heroStageRect),
 ) {
   if (!heroStageRect) {
     return { left: 0, top: 0, width: 0, height: 0 };
@@ -1663,31 +1765,127 @@ function buildCenteredHeroBoardRect(
   };
 }
 
-function buildAuthoredMagnets(heroMagnetControls) {
-  const heroControls = sanitizeHeroMagnetControls(heroMagnetControls);
-  const sharedMagnetProps = {
-    vibrance: heroControls.vibrance,
-    faceContrast: heroControls.faceContrast,
-    innerLightOpacity: heroControls.innerLightOpacity,
-    innerLightOffsetY: heroControls.innerLightOffsetY,
-    innerLightBlur: heroControls.innerLightBlur,
-    innerShadeOpacity: heroControls.innerShadeOpacity,
-    innerShadeOffsetX: heroControls.innerShadeOffsetX,
-    innerShadeOffsetY: heroControls.innerShadeOffsetY,
-    innerShadeBlur: heroControls.innerShadeBlur,
-    depthContrast: heroControls.depthContrast,
-    depthOffsetX: heroControls.depthOffsetX,
-    depthOffsetY: heroControls.depthOffsetY,
-    depthSpread: heroControls.depthSpread,
-    groundShadow1Opacity: heroControls.groundShadow1Opacity,
-    groundShadow1OffsetX: heroControls.groundShadow1OffsetX,
-    groundShadow1OffsetY: heroControls.groundShadow1OffsetY,
-    groundShadow1Blur: heroControls.groundShadow1Blur,
-    groundShadow2Opacity: heroControls.groundShadow2Opacity,
-    groundShadow2OffsetX: heroControls.groundShadow2OffsetX,
-    groundShadow2OffsetY: heroControls.groundShadow2OffsetY,
-    groundShadow2Blur: heroControls.groundShadow2Blur,
+function buildHeroLetterLevelProps(levelControls, vibrance = HERO_MAGNET_DEFAULTS.vibrance) {
+  const level3 = getLevelControlFactors(levelControls, 'level3');
+
+  return {
+    vibrance,
+    faceContrast: clamp(HERO_MAGNET_DEFAULTS.faceContrast * (1 + (level3.fillContrast - 1) * 0.42), 0, 2),
+    innerLightOpacity: clamp(
+      HERO_MAGNET_DEFAULTS.innerLightOpacity *
+        (1 + (level3.lightStrength - 1) * 0.36 + (level3.amount - 1) * 0.08),
+      0,
+      1,
+    ),
+    innerLightOffsetY: clamp(
+      HERO_MAGNET_DEFAULTS.innerLightOffsetY * (1 + (level3.amount - 1) * 0.24),
+      0,
+      12,
+    ),
+    innerLightBlur: clamp(
+      HERO_MAGNET_DEFAULTS.innerLightBlur *
+        (1 + (level3.lightStrength - 1) * 0.22 + (level3.shadowSoftness - 1) * 0.08),
+      0,
+      16,
+    ),
+    innerShadeOpacity: clamp(
+      HERO_MAGNET_DEFAULTS.innerShadeOpacity * (1 + (level3.shadowStrength - 1) * 0.35),
+      0,
+      1,
+    ),
+    innerShadeOffsetX: clamp(
+      HERO_MAGNET_DEFAULTS.innerShadeOffsetX * (1 + (level3.amount - 1) * 0.18),
+      0,
+      12,
+    ),
+    innerShadeOffsetY: clamp(
+      HERO_MAGNET_DEFAULTS.innerShadeOffsetY * (1 + (level3.amount - 1) * 0.18),
+      0,
+      12,
+    ),
+    innerShadeBlur: clamp(
+      HERO_MAGNET_DEFAULTS.innerShadeBlur * (1 + (level3.shadowSoftness - 1) * 0.18),
+      0,
+      16,
+    ),
+    depthContrast: clamp(
+      HERO_MAGNET_DEFAULTS.depthContrast * (1 + (level3.fillContrast - 1) * 0.26),
+      0,
+      2,
+    ),
+    depthOffsetX: clamp(
+      HERO_MAGNET_DEFAULTS.depthOffsetX * (1 + (level3.amount - 1) * 0.35),
+      0,
+      12,
+    ),
+    depthOffsetY: clamp(
+      HERO_MAGNET_DEFAULTS.depthOffsetY *
+        (1 + (level3.amount - 1) * 0.42 + (level3.shadowStrength - 1) * 0.16),
+      0,
+      20,
+    ),
+    depthSpread: Math.round(
+      clamp(
+        HERO_MAGNET_DEFAULTS.depthSpread +
+          (level3.amount - 1) * 1.8 +
+          (level3.shadowSoftness - 1) * 0.8,
+        0,
+        6,
+      ),
+    ),
+    groundShadow1Opacity: clamp(
+      HERO_MAGNET_DEFAULTS.groundShadow1Opacity *
+        (1 + (level3.shadowStrength - 1) * 0.35 + (level3.amount - 1) * 0.12),
+      0,
+      1,
+    ),
+    groundShadow1OffsetX: clamp(
+      HERO_MAGNET_DEFAULTS.groundShadow1OffsetX * (1 + (level3.amount - 1) * 0.22),
+      0,
+      24,
+    ),
+    groundShadow1OffsetY: clamp(
+      HERO_MAGNET_DEFAULTS.groundShadow1OffsetY * (1 + (level3.amount - 1) * 0.3),
+      0,
+      40,
+    ),
+    groundShadow1Blur: clamp(
+      HERO_MAGNET_DEFAULTS.groundShadow1Blur *
+        (1 + (level3.shadowSoftness - 1) * 0.36 + (level3.amount - 1) * 0.16),
+      0,
+      40,
+    ),
+    groundShadow2Opacity: clamp(
+      HERO_MAGNET_DEFAULTS.groundShadow2Opacity *
+        (1 + (level3.shadowStrength - 1) * 0.42 + (level3.amount - 1) * 0.1),
+      0,
+      1,
+    ),
+    groundShadow2OffsetX: clamp(
+      HERO_MAGNET_DEFAULTS.groundShadow2OffsetX * (1 + (level3.amount - 1) * 0.2),
+      0,
+      36,
+    ),
+    groundShadow2OffsetY: clamp(
+      HERO_MAGNET_DEFAULTS.groundShadow2OffsetY * (1 + (level3.amount - 1) * 0.26),
+      0,
+      56,
+    ),
+    groundShadow2Blur: clamp(
+      HERO_MAGNET_DEFAULTS.groundShadow2Blur *
+        (1 + (level3.shadowSoftness - 1) * 0.42 + (level3.amount - 1) * 0.14),
+      0,
+      72,
+    ),
   };
+}
+
+function buildAuthoredMagnets(
+  heroMagnetControls,
+  levelControls = LEVEL_CONTROL_DEFAULTS,
+) {
+  const heroControls = sanitizeHeroMagnetControls(heroMagnetControls);
+  const sharedMagnetProps = buildHeroLetterLevelProps(levelControls, heroControls.vibrance);
 
   return [
     ...buildHeroTitleAuthoredMagnets(heroMagnetControls, sharedMagnetProps),
@@ -1705,11 +1903,10 @@ function buildHeroLayoutContentRect(heroRect, heroAuthorBounds) {
     };
   }
 
+  const referenceBounds = getHeroReferenceAuthorBounds();
   const slotScaleX =
-    heroRect.width / Math.max(heroAuthorBounds.width + HERO_TITLE_SLOT_PADDING_X * 2, 1);
-  const slotScaleY =
-    heroRect.height / Math.max(heroAuthorBounds.height + HERO_TITLE_SLOT_PADDING_Y * 2, 1);
-  const scale = Math.min(slotScaleX, slotScaleY);
+    heroRect.width / Math.max(referenceBounds.width + HERO_TITLE_SLOT_PADDING_X * 2, 1);
+  const scale = slotScaleX;
 
   return {
     left: heroRect.left + HERO_TITLE_SLOT_PADDING_X * scale,
@@ -1727,10 +1924,31 @@ function getMagnetDimensions(magnet) {
   return { width, height };
 }
 
-function buildRuntimeMagnets(boardRects, heroMagnetControls = HERO_MAGNET_DEFAULTS) {
+function getHeroLayoutInsetBounds(heroRect, width, height) {
+  const insetX = Math.min(
+    Math.max(14, width * 0.08),
+    Math.max((heroRect.width - width) / 2, 0),
+  );
+  const insetY = Math.min(
+    Math.max(18, height * 0.12),
+    Math.max((heroRect.height - height) / 2, 0),
+  );
+
+  return {
+    left: heroRect.left + insetX,
+    top: heroRect.top + insetY,
+    right: heroRect.left + heroRect.width - insetX,
+    bottom: heroRect.top + heroRect.height - insetY,
+  };
+}
+
+function buildRuntimeMagnets(
+  boardRects,
+  heroMagnetControls = HERO_MAGNET_DEFAULTS,
+  levelControls = LEVEL_CONTROL_DEFAULTS,
+) {
   const shouldCompactPlayfield = typeof window !== 'undefined' && window.innerWidth < 860;
-  const heroControls = sanitizeHeroMagnetControls(heroMagnetControls);
-  const authoredMagnets = buildAuthoredMagnets(heroMagnetControls);
+  const authoredMagnets = buildAuthoredMagnets(heroMagnetControls, levelControls);
   const heroAuthorBounds = getAuthorMagnetBounds(
     authoredMagnets.filter((magnet) => magnet.boardId === 'hero'),
   );
@@ -1817,19 +2035,25 @@ function applyPersistedHeroLayout(
     let nextY;
 
     if (Number.isFinite(override.cx) && Number.isFinite(override.cy)) {
-      nextX = heroRect.left + override.cx * heroRect.width - width / 2;
-      nextY = heroRect.top + override.cy * heroRect.height - height / 2;
+      const insetBounds = getHeroLayoutInsetBounds(heroRect, width, height);
+      const insetWidth = Math.max(insetBounds.right - insetBounds.left, 1);
+      const insetHeight = Math.max(insetBounds.bottom - insetBounds.top, 1);
+
+      nextX = insetBounds.left + override.cx * insetWidth - width / 2;
+      nextY = insetBounds.top + override.cy * insetHeight - height / 2;
     } else {
-      const usableWidth = Math.max(heroRect.width - width, 0);
-      const usableHeight = Math.max(heroRect.height - height, 0);
-      nextX = heroRect.left + override.x * usableWidth;
-      nextY = heroRect.top + override.y * usableHeight;
+      const insetBounds = getHeroLayoutInsetBounds(heroRect, width, height);
+      const usableWidth = Math.max(insetBounds.right - insetBounds.left - width, 0);
+      const usableHeight = Math.max(insetBounds.bottom - insetBounds.top - height, 0);
+      nextX = insetBounds.left + override.x * usableWidth;
+      nextY = insetBounds.top + override.y * usableHeight;
     }
 
+    const insetBounds = getHeroLayoutInsetBounds(heroRect, width, height);
     return {
       ...magnet,
-      x: clamp(nextX, heroRect.left, heroRect.left + heroRect.width - width),
-      y: clamp(nextY, heroRect.top, heroRect.top + heroRect.height - height),
+      x: clamp(nextX, insetBounds.left, insetBounds.right - width),
+      y: clamp(nextY, insetBounds.top, insetBounds.bottom - height),
       rotation: override.rotation,
       userPlaced: true,
     };
@@ -1970,11 +2194,14 @@ function SectionBreak({ color = SECTION_BREAK_COLORS.blue, tilt = -4, width = 10
   );
 }
 
-function ensureHeroControlWindowHost(popupWindow) {
+function ensureHeroControlWindowHost(
+  popupWindow,
+  levelControls = LEVEL_CONTROL_DEFAULTS,
+) {
   const { document: popupDocument } = popupWindow;
 
   popupDocument.title = HERO_CONTROL_WINDOW_TITLE;
-  applyThemeTokens(popupDocument.documentElement);
+  applyThemeTokens(popupDocument.documentElement, { levelControls });
 
   if (!popupDocument.querySelector('meta[name="viewport"]')) {
     const viewportMeta = popupDocument.createElement('meta');
@@ -2015,7 +2242,7 @@ function ensureHeroControlWindowHost(popupWindow) {
         margin: 0;
         padding: 16px;
         color: var(--ink);
-        background: var(--control-window-gradient);
+        background: var(--gradient-control-window);
       }
 
       body.eli5-control-window #eli5-control-host {
@@ -2049,9 +2276,11 @@ function ControlPanelSurface({
   caption,
   controls,
   sections,
+  isAdvancedLevelsVisible = false,
   isLayoutEditing = false,
   onChange,
   onReset,
+  onToggleAdvancedLevels,
   onStartLayoutEdit,
   onSaveLayoutEdit,
   onCancelLayoutEdit,
@@ -2068,6 +2297,16 @@ function ControlPanelSurface({
         </div>
 
         <div className="eli5-control-panel__actions">
+          {onToggleAdvancedLevels ? (
+            <button
+              type="button"
+              className="eli5-control-panel__reset"
+              onClick={onToggleAdvancedLevels}
+            >
+              {isAdvancedLevelsVisible ? 'Hide Advanced' : 'Advanced Levels'}
+            </button>
+          ) : null}
+
           <button
             type="button"
             className="eli5-control-panel__reset"
@@ -2092,7 +2331,7 @@ function ControlPanelSurface({
         <div className="eli5-control-panel__layout-tools">
           <p className="eli5-control-panel__layout-caption">
             {isLayoutEditing
-              ? 'Drag the hero letters on the page, then save this composition as the new resting layout.'
+              ? 'Drag the hero letters on the page, then save this composition as the new resting layout. Press / to hide or show this panel while you work.'
               : 'Use Edit Layout to drag the hero letters into place, then save that composition as the new default.'}
           </p>
 
@@ -2166,6 +2405,20 @@ function ControlPanelSurface({
   );
 }
 
+function isTypingTarget(target) {
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
+
+  const tagName = target.tagName;
+  return (
+    target.isContentEditable ||
+    tagName === 'INPUT' ||
+    tagName === 'TEXTAREA' ||
+    tagName === 'SELECT'
+  );
+}
+
 function TypedPromptField({
   label,
   skill,
@@ -2195,15 +2448,150 @@ function TypedPromptField({
   );
 }
 
+function StoryExampleCard({ example }) {
+  if (!example) {
+    return null;
+  }
+
+  return (
+    <article className="eli5-story-example">
+      <div className="eli5-story-example__header">
+        <p className="eli5-story-example__eyebrow">Surplus example</p>
+        <h3>{example.subject}</h3>
+        <p className="eli5-story-example__caption">
+          One plain question. Five increasingly complete answers. Finance eventually stops sounding like a prank.
+        </p>
+      </div>
+
+      <TypedPromptField
+        label="Example prompt"
+        skill="Explain It Like I'm Five"
+        prompt={getExamplePromptText(example)}
+        className="eli5-story-example__prompt"
+        ariaLabel={`Explain It Like I'm Five ${getExamplePromptText(example)}`}
+      />
+
+      <div className="eli5-story-example__rows">
+        {example.bands.map((band) => (
+          <div key={band.age} className="eli5-story-example__row">
+            <p className="eli5-story-example__age">{band.age}</p>
+            <p className="eli5-story-example__copy">{band.copy}</p>
+          </div>
+        ))}
+      </div>
+    </article>
+  );
+}
+
 function ExampleTopicTabs({
   examples,
   activeSlug,
   onSelect,
 }) {
-  const tabRefs = useRef([]);
+  const focusTargetIndexRef = useRef(null);
+  const internalCommittedSlugRef = useRef(activeSlug);
+  const transitionTimeoutRef = useRef(0);
   const activeIndex = Math.max(0, examples.findIndex((example) => example.slug === activeSlug));
+  const [displayIndex, setDisplayIndex] = useState(activeIndex);
+  const [queuedSteps, setQueuedSteps] = useState(0);
+  const [animationDirection, setAnimationDirection] = useState(0);
 
-  const focusTabAtIndex = (nextIndex) => {
+  const clearPendingTransition = useEffectEvent(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    window.clearTimeout(transitionTimeoutRef.current);
+    transitionTimeoutRef.current = 0;
+  });
+
+  const focusExampleIndex = useEffectEvent((nextIndex) => {
+    const targetExample = examples[nextIndex];
+
+    if (typeof window === 'undefined' || !targetExample) {
+      return;
+    }
+
+    window.requestAnimationFrame(() => {
+      document
+        .getElementById(`example-tab-${targetExample.slug}`)
+        ?.focus();
+    });
+  });
+
+  const finishTransition = useEffectEvent((nextIndex) => {
+    clearPendingTransition();
+    setDisplayIndex(nextIndex);
+    setAnimationDirection(0);
+    const nextSlug = examples[nextIndex]?.slug ?? activeSlug;
+
+    internalCommittedSlugRef.current = nextSlug;
+    onSelect(nextSlug);
+
+    if (queuedSteps === 0 && focusTargetIndexRef.current === nextIndex) {
+      focusExampleIndex(focusTargetIndexRef.current);
+      focusTargetIndexRef.current = null;
+    }
+  });
+
+  useEffect(() => () => {
+    clearPendingTransition();
+  }, [clearPendingTransition]);
+
+  useEffect(() => {
+    if (animationDirection !== 0 || queuedSteps !== 0) {
+      return;
+    }
+
+    const currentSlug = examples[displayIndex]?.slug;
+
+    if (!activeSlug || activeSlug === currentSlug || activeSlug === internalCommittedSlugRef.current) {
+      return;
+    }
+
+    const externalIndex = examples.findIndex((example) => example.slug === activeSlug);
+
+    if (externalIndex < 0) {
+      return;
+    }
+
+    internalCommittedSlugRef.current = activeSlug;
+    setDisplayIndex(externalIndex);
+  }, [activeSlug, animationDirection, displayIndex, examples, queuedSteps]);
+
+  useEffect(() => {
+    if (examples.length === 0 || animationDirection !== 0 || queuedSteps === 0) {
+      return;
+    }
+
+    const direction = queuedSteps > 0 ? 1 : -1;
+    const nextIndex = wrapIndex(displayIndex + direction, examples.length);
+    const nextExample = examples[nextIndex];
+
+    if (!nextExample) {
+      return;
+    }
+
+    setQueuedSteps((currentSteps) => currentSteps - direction);
+    setAnimationDirection(direction);
+
+    if (typeof window === 'undefined') {
+      finishTransition(nextIndex);
+      return;
+    }
+
+    transitionTimeoutRef.current = window.setTimeout(() => {
+      finishTransition(nextIndex);
+    }, EXAMPLE_TAB_TRANSITION_MS + 40);
+  }, [
+    animationDirection,
+    displayIndex,
+    finishTransition,
+    examples,
+    queuedSteps,
+  ]);
+
+  const selectIndexImmediately = (nextIndex, shouldFocus = false) => {
     const wrappedIndex = wrapIndex(nextIndex, examples.length);
     const targetExample = examples[wrappedIndex];
 
@@ -2211,17 +2599,68 @@ function ExampleTopicTabs({
       return;
     }
 
+    clearPendingTransition();
+    focusTargetIndexRef.current = shouldFocus ? wrappedIndex : null;
+    setQueuedSteps(0);
+    setAnimationDirection(0);
+    setDisplayIndex(wrappedIndex);
+    internalCommittedSlugRef.current = targetExample.slug;
     onSelect(targetExample.slug);
 
-    if (typeof window !== 'undefined') {
-      window.requestAnimationFrame(() => {
-        tabRefs.current[wrappedIndex]?.focus();
-      });
+    if (shouldFocus) {
+      focusExampleIndex(wrappedIndex);
     }
   };
 
-  const shiftActiveBy = (direction) => {
-    focusTabAtIndex(activeIndex + direction);
+  const queueForwardSelection = (nextIndex, shouldFocus = true) => {
+    const wrappedIndex = wrapIndex(nextIndex, examples.length);
+    const targetExample = examples[wrappedIndex];
+
+    if (!targetExample) {
+      return;
+    }
+
+    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      selectIndexImmediately(wrappedIndex, shouldFocus);
+      return;
+    }
+
+    if (animationDirection !== 0 || queuedSteps !== 0) {
+      return;
+    }
+
+    const delta = wrapIndex(wrappedIndex - displayIndex, examples.length);
+
+    if (delta === 0) {
+      if (shouldFocus) {
+        focusExampleIndex(wrappedIndex);
+      }
+      return;
+    }
+
+    focusTargetIndexRef.current = shouldFocus ? wrappedIndex : null;
+    setQueuedSteps(delta);
+  };
+
+  const queueStep = (direction, shouldFocus = false) => {
+    const nextIndex = wrapIndex(displayIndex + direction, examples.length);
+    const targetExample = examples[nextIndex];
+
+    if (!targetExample) {
+      return;
+    }
+
+    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      selectIndexImmediately(nextIndex, shouldFocus);
+      return;
+    }
+
+    if (animationDirection !== 0 || queuedSteps !== 0) {
+      return;
+    }
+
+    focusTargetIndexRef.current = shouldFocus ? nextIndex : null;
+    setQueuedSteps(direction);
   };
 
   const handleTabKeyDown = (event, index) => {
@@ -2229,41 +2668,40 @@ function ExampleTopicTabs({
       case 'ArrowDown':
       case 'ArrowRight':
         event.preventDefault();
-        focusTabAtIndex(index + 1);
+        queueStep(1, true);
         break;
       case 'ArrowUp':
       case 'ArrowLeft':
         event.preventDefault();
-        focusTabAtIndex(index - 1);
+        queueStep(-1, true);
         break;
       case 'Home':
         event.preventDefault();
-        focusTabAtIndex(0);
+        selectIndexImmediately(0, true);
         break;
       case 'End':
         event.preventDefault();
-        focusTabAtIndex(examples.length - 1);
+        selectIndexImmediately(examples.length - 1, true);
         break;
       default:
         break;
     }
   };
 
-  const tabWindow = [];
-  for (let position = EXAMPLE_TAB_MIN_POSITION; position <= EXAMPLE_TAB_MAX_POSITION; position += 1) {
-    const exampleIndex = wrapIndex(activeIndex + position, examples.length);
-    const example = examples[exampleIndex];
-
-    if (!example) {
-      continue;
+  const handleSlotTransitionEnd = (event) => {
+    if (event.target !== event.currentTarget || event.propertyName !== 'transform' || animationDirection === 0) {
+      return;
     }
 
-    tabWindow.push({
-      example,
-      exampleIndex,
-      position,
-    });
-  }
+    if (event.currentTarget.dataset.slotIndex !== '0') {
+      return;
+    }
+
+    const nextIndex = wrapIndex(displayIndex + animationDirection, examples.length);
+    finishTransition(nextIndex);
+  };
+
+  const tabTrack = getExampleTabTrackItems(examples, displayIndex);
 
   return (
     <div
@@ -2287,8 +2725,6 @@ function ExampleTopicTabs({
                   '--example-tab-color': tabStyle.color,
                   '--example-tab-tilt': '0deg',
                   '--example-tab-scale': '1',
-                  '--example-tab-opacity': '1',
-                  '--example-tab-offset-x': '0px',
                   '--example-tab-offset-y': '0px',
                 }}
               >
@@ -2304,38 +2740,55 @@ function ExampleTopicTabs({
           aria-label="Example topics"
           aria-orientation="vertical"
         >
-          {tabWindow.map(({ example, exampleIndex, position }) => {
+          {tabTrack.map((item) => {
+            const {
+              example,
+              exampleIndex,
+              slotIndex,
+            } = item;
             const isActive = example.slug === activeSlug;
             const tabStyle = EXAMPLE_TAB_STYLES[exampleIndex % EXAMPLE_TAB_STYLES.length];
-            const visuals = getExampleTabVisuals(position);
+            const renderedSlotIndex = slotIndex + (animationDirection > 0 ? -1 : animationDirection < 0 ? 1 : 0);
+            const visuals = getExampleTabVisuals(renderedSlotIndex);
+            const layerSlot = Math.max(Math.min(renderedSlotIndex, EXAMPLE_TAB_VISIBLE_COUNT - 1), 0);
+            const isWithinVisibleRange = renderedSlotIndex >= 0 && renderedSlotIndex < EXAMPLE_TAB_VISIBLE_COUNT;
 
             return (
-              <button
-                key={example.slug}
-                ref={(node) => {
-                  tabRefs.current[exampleIndex] = node;
-                }}
-                id={`example-tab-${example.slug}`}
-                type="button"
-                role="tab"
-                tabIndex={isActive ? 0 : -1}
-                aria-selected={isActive}
-                aria-hidden={visuals.opacity === 0 ? 'true' : undefined}
-                aria-controls={`example-panel-${example.slug}`}
-                className={`eli5-example-tab${isActive ? ' is-active' : ''}`}
+              <div
+                key={`slot-${slotIndex}`}
+                data-slot-index={slotIndex}
+                className="eli5-example-tabs__slot"
                 style={{
-                  '--example-tab-color': tabStyle.color,
-                  '--example-tab-tilt': `${tabStyle.tilt}deg`,
                   '--example-tab-offset-y': `${visuals.offsetY}px`,
-                  '--example-tab-offset-x': `${isActive ? 10 : 0}px`,
                   '--example-tab-scale': visuals.scale.toFixed(3),
-                  '--example-tab-opacity': visuals.opacity.toFixed(3),
+                  '--example-tab-layer': String(30 - layerSlot),
+                  pointerEvents: isWithinVisibleRange ? undefined : 'none',
                 }}
-                onClick={() => focusTabAtIndex(exampleIndex)}
-                onKeyDown={(event) => handleTabKeyDown(event, exampleIndex)}
+                aria-hidden={isWithinVisibleRange ? undefined : 'true'}
+                onTransitionEnd={handleSlotTransitionEnd}
               >
-                {example.subject}
-              </button>
+                <button
+                  id={`example-tab-${example.slug}`}
+                  type="button"
+                  role="tab"
+                  tabIndex={isActive && isWithinVisibleRange ? 0 : -1}
+                  aria-selected={isActive}
+                  aria-controls={`example-panel-${example.slug}`}
+                  className={`eli5-example-tab${isActive ? ' is-active' : ''}`}
+                  style={{
+                    '--example-tab-color': tabStyle.color,
+                    '--example-tab-tilt': `${tabStyle.tilt}deg`,
+                  }}
+                  onClick={() => {
+                    if (animationDirection === 0 && queuedSteps === 0) {
+                      queueForwardSelection(exampleIndex);
+                    }
+                  }}
+                  onKeyDown={(event) => handleTabKeyDown(event, exampleIndex)}
+                >
+                  {example.subject}
+                </button>
+              </div>
             );
           })}
         </div>
@@ -2345,7 +2798,7 @@ function ExampleTopicTabs({
         <button
           type="button"
           className="eli5-example-tabs__chevron"
-          onClick={() => shiftActiveBy(-1)}
+          onClick={() => queueStep(-1)}
           aria-label="Show previous topic"
         >
           <ExampleChevronIcon className="eli5-example-tabs__chevron-icon" />
@@ -2354,7 +2807,7 @@ function ExampleTopicTabs({
         <button
           type="button"
           className="eli5-example-tabs__chevron eli5-example-tabs__chevron--down"
-          onClick={() => shiftActiveBy(1)}
+          onClick={() => queueStep(1)}
           aria-label="Show next topic"
         >
           <ExampleChevronIcon className="eli5-example-tabs__chevron-icon" />
@@ -2490,6 +2943,49 @@ function ScrollScrubMedia({
             preload="auto"
             aria-label={label}
           />
+
+          <div className="eli5-gif-card__summary" aria-label="What the skill outputs">
+            <div className="eli5-gif-card__summary-row">
+              <p className="eli5-gif-card__summary-text eli5-gif-card__summary-text--ask">
+                You ask one question
+              </p>
+
+              <div className="eli5-gif-card__summary-icon" aria-hidden="true">
+                <svg
+                  className="eli5-gif-card__summary-icon-svg"
+                  viewBox="0 0 24 24"
+                  focusable="false"
+                >
+                  <path
+                    d="M5 12h12"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.9"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d="m13 7 5 5-5 5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.9"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </div>
+
+              <p className="eli5-gif-card__summary-text eli5-gif-card__summary-text--write">
+                The skill writes five explanation levels
+              </p>
+            </div>
+
+            <a
+              className="eli5-button eli5-button--secondary eli5-gif-card__summary-action"
+              href="#install"
+            >
+              How to install
+            </a>
+          </div>
         </div>
       </div>
     </div>
@@ -2504,10 +3000,13 @@ export default function App() {
   const controlPanelWindowRef = useRef(null);
   const [activeExampleSlug, setActiveExampleSlug] = useState(EXAMPLES[0]?.slug ?? '');
   const [heroTitleSlot, setHeroTitleSlot] = useState(() =>
-    buildHeroTitleSlot(buildFallbackBoardRects().hero, loadHeroMagnetControls()),
+    buildHeroTitleSlot(buildFallbackBoardRects().hero),
   );
   const [heroMagnetControls, setHeroMagnetControls] = useState(() =>
     loadHeroMagnetControls(),
+  );
+  const [levelControls, setLevelControls] = useState(() =>
+    loadLevelControls(),
   );
   const [heroSavedLayout, setHeroSavedLayout] = useState(() =>
     loadHeroLayout(),
@@ -2516,6 +3015,7 @@ export default function App() {
     loadHeroLayout(),
   );
   const [isHeroLayoutEditing, setIsHeroLayoutEditing] = useState(false);
+  const [isAdvancedLevelsVisible, setIsAdvancedLevelsVisible] = useState(false);
   const [controlPanelHost, setControlPanelHost] = useState(null);
   const [isInlineFallbackOpen, setIsInlineFallbackOpen] = useState(false);
   const [magnetSeed, setMagnetSeed] = useState([]);
@@ -2550,25 +3050,12 @@ export default function App() {
       : null;
 
     const resolvedHeroStageRect = heroStageRect ?? buildFallbackBoardRects().hero;
-    const provisionalHeroSlot = buildHeroTitleSlot(resolvedHeroStageRect, heroMagnetControls);
-    const provisionalHeroRect = heroBoardRect ?? buildCenteredHeroBoardRect(
-      resolvedHeroStageRect,
-      heroMagnetControls,
-      provisionalHeroSlot,
-    );
-    const provisionalSeed = applyPersistedHeroLayout(
-      buildRuntimeMagnets({
-        hero: provisionalHeroRect,
-        playfield: playfieldRect,
-      }, heroMagnetControls),
-      provisionalHeroRect,
+    const heroLayoutForRender = expandHeroLayoutVertical(
       activeHeroLayout,
+      getHeroLayoutRenderExpansion(heroMagnetControls),
     );
-    const nextHeroSlot = buildHeroTitleSlotFromRuntimeMagnets(
-      provisionalSeed,
-      resolvedHeroStageRect,
-      heroMagnetControls,
-    );
+    const provisionalHeroSlot = buildHeroTitleSlot(resolvedHeroStageRect);
+    const nextHeroSlot = provisionalHeroSlot;
     const nextHeroRect = heroBoardRect
       ? {
           ...heroBoardRect,
@@ -2583,9 +3070,9 @@ export default function App() {
       buildRuntimeMagnets({
         hero: nextHeroRect,
         playfield: playfieldRect,
-      }, heroMagnetControls),
+      }, heroMagnetControls, levelControls),
       nextHeroRect,
-      activeHeroLayout,
+      heroLayoutForRender,
     );
 
     setHeroTitleSlot(nextHeroSlot);
@@ -2627,7 +3114,19 @@ export default function App() {
 
   useLayoutEffect(() => {
     syncMagnetSeed();
-  }, [activeHeroLayout, heroMagnetControls]);
+  }, [activeHeroLayout, heroMagnetControls, levelControls]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    applyThemeTokens(document.documentElement, { levelControls });
+
+    if (controlPanelWindowRef.current && !controlPanelWindowRef.current.closed) {
+      applyThemeTokens(controlPanelWindowRef.current.document.documentElement, { levelControls });
+    }
+  }, [levelControls]);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -2649,8 +3148,22 @@ export default function App() {
       return;
     }
 
+    window.localStorage.setItem(
+      LEVEL_CONTROL_STORAGE_KEY,
+      JSON.stringify(levelControls),
+    );
+  }, [levelControls]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
     if (Object.keys(heroSavedLayout).length === 0) {
       window.localStorage.removeItem(HERO_LAYOUT_STORAGE_KEY);
+      HERO_LAYOUT_STORAGE_DEPRECATED_KEYS.forEach((storageKey) => {
+        window.localStorage.removeItem(storageKey);
+      });
       return;
     }
 
@@ -2658,9 +3171,23 @@ export default function App() {
       HERO_LAYOUT_STORAGE_KEY,
       JSON.stringify(heroSavedLayout),
     );
+
+    HERO_LAYOUT_STORAGE_DEPRECATED_KEYS.forEach((storageKey) => {
+      window.localStorage.removeItem(storageKey);
+    });
   }, [heroSavedLayout]);
 
-  const handleHeroControlChange = useEffectEvent((key, value) => {
+  const handlePanelControlChange = useEffectEvent((key, value) => {
+    if (LEVEL_CONTROL_KEYS.has(key)) {
+      setLevelControls((current) =>
+        sanitizeLevelControls({
+          ...current,
+          [key]: value,
+        }),
+      );
+      return;
+    }
+
     setHeroMagnetControls((current) =>
       sanitizeHeroMagnetControls({
         ...current,
@@ -2669,12 +3196,25 @@ export default function App() {
     );
   });
 
-  const handleHeroControlReset = useEffectEvent(() => {
+  const handlePanelControlReset = useEffectEvent(() => {
     setHeroMagnetControls(HERO_MAGNET_DEFAULTS);
+    setLevelControls(LEVEL_CONTROL_DEFAULTS);
+  });
+
+  const handleToggleAdvancedLevels = useEffectEvent(() => {
+    setIsAdvancedLevelsVisible((current) => !current);
   });
 
   const handleStartHeroLayoutEdit = useEffectEvent(() => {
     setHeroDraftLayout(sanitizeHeroLayout(heroSavedLayout));
+    setIsInlineFallbackOpen(true);
+
+    if (controlPanelWindowRef.current && !controlPanelWindowRef.current.closed) {
+      controlPanelWindowRef.current.close();
+    }
+
+    controlPanelWindowRef.current = null;
+    setControlPanelHost(null);
     setIsHeroLayoutEditing(true);
   });
 
@@ -2691,7 +3231,7 @@ export default function App() {
   });
 
   const handleResetHeroLayout = useEffectEvent(() => {
-    const referenceLayout = sanitizeHeroLayout(HERO_REFERENCE_LAYOUT);
+    const referenceLayout = getReferenceHeroLayout();
     setHeroSavedLayout(referenceLayout);
     setHeroDraftLayout(referenceLayout);
     setIsHeroLayoutEditing(false);
@@ -2707,6 +3247,7 @@ export default function App() {
   });
 
   const handleExternalPanelClose = useEffectEvent(() => {
+    setIsInlineFallbackOpen(false);
     setControlPanelHost(null);
 
     if (controlPanelWindowRef.current && !controlPanelWindowRef.current.closed) {
@@ -2717,6 +3258,11 @@ export default function App() {
   });
 
   const openExternalControlPanel = useEffectEvent(() => {
+    if (isHeroLayoutEditing) {
+      setIsInlineFallbackOpen(true);
+      return;
+    }
+
     let popupWindow = controlPanelWindowRef.current;
 
     if (!popupWindow || popupWindow.closed) {
@@ -2734,9 +3280,23 @@ export default function App() {
 
     setIsInlineFallbackOpen(false);
     controlPanelWindowRef.current = popupWindow;
-    const nextHost = ensureHeroControlWindowHost(popupWindow);
+    const nextHost = ensureHeroControlWindowHost(popupWindow, levelControls);
     setControlPanelHost(nextHost);
     popupWindow.focus();
+  });
+
+  const toggleControlPanelVisibility = useEffectEvent(() => {
+    if (isHeroLayoutEditing) {
+      setIsInlineFallbackOpen((current) => !current);
+      return;
+    }
+
+    if (controlPanelHost || isInlineFallbackOpen) {
+      handleExternalPanelClose();
+      return;
+    }
+
+    openExternalControlPanel();
   });
 
   useEffect(() => {
@@ -2756,8 +3316,45 @@ export default function App() {
     };
   }, []);
 
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) {
+        return;
+      }
+
+      if (event.key !== '/' && event.code !== 'Slash') {
+        return;
+      }
+
+      if (isTypingTarget(event.target)) {
+        return;
+      }
+
+      event.preventDefault();
+      toggleControlPanelVisibility();
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [toggleControlPanelVisibility]);
+
   const activeExample =
     EXAMPLES.find((example) => example.slug === activeExampleSlug) ?? EXAMPLES[0];
+  const howStoryExample =
+    EXAMPLES.find((example) => example.slug === HOW_STORY_EXAMPLE_SLUG) ?? EXAMPLES[0];
+  const panelControls = {
+    ...heroMagnetControls,
+    ...levelControls,
+  };
+  const panelSections = [
+    ...HERO_CONTROL_SECTIONS,
+    ...LEVEL_CONTROL_SECTIONS,
+    ...(isAdvancedLevelsVisible ? LEVEL_ADVANCED_SECTIONS : []),
+  ];
+  const isControlPanelVisible = isInlineFallbackOpen || Boolean(controlPanelHost);
 
   return (
     <div className="eli5-page">
@@ -2792,6 +3389,7 @@ export default function App() {
                       ref={heroBoardRef}
                       className="eli5-hero__magnet-slot"
                       data-magnet-board="hero"
+                      data-layout-editing={isHeroLayoutEditing ? 'true' : undefined}
                       aria-hidden="true"
                       style={{
                         height: heroTitleSlot.height ? `${heroTitleSlot.height}px` : undefined,
@@ -2847,7 +3445,7 @@ export default function App() {
                     <div className="eli5-how__copy">
                       <h2>What this skill does</h2>
                       <p className="eli5-how__lede">
-                        You ask one question and get the answer in five passes, starting with the quick shape first and building toward the fuller version as you keep reading.
+                        You ask one question and get the answer in five passes, starting with the quick shape first and building toward the fuller version as you keep reading. Much less &ldquo;can we circle back on that&rdquo; energy.
                       </p>
 
                       <TypedPromptField
@@ -2856,6 +3454,8 @@ export default function App() {
                         prompt={HOW_EXAMPLE.prompt}
                         className="eli5-how__prompt"
                       />
+
+                      <StoryExampleCard example={howStoryExample} />
 
                       <div className="eli5-how__benefits">
                         {HOW_BENEFITS.map((benefit) => (
@@ -2899,7 +3499,7 @@ export default function App() {
                 <section id="examples" className="eli5-section eli5-section--examples">
                   <div className="eli5-section-heading">
                     <h2>See the output.</h2>
-                    <p>Pick a topic. The prompt stays short. The answer gets rewritten at ages 5, 7, 9, 12, and 16.</p>
+                    <p>Pick a topic. The prompt stays short. The answer gets rewritten at ages 5, 7, 9, 12, and 16, without needing a second explanation meeting.</p>
                   </div>
 
                   <div ref={playfieldBoardRef} className="eli5-playfield" data-magnet-board="playfield">
@@ -2950,7 +3550,7 @@ export default function App() {
                 <section id="install" className="eli5-section eli5-section--install">
                   <div className="eli5-section-heading">
                     <h2>Add the skill in three short steps.</h2>
-                    <p>This is a Markdown skill file for AI agents. Download it, add it to Codex, Claude Code, Cursor, or a similar setup, and ask your question as usual.</p>
+                    <p>This is a Markdown skill file for AI agents. Download it, add it to Codex, Claude Code, Cursor, or a similar setup, and ask your question as usual. No onboarding committee required.</p>
                   </div>
 
                   <div className="eli5-install-grid">
@@ -2983,7 +3583,7 @@ export default function App() {
                 <section id="science" className="eli5-section eli5-section--science" aria-label="The science">
                   <div className="eli5-section-heading">
                     <h2>Why this format works.</h2>
-                    <p>The tone is cheeky. The method is not. Research on plain language, segmentation, scaffolding, and relevant humor points in the same direction: people stay oriented longer when explanations arrive in smaller, better-signposted chunks.</p>
+                    <p>The tone is cheeky. The method is not. Research on plain language, segmentation, scaffolding, and relevant humor points in the same direction: people stay oriented longer when explanations arrive in smaller, better-signposted chunks instead of one big verbal performance.</p>
                   </div>
 
                   <div className="eli5-science-grid">
@@ -3029,13 +3629,13 @@ export default function App() {
                   <div className="eli5-cta">
                     <h2>Put it in your agent.</h2>
                     <p>
-                      You do not need a smarter answer. You need one you can actually follow.
+                      You do not need a smarter answer. You need one you can actually follow before everyone starts nodding like they got it.
                     </p>
                     <div className="eli5-cta__actions">
                       <DownloadLink className="eli5-button eli5-button--primary eli5-button--large eli5-button--cta-download">
                         Download the skill
                       </DownloadLink>
-                      <SupportLink className="eli5-button eli5-button--support eli5-button--large eli5-button--cta-support">
+                      <SupportLink className="eli5-button eli5-button--coffee eli5-button--large eli5-button--cta-support">
                         If it helped, tip me
                       </SupportLink>
                     </div>
@@ -3049,20 +3649,10 @@ export default function App() {
         <button
           type="button"
           className="eli5-control-launcher__button"
-          onClick={openExternalControlPanel}
+          onClick={toggleControlPanelVisibility}
         >
-          {controlPanelHost ? 'Focus Control Panel' : 'Open Control Panel'}
+          {isControlPanelVisible ? 'Hide Control Panel (/)' : 'Show Control Panel (/)'}
         </button>
-
-        {isInlineFallbackOpen ? (
-          <button
-            type="button"
-            className="eli5-control-launcher__button eli5-control-launcher__button--secondary"
-            onClick={() => setIsInlineFallbackOpen(false)}
-          >
-            Hide Inline Fallback
-          </button>
-        ) : null}
       </div>
 
       {isInlineFallbackOpen ? (
@@ -3070,12 +3660,14 @@ export default function App() {
           <ControlPanelSurface
             eyebrow="Linked control panel"
             title="Live page controls"
-            caption="Hero letters and the Michael Scott sticky motion update live on this page."
-            controls={heroMagnetControls}
-            sections={HERO_CONTROL_SECTIONS}
+            caption="Levels tune the page depth system. Layout and motion still update the hero letters live."
+            controls={panelControls}
+            sections={panelSections}
+            isAdvancedLevelsVisible={isAdvancedLevelsVisible}
             isLayoutEditing={isHeroLayoutEditing}
-            onChange={handleHeroControlChange}
-            onReset={handleHeroControlReset}
+            onChange={handlePanelControlChange}
+            onReset={handlePanelControlReset}
+            onToggleAdvancedLevels={handleToggleAdvancedLevels}
             onStartLayoutEdit={handleStartHeroLayoutEdit}
             onSaveLayoutEdit={handleSaveHeroLayoutEdit}
             onCancelLayoutEdit={handleCancelHeroLayoutEdit}
@@ -3089,12 +3681,14 @@ export default function App() {
             <ControlPanelSurface
               eyebrow="Linked control panel"
               title="Live page controls"
-              caption="Hero letters and the Michael Scott sticky motion update live on this page."
-              controls={heroMagnetControls}
-              sections={HERO_CONTROL_SECTIONS}
+              caption="Levels tune the page depth system. Layout and motion still update the hero letters live."
+              controls={panelControls}
+              sections={panelSections}
+              isAdvancedLevelsVisible={isAdvancedLevelsVisible}
               isLayoutEditing={isHeroLayoutEditing}
-              onChange={handleHeroControlChange}
-              onReset={handleHeroControlReset}
+              onChange={handlePanelControlChange}
+              onReset={handlePanelControlReset}
+              onToggleAdvancedLevels={handleToggleAdvancedLevels}
               onStartLayoutEdit={handleStartHeroLayoutEdit}
               onSaveLayoutEdit={handleSaveHeroLayoutEdit}
               onCancelLayoutEdit={handleCancelHeroLayoutEdit}

@@ -112,6 +112,7 @@ Allowed:
 - office-adjacent
 - one small wink in a section
 - one clean line that sounds human
+- roughly 10-15% humor, not 40%
 
 Not allowed:
 - trying too hard
@@ -119,6 +120,7 @@ Not allowed:
 - “quirky product” filler
 - fake confidence
 - making the visitor decode the point
+- a joke in every sentence
 
 ## Headlines
 

@@ -12,12 +12,18 @@
   --enter-distance: 18px;
   --enter-duration: 680ms;
   --enter-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --cursor-default: url('/assets/cursors/default.png') 8 7, default;
+  --cursor-pointer: url('/assets/cursors/pointer.png') 31 7, pointer;
+  --cursor-text: url('/assets/cursors/text.png') 32 32, text;
+  --cursor-grab: url('/assets/cursors/grab.png') 32 31, grab;
+  --cursor-grabbing: url('/assets/cursors/grabbing.png') 32 31, grabbing;
 }
 
 html {
   font-size: 16px;
   color-scheme: light;
   scroll-behavior: smooth;
+  cursor: var(--cursor-default);
 }
 
 *,
@@ -31,7 +37,7 @@ body {
   padding-inline: clamp(14px, 2vw, 28px);
   color: var(--ink);
   font-family: var(--font-ui);
-  cursor: default;
+  cursor: var(--cursor-default);
   -webkit-user-select: none;
   user-select: none;
   background: var(--page-gradient);
@@ -51,6 +57,33 @@ a {
 button {
   border: 0;
   background: none;
+}
+
+a[href],
+button:not(:disabled),
+summary,
+label[for],
+input[type='button'],
+input[type='submit'],
+input[type='reset'],
+input[type='file'],
+input[type='range'],
+select,
+[role='button'],
+[role='link'] {
+  cursor: var(--cursor-pointer);
+}
+
+button:disabled,
+[aria-disabled='true'] {
+  cursor: var(--cursor-default);
+}
+
+input:not([type='button']):not([type='submit']):not([type='reset']):not([type='file']):not([type='range']):not([type='checkbox']):not([type='radio']),
+textarea,
+[contenteditable='true'],
+[contenteditable='plaintext-only'] {
+  cursor: var(--cursor-text);
 }
 
 img {
@@ -147,7 +180,7 @@ select {
   color: var(--ink);
   font-size: 0.95rem;
   font-weight: 600;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
   box-shadow: var(--shadow-floating-ui);
   backdrop-filter: blur(12px);
 }
@@ -169,7 +202,7 @@ select {
   padding: 18px;
   border: 1px solid var(--panel-border);
   border-radius: 24px;
-  background: var(--panel-gradient);
+  background: var(--gradient-floating);
   box-shadow: var(--shadow-panel);
   backdrop-filter: blur(18px);
   overflow: hidden;
@@ -255,7 +288,7 @@ select {
 
 .eli5-control-panel__layout-actions button:disabled {
   opacity: 0.42;
-  cursor: default;
+  cursor: var(--cursor-default);
   box-shadow: none;
 }
 
@@ -307,7 +340,7 @@ select {
   height: 6px;
   margin: 0;
   accent-color: var(--blue);
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
 }
 
 .eli5-main,
@@ -395,6 +428,16 @@ select {
   z-index: 3;
 }
 
+.eli5-magnet-layer.is-layout-editing,
+.eli5-hero__magnet-slot[data-layout-editing='true'] {
+  cursor: var(--cursor-grab);
+}
+
+.eli5-magnet-layer.is-layout-editing:active,
+.eli5-hero__magnet-slot[data-layout-editing='true']:active {
+  cursor: var(--cursor-grabbing);
+}
+
 .eli5-shell {
   width: var(--shell);
   margin: 0 auto;
@@ -440,7 +483,7 @@ select {
   padding: 9px 12px;
   border: 1px solid var(--header-border);
   border-radius: 22px;
-  background: var(--header-gradient);
+  background: var(--gradient-floating);
   box-shadow: var(--shadow-header);
   backdrop-filter: blur(12px);
 }
@@ -517,7 +560,7 @@ select {
   justify-content: center;
   min-height: 56px;
   padding: 0 24px;
-  border: 1px solid transparent;
+  border: 1px solid var(--transparent);
   border-radius: var(--radius-pill);
   font-size: 1rem;
   font-weight: 700;
@@ -526,33 +569,29 @@ select {
 
 .eli5-button--primary {
   color: var(--on-dark);
-  background: var(--button-primary-gradient);
+  background: var(--gradient-action-dark);
   box-shadow: var(--shadow-button);
 }
 
 .eli5-button--secondary {
   color: var(--ink);
   border-color: var(--button-secondary-border);
-  background: var(--button-secondary-gradient);
+  background: var(--gradient-card);
   box-shadow: var(--shadow-button-soft);
 }
 
 .eli5-button--support {
   color: var(--ink);
   border-color: var(--button-support-border);
-  background: var(--button-support-gradient);
+  background: var(--gradient-card);
   box-shadow: var(--shadow-button-soft);
 }
 
 .eli5-button--coffee {
-  color: #151515;
-  border-color: rgba(26, 26, 26, 0.12);
-  background: linear-gradient(180deg, #ffdd00 0%, #ffd21f 100%);
-  box-shadow:
-    0 6px 0 rgba(100, 69, 30, 0.1),
-    0 16px 18px rgba(73, 53, 28, 0.05),
-    inset 0 1px 0 rgba(255, 255, 255, 0.35),
-    inset 0 -1px 0 rgba(185, 151, 0, 0.22);
+  color: var(--coffee-ink);
+  border-color: var(--coffee-border);
+  background: var(--coffee-gradient);
+  box-shadow: var(--coffee-shadow);
 }
 
 .eli5-button--header {
@@ -593,7 +632,7 @@ select {
   padding: 0 15px;
   border: 1px solid var(--badge-border);
   border-radius: 16px;
-  background: var(--hero-badge-gradient);
+  background: var(--gradient-warm);
   box-shadow: var(--shadow-hero-badge);
   color: var(--ink-soft);
   font-size: 0.84rem;
@@ -618,6 +657,11 @@ select {
   max-width: 100%;
   overflow: visible;
   pointer-events: none;
+}
+
+.eli5-hero__magnet-slot[data-layout-editing='true'] {
+  pointer-events: auto;
+  touch-action: none;
 }
 
 .eli5-hero__notes-copy {
@@ -894,12 +938,8 @@ select {
   padding: 10px 14px;
   border: 1px solid var(--prompt-border);
   border-radius: 16px;
-  background: linear-gradient(180deg, rgba(250, 248, 244, 0.99) 0%, rgba(255, 255, 255, 0.99) 100%);
-  box-shadow:
-    inset 0 2px 5px rgba(95, 72, 39, 0.16),
-    inset 0 14px 22px rgba(255, 255, 255, 0.14),
-    inset 0 -1px 0 rgba(255, 251, 243, 0.76),
-    0 1px 0 rgba(255, 252, 245, 0.34);
+  background: var(--gradient-warm);
+  box-shadow: var(--shadow-prompt-shell);
 }
 
 .eli5-prompt-field__skill {
@@ -909,7 +949,7 @@ select {
   padding: 0 12px;
   border: 1px solid var(--prompt-skill-border);
   border-radius: 12px;
-  background: var(--prompt-skill-gradient);
+  background: var(--gradient-violet-accent);
   box-shadow: var(--shadow-prompt-skill);
   color: var(--prompt-violet-text);
   font-size: 0.92rem;
@@ -952,6 +992,88 @@ select {
 
 .eli5-how__prompt {
   margin-top: 26px;
+}
+
+.eli5-story-example {
+  display: grid;
+  gap: 18px;
+  margin-top: 22px;
+  padding: 22px 22px 20px;
+  border: 1px solid var(--floating-border);
+  border-radius: 28px;
+  background: var(--gradient-card);
+}
+
+.eli5-story-example__header {
+  display: grid;
+  gap: 8px;
+}
+
+.eli5-story-example__eyebrow {
+  margin: 0;
+  color: var(--blue);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.eli5-story-example h3 {
+  margin: 0;
+  color: var(--ink-subhead);
+  font-size: clamp(1.28rem, 1.85vw, 1.62rem);
+  font-weight: 600;
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+}
+
+.eli5-story-example__caption {
+  margin: 0;
+  max-width: 32rem;
+  color: var(--ink-soft);
+  font-size: 0.98rem;
+  line-height: 1.58;
+}
+
+.eli5-story-example__prompt .eli5-prompt-field__shell {
+  width: 100%;
+}
+
+.eli5-story-example__rows {
+  display: grid;
+  gap: 0;
+}
+
+.eli5-story-example__row {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.eli5-story-example__row:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.eli5-story-example__age,
+.eli5-story-example__copy {
+  margin: 0;
+}
+
+.eli5-story-example__age {
+  padding-top: 1px;
+  color: var(--blue);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.eli5-story-example__copy {
+  color: var(--ink-soft);
+  font-size: 0.98rem;
+  line-height: 1.58;
 }
 
 .eli5-how__benefits {
@@ -1032,7 +1154,7 @@ select {
   padding: 0 14px;
   border: 1px solid var(--soft-border);
   border-radius: 999px;
-  background: var(--pill-surface);
+  background: var(--gradient-warm);
   color: var(--ink-soft);
   font-size: 0.92rem;
   font-weight: 600;
@@ -1111,10 +1233,12 @@ select {
 .eli5-gif-card__frame {
   position: relative;
   overflow: hidden;
+  display: grid;
+  gap: 14px;
   padding: 14px;
-  border: 1px solid var(--surface-border-strong);
+  border: 1px solid var(--soft-border);
   border-radius: 32px;
-  background: var(--media-frame-gradient);
+  background: var(--gradient-card);
   box-shadow: var(--shadow-media);
 }
 
@@ -1126,6 +1250,69 @@ select {
   border-radius: 22px;
   object-fit: contain;
   background: var(--media-bg);
+}
+
+.eli5-gif-card__summary {
+  display: grid;
+  gap: 16px;
+  padding: 14px 4px 4px 2px;
+  border-top: 1px solid var(--media-summary-action-border);
+}
+
+.eli5-gif-card__summary-row {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) auto minmax(0, 1.1fr);
+  gap: 14px;
+  align-items: center;
+}
+
+.eli5-gif-card__summary-text {
+  margin: 0;
+  min-width: 0;
+  color: var(--ink-subhead);
+  font-size: 0.98rem;
+  font-weight: 700;
+  line-height: 1.32;
+  letter-spacing: -0.025em;
+}
+
+.eli5-gif-card__summary-text--ask {
+  text-align: right;
+}
+
+.eli5-gif-card__summary-text--write {
+  text-align: left;
+}
+
+.eli5-gif-card__summary-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--media-summary-border);
+  border-radius: 999px;
+  background: var(--media-summary-icon-surface);
+  color: var(--ink-muted);
+  box-shadow: inset 0 1px 0 var(--media-summary-icon-highlight);
+}
+
+.eli5-gif-card__summary-icon-svg {
+  width: 18px;
+  height: 18px;
+}
+
+.eli5-gif-card__summary-action {
+  min-height: 48px;
+  padding: 0 18px;
+  justify-self: center;
+  border-color: var(--media-summary-action-border);
+  background: var(--media-summary-action-surface);
+  box-shadow: var(--media-summary-action-shadow);
+}
+
+.eli5-gif-card__summary-action:hover {
+  transform: translateY(-1px);
 }
 
 .eli5-section-heading {
@@ -1151,8 +1338,7 @@ select {
 }
 
 .eli5-example-tabs {
-  --example-tab-safe-inline: 18px;
-  --example-tab-max-shift: 12px;
+  --example-tab-safe-inline: 14px;
   position: relative;
   z-index: 2;
   display: grid;
@@ -1177,6 +1363,7 @@ select {
 
 .eli5-example-tabs__list {
   position: relative;
+  width: 100%;
   min-height: 100%;
 }
 
@@ -1185,49 +1372,59 @@ select {
   width: max-content;
   max-width: 100%;
   height: 0;
-  padding-inline:
-    var(--example-tab-safe-inline, 18px)
-    calc(var(--example-tab-safe-inline, 18px) + var(--example-tab-max-shift, 12px));
+  justify-items: center;
+  padding-inline: var(--example-tab-safe-inline, 14px);
   overflow: visible;
   visibility: hidden;
   pointer-events: none;
 }
 
-.eli5-example-tab {
+.eli5-example-tabs__slot {
   position: absolute;
   top: 0;
-  left: var(--example-tab-safe-inline, 18px);
+  left: 50%;
+  z-index: var(--example-tab-layer, 1);
+  display: grid;
+  justify-items: center;
   width: max-content;
-  justify-self: start;
+  max-width: calc(100% - (var(--example-tab-safe-inline, 14px) * 2));
+  transform:
+    translate3d(-50%, var(--example-tab-offset-y, 0px), 0)
+    scale(var(--example-tab-scale, 1));
+  transform-origin: center center;
+  transition: transform calc(var(--ui-duration) * 1.8) var(--ui-ease);
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+.eli5-example-tab {
+  position: relative;
+  width: max-content;
+  max-width: min(calc(100vw - 48px), 100%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   height: var(--example-tab-item-height, 56px);
   padding: 0 20px;
-  border: 1px solid var(--surface-border-strong);
+  border: 1px solid var(--soft-border);
   border-radius: 999px;
   background: var(--tab-sheen-gradient), var(--example-tab-color, var(--magnet-blue));
   color: var(--on-dark);
   font-size: 0.96rem;
   font-weight: 700;
   letter-spacing: -0.02em;
-  cursor: pointer;
+  text-align: center;
+  cursor: var(--cursor-pointer);
   white-space: nowrap;
-  transform-origin: left center;
-  opacity: var(--example-tab-opacity, 1);
-  transform:
-    translate3d(var(--example-tab-offset-x, 0px), var(--example-tab-offset-y, 0px), 0)
-    rotate(var(--example-tab-tilt, 0deg))
-    scale(var(--example-tab-scale, 1));
+  transform: rotate(var(--example-tab-tilt, 0deg));
   box-shadow: var(--shadow-tab);
-  transition:
-    transform calc(var(--ui-duration) * 1.8) var(--ui-ease),
-    box-shadow var(--ui-duration) var(--ui-ease);
-  will-change: transform;
+  transition: box-shadow var(--ui-duration) var(--ui-ease);
 }
 
 .eli5-example-tab--measure {
   position: static;
   transform: none;
   box-shadow: none;
-  opacity: 1;
 }
 
 .eli5-example-tab.is-active {
@@ -1236,6 +1433,8 @@ select {
 }
 
 .eli5-example-tabs__controls {
+  position: relative;
+  z-index: 30;
   display: flex;
   justify-content: center;
   gap: 8px;
@@ -1249,11 +1448,11 @@ select {
   height: 32px;
   border: 1px solid var(--line);
   border-radius: 999px;
-  background: rgba(255, 252, 247, 0.82);
+  background: var(--example-chevron-surface);
   color: var(--ink);
   font-size: 1rem;
   font-weight: 800;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
   box-shadow: var(--shadow-floating-ui);
   transition:
     transform var(--ui-duration) var(--ui-ease),
@@ -1274,7 +1473,7 @@ select {
 
 .eli5-example-tabs__chevron:disabled {
   opacity: 0.32;
-  cursor: default;
+  cursor: var(--cursor-default);
   box-shadow: none;
 }
 
@@ -1387,7 +1586,7 @@ select {
 
 .eli5-science-point__sources-label {
   margin: 0;
-  color: rgba(36, 48, 66, 0.5);
+  color: var(--science-source-meta);
   font-size: 0.68rem;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -1417,7 +1616,7 @@ select {
 }
 
 .eli5-science-point__source span:last-child {
-  color: rgba(36, 48, 66, 0.58);
+  color: var(--science-source-meta-strong);
   font-size: 0.68rem;
   line-height: 1.3;
 }
@@ -1463,7 +1662,10 @@ select {
 }
 
 .eli5-button--cta-support {
-  background: var(--button-support-gradient);
+  color: var(--coffee-ink);
+  border-color: var(--coffee-border);
+  background: var(--coffee-gradient);
+  box-shadow: var(--coffee-shadow);
 }
 
 .eli5-sr-only {
@@ -1671,8 +1873,7 @@ select {
   .eli5-example-tabs {
     position: relative;
     top: auto;
-    --example-tab-safe-inline: 20px;
-    --example-tab-max-shift: 12px;
+    --example-tab-safe-inline: 12px;
   }
 
   .eli5-example-thread {
@@ -1692,6 +1893,29 @@ select {
   .eli5-gif-wrap {
     position: static;
     padding: 16px 0 0;
+  }
+
+  .eli5-gif-card__summary {
+    gap: 14px;
+    padding-right: 0;
+  }
+
+  .eli5-gif-card__summary-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .eli5-gif-card__summary-icon {
+    display: none;
+  }
+
+  .eli5-gif-card__summary-text--ask,
+  .eli5-gif-card__summary-text--write {
+    text-align: left;
+  }
+
+  .eli5-gif-card__summary-action {
+    width: 100%;
   }
 
   .eli5-hero-stage {

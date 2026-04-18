@@ -1,0 +1,495 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Explain It Like I'm Five · Brand Color Guide</title>
+    <style>
+      :root {
+        --board-bg: #efe5d6;
+        --board-card: rgba(255, 252, 247, 0.84);
+        --board-ink: #1b273a;
+        --board-muted: rgba(27, 39, 58, 0.64);
+        --board-line: rgba(35, 52, 79, 0.14);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
+
+      body {
+        font-family: 'Outfit', 'Inter', 'Segoe UI', sans-serif;
+        color: var(--board-ink);
+        background:
+          radial-gradient(circle at 8% 12%, rgba(255, 204, 130, 0.28), transparent 24%),
+          radial-gradient(circle at 88% 10%, rgba(92, 148, 255, 0.16), transparent 26%),
+          linear-gradient(180deg, #f6ecdf 0%, var(--board-bg) 100%);
+        padding: clamp(10px, 1vw, 16px);
+      }
+
+      .board {
+        height: 100%;
+        border: 1px solid rgba(255, 255, 255, 0.72);
+        border-radius: 24px;
+        background: rgba(248, 241, 229, 0.82);
+        box-shadow: 0 14px 36px rgba(61, 43, 20, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(10px);
+        display: grid;
+        grid-template-rows: auto auto 1fr;
+        gap: 8px;
+        padding: 10px;
+      }
+
+      .header {
+        display: grid;
+        grid-template-columns: 1.25fr 1fr;
+        gap: 8px;
+      }
+
+      .card {
+        border: 1px solid var(--board-line);
+        border-radius: 14px;
+        background: var(--board-card);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+        padding: 9px 10px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(1rem, 1.3vw, 1.3rem);
+        line-height: 1.1;
+        letter-spacing: -0.03em;
+      }
+
+      p {
+        margin: 6px 0 0;
+        font-size: clamp(0.72rem, 0.8vw, 0.82rem);
+        line-height: 1.3;
+        color: var(--board-muted);
+      }
+
+      .meta {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .meta h2 {
+        margin: 0;
+        font-size: 0.62rem;
+        font-weight: 600;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+        color: var(--board-muted);
+      }
+
+      .meta strong {
+        display: block;
+        margin-top: 4px;
+        font-size: 1rem;
+        line-height: 1;
+        letter-spacing: -0.02em;
+      }
+
+      .content {
+        min-height: 0;
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        gap: 8px;
+      }
+
+      .text-strip {
+        display: grid;
+        grid-template-columns: repeat(8, minmax(0, 1fr));
+        gap: 6px;
+      }
+
+      .text-strip .swatch {
+        grid-template-columns: 24px 1fr;
+      }
+
+      .color-groups {
+        min-height: 0;
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .group {
+        min-height: 0;
+      }
+
+      .group h3,
+      .gradients h3 {
+        margin: 0 0 6px;
+        font-size: 0.62rem;
+        font-weight: 600;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+        color: var(--board-muted);
+      }
+
+      .swatches {
+        display: grid;
+        gap: 5px;
+      }
+
+      .swatch {
+        display: grid;
+        grid-template-columns: 24px 1fr;
+        gap: 6px;
+        align-items: center;
+      }
+
+      .chip {
+        width: 24px;
+        height: 24px;
+        border-radius: 6px;
+        border: 1px solid rgba(0, 0, 0, 0.12);
+      }
+
+      .token-name {
+        font-size: 0.67rem;
+        line-height: 1.18;
+        letter-spacing: 0.01em;
+        overflow-wrap: anywhere;
+      }
+
+      .gradients {
+        padding: 8px;
+      }
+
+      .gradient-grid {
+        display: grid;
+        grid-template-columns: repeat(9, minmax(0, 1fr));
+        gap: 6px;
+      }
+
+      .gradient-item {
+        display: grid;
+        gap: 3px;
+      }
+
+      .gradient-chip {
+        height: 30px;
+        border-radius: 8px;
+        border: 1px solid rgba(0, 0, 0, 0.12);
+      }
+
+      .gradient-name {
+        font-size: 0.58rem;
+        line-height: 1.1;
+        color: var(--board-muted);
+        overflow-wrap: anywhere;
+      }
+
+      .status {
+        position: fixed;
+        left: 50%;
+        bottom: 8px;
+        transform: translateX(-50%);
+        background: rgba(255, 252, 246, 0.78);
+        border: 1px solid rgba(27, 39, 58, 0.12);
+        border-radius: 999px;
+        padding: 4px 10px;
+        font-size: 0.66rem;
+        color: var(--board-muted);
+      }
+
+      @media (max-width: 1180px) {
+        .header {
+          grid-template-columns: 1fr;
+        }
+
+        .color-groups {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .text-strip {
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+
+        .gradient-grid {
+          grid-template-columns: repeat(6, minmax(0, 1fr));
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="board">
+      <header class="header">
+        <section class="card">
+          <h1>Explain It Like I’m Five · Brand Color Guide</h1>
+          <p>
+            One-page brand board. Every token swatch appears immediately. No scrolling regions,
+            no literal audit noise, just categorized system color + gradient tokens.
+          </p>
+        </section>
+        <aside class="card">
+          <h1>Palette Feeling</h1>
+          <p>
+            Warm paper base + clear navy structure, with playful magnet accents on top. The result
+            feels competent first, toy-like second.
+          </p>
+        </aside>
+      </header>
+
+      <section class="meta" id="meta"></section>
+
+      <main class="content">
+        <section class="card">
+          <h3>Text Colors</h3>
+          <div class="text-strip" id="text-strip"></div>
+        </section>
+        <section class="color-groups" id="color-groups"></section>
+        <section class="card gradients">
+          <h3>Gradient Tokens</h3>
+          <div class="gradient-grid" id="gradient-grid"></div>
+        </section>
+      </main>
+    </div>
+
+    <p class="status" id="status">Loading token board…</p>
+
+    <script type="module">
+      import { applyThemeTokens } from '/src/theme.js';
+
+      const metaEl = document.getElementById('meta');
+      const textStripEl = document.getElementById('text-strip');
+      const colorGroupsEl = document.getElementById('color-groups');
+      const gradientGridEl = document.getElementById('gradient-grid');
+      const statusEl = document.getElementById('status');
+
+      const CATEGORY_ORDER = [
+        'Foundation',
+        'Text',
+        'Actions',
+        'Magnet Letters',
+        'Brand & Compatibility',
+        'Utility',
+      ];
+
+      const VALUE_SPACES = /\s+/g;
+
+      function normalizeValue(value) {
+        return value.replace(VALUE_SPACES, ' ').trim();
+      }
+
+      function isGradient(value) {
+        return /gradient\(/i.test(value);
+      }
+
+      function isColor(value) {
+        return /#|rgba?\(|hsla?\(|\btransparent\b|\bwhite\b|\bblack\b/i.test(value);
+      }
+
+      function escapeHtml(value) {
+        return value
+          .replaceAll('&', '&amp;')
+          .replaceAll('<', '&lt;')
+          .replaceAll('>', '&gt;')
+          .replaceAll('"', '&quot;')
+          .replaceAll("'", '&#039;');
+      }
+
+      function readTokenEntries() {
+        applyThemeTokens(document.documentElement);
+        const computed = getComputedStyle(document.documentElement);
+        const colors = [];
+        const gradients = [];
+
+        for (let i = 0; i < computed.length; i += 1) {
+          const name = computed[i];
+          if (!name.startsWith('--')) continue;
+
+          const value = normalizeValue(computed.getPropertyValue(name));
+          if (!value) continue;
+
+          if (isGradient(value)) {
+            gradients.push({ name, value });
+            continue;
+          }
+
+          if (isColor(value)) {
+            colors.push({ name, value });
+          }
+        }
+
+        colors.sort((a, b) => a.name.localeCompare(b.name));
+        gradients.sort((a, b) => a.name.localeCompare(b.name));
+        return { colors, gradients };
+      }
+
+      function categorizeColorToken(tokenName) {
+        const name = tokenName.toLowerCase();
+
+        if (
+          name.includes('ink') ||
+          name.includes('science-source-meta') ||
+          name.includes('separator-color') ||
+          name.includes('on-dark') ||
+          name.includes('prompt-violet-text')
+        ) {
+          return 'Text';
+        }
+
+        if (name.startsWith('--magnet-') || name.includes('divider')) {
+          return 'Magnet Letters';
+        }
+
+        if (name.startsWith('--brand-')) {
+          return 'Brand & Compatibility';
+        }
+
+        if (
+          name.includes('button') ||
+          name.includes('coffee') ||
+          name.includes('badge') ||
+          name.includes('pill') ||
+          name.includes('blue')
+        ) {
+          return 'Actions';
+        }
+
+        if (
+          name.includes('transparent') ||
+          name.includes('focus') ||
+          name.includes('control') ||
+          name.includes('science-source-meta')
+        ) {
+          return 'Utility';
+        }
+
+        return 'Foundation';
+      }
+
+      function groupColors(colors) {
+        const groups = new Map(CATEGORY_ORDER.map((category) => [category, []]));
+
+        for (const token of colors) {
+          const category = categorizeColorToken(token.name);
+          groups.get(category).push(token);
+        }
+
+        for (const category of CATEGORY_ORDER) {
+          groups.set(
+            category,
+            groups.get(category).sort((a, b) => a.name.localeCompare(b.name))
+          );
+        }
+
+        return groups;
+      }
+
+      function renderMeta({ colorCount, gradientCount, grouped }) {
+        const usedGroups = CATEGORY_ORDER.filter((category) => grouped.get(category).length > 0).length;
+        const cards = [
+          { label: 'Color Tokens', value: String(colorCount), note: 'All tokenized colors' },
+          { label: 'Gradient Tokens', value: String(gradientCount), note: 'All tokenized gradients' },
+          { label: 'Color Categories', value: String(usedGroups), note: 'Grouped by appearance' },
+          { label: 'Playful Accent Cut', value: '2 fewer', note: 'Divider green/red now reuse magnet hues' },
+        ];
+
+        metaEl.innerHTML = cards
+          .map(
+            (card) => `
+              <article class="card">
+                <h2>${escapeHtml(card.label)}</h2>
+                <strong>${escapeHtml(card.value)}</strong>
+                <p>${escapeHtml(card.note)}</p>
+              </article>
+            `
+          )
+          .join('');
+      }
+
+      function renderColorGroups(grouped) {
+        colorGroupsEl.innerHTML = CATEGORY_ORDER.map((category) => {
+          if (category === 'Text') {
+            return '';
+          }
+
+          const entries = grouped.get(category) ?? [];
+
+          return `
+            <section class="card group">
+              <h3>${escapeHtml(category)} · ${entries.length}</h3>
+              <div class="swatches">
+                ${entries
+                  .map((entry) => {
+                    const safeName = escapeHtml(entry.name);
+                    const safeValue = escapeHtml(entry.value);
+                    return `
+                      <article class="swatch">
+                        <div class="chip" style="background:${safeValue}"></div>
+                        <div class="token-name">${safeName}</div>
+                      </article>
+                    `;
+                  })
+                  .join('')}
+              </div>
+            </section>
+          `;
+        }).join('');
+      }
+
+      function renderTextStrip(grouped) {
+        const textEntries = grouped.get('Text') ?? [];
+
+        textStripEl.innerHTML = textEntries
+          .map((entry) => {
+            const safeName = escapeHtml(entry.name);
+            const safeValue = escapeHtml(entry.value);
+            return `
+              <article class="swatch">
+                <div class="chip" style="background:${safeValue}"></div>
+                <div class="token-name">${safeName}</div>
+              </article>
+            `;
+          })
+          .join('');
+      }
+
+      function renderGradients(gradients) {
+        gradientGridEl.innerHTML = gradients
+          .map((entry) => {
+            const safeName = escapeHtml(entry.name);
+            const safeValue = escapeHtml(entry.value);
+            return `
+              <article class="gradient-item">
+                <div class="gradient-chip" style="background:${safeValue}"></div>
+                <div class="gradient-name">${safeName}</div>
+              </article>
+            `;
+          })
+          .join('');
+      }
+
+      try {
+        const tokenEntries = readTokenEntries();
+        const grouped = groupColors(tokenEntries.colors);
+
+        renderMeta({
+          colorCount: tokenEntries.colors.length,
+          gradientCount: tokenEntries.gradients.length,
+          grouped,
+        });
+        renderTextStrip(grouped);
+        renderColorGroups(grouped);
+        renderGradients(tokenEntries.gradients);
+
+        statusEl.textContent = `Loaded ${tokenEntries.colors.length} color tokens and ${tokenEntries.gradients.length} gradient tokens.`;
+      } catch (error) {
+        statusEl.textContent = `Board failed: ${error instanceof Error ? error.message : String(error)}`;
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,404 @@
+- generic [ref=e3]:
+  - main [ref=e4]:
+    - generic [ref=e6]:
+      - generic [ref=e7]:
+        - navigation "Primary" [ref=e8]:
+          - link "What it does" [ref=e9]:
+            - /url: "#how"
+          - link "See output" [ref=e10]:
+            - /url: "#examples"
+          - link "Install" [ref=e11]:
+            - /url: "#install"
+        - generic [ref=e12]:
+          - link "Download" [ref=e13]:
+            - /url: ./downloads/explain-it-like-im-5.md
+          - link "Buy me a coffee" [ref=e14]:
+            - /url: https://buymeacoffee.com/explainitlikeim
+      - generic [ref=e16]:
+        - heading "Explain It Like I'm Five" [level=1] [ref=e17]
+        - generic [ref=e18]: Skill for AI agents
+        - generic [ref=e19]:
+          - generic [ref=e20]:
+            - paragraph [ref=e21]: An AI skill for answers you can follow.
+            - paragraph [ref=e22]: Install it in any AI agent. Ask one question. Get five versions of the answer, from simple to precise. Less waffle. More point.
+          - generic "Supported tools" [ref=e23]:
+            - generic [ref=e24]: Use it with
+            - generic [ref=e25]:
+              - img [ref=e27]
+              - generic [ref=e29]: Codex
+            - generic [ref=e30]:
+              - img [ref=e32]
+              - generic [ref=e34]: Claude Code
+            - generic [ref=e35]:
+              - img [ref=e37]
+              - generic [ref=e39]: Cursor
+          - generic [ref=e40]:
+            - link "Download the skill" [ref=e41]:
+              - /url: ./downloads/explain-it-like-im-5.md
+            - link "See the output" [ref=e42]:
+              - /url: "#examples"
+      - generic [ref=e46]:
+        - generic [ref=e47]:
+          - heading "What this skill does" [level=2] [ref=e48]
+          - paragraph [ref=e49]: You ask one question and get the answer in five passes, starting with the quick shape first and building toward the fuller version as you keep reading. Much less “can we circle back on that” energy.
+          - generic [ref=e50]:
+            - generic [ref=e51]: What you ask
+            - generic "Explain It Like I'm Five why do we have a surplus?" [ref=e52]:
+              - generic [ref=e53]: Explain It Like I'm Five
+              - generic [ref=e54]: why do we have a surplus?
+          - article [ref=e56]:
+            - generic [ref=e57]:
+              - paragraph [ref=e58]: Surplus example
+              - heading "Why Do We Have A Surplus?" [level=3] [ref=e59]
+              - paragraph [ref=e60]: One plain question. Five increasingly complete answers. Finance eventually stops sounding like a prank.
+            - generic [ref=e61]:
+              - generic [ref=e62]: Example prompt
+              - generic "Explain It Like I'm Five why do we have a surplus?" [ref=e63]:
+                - generic [ref=e64]: Explain It Like I'm Five
+                - generic [ref=e65]: why do we have a surplus?
+            - generic [ref=e67]:
+              - generic [ref=e68]:
+                - paragraph [ref=e69]: "5"
+                - paragraph [ref=e70]: A surplus means you have money left after paying for the things you needed.
+              - generic [ref=e71]:
+                - paragraph [ref=e72]: "7"
+                - paragraph [ref=e73]: In a budget, a surplus means you planned some money for spending, but part of it did not get used.
+              - generic [ref=e74]:
+                - paragraph [ref=e75]: "9"
+                - paragraph [ref=e76]: A budget surplus happens when income is higher than spending, or when spending ends up lower than expected. The leftover amount is the surplus.
+              - generic [ref=e77]:
+                - paragraph [ref=e78]: "12"
+                - paragraph [ref=e79]: A budget surplus is the amount left when actual revenue or available funds are greater than actual spending over the same period. In a company or office budget, that usually means some planned money was not spent.
+              - generic [ref=e80]:
+                - paragraph [ref=e81]: "16"
+                - paragraph [ref=e82]: A budget surplus is the positive balance that remains when revenue or allocated funds exceed expenditures for a defined period. It can result from higher-than-expected income, lower-than-expected costs, delayed purchases, or deliberate underspending, and the next question is usually whether to save it, reallocate it, or return it.
+          - generic [ref=e83]:
+            - article [ref=e84]:
+              - generic [ref=e85]:
+                - heading "You get the version your brain wanted first." [level=3] [ref=e86]
+                - paragraph [ref=e87]: The first pass gives you the shape of the answer quickly, before the denser language books a meeting room.
+            - article [ref=e88]:
+              - generic [ref=e89]:
+                - heading "The proper detail still shows up." [level=3] [ref=e90]
+                - paragraph [ref=e91]: Each pass adds back the real terms, mechanism, and caveats, so the useful detail stays intact instead of wandering off into waffle.
+            - article [ref=e92]:
+              - generic [ref=e93]:
+                - heading "It works on code, docs, papers, plans, and odd questions." [level=3] [ref=e94]
+                - paragraph [ref=e95]: Anything that is correct but annoyingly dense gets easier when the answer arrives in steps instead of one long slab with lanyard energy.
+            - article [ref=e96]:
+              - generic [ref=e97]:
+                - heading "It saves your next prompt for something better." [level=3] [ref=e98]
+                - paragraph [ref=e99]: You spend less time asking for a rewrite and more time deciding what to do with the answer, instead of writing the prompt equivalent of a polite follow-up email.
+          - generic [ref=e100]:
+            - paragraph [ref=e101]: Great for
+            - generic "Best use cases" [ref=e102]:
+              - generic [ref=e103]: API docs
+              - generic [ref=e104]: merge conflicts
+              - generic [ref=e105]: research papers
+              - generic [ref=e106]: architecture notes
+              - generic [ref=e107]: product specs
+              - generic [ref=e108]: weird finance terms
+        - generic [ref=e111]:
+          - generic "Michael Scott waiting for the answer to become intelligible." [ref=e112]
+          - generic "What the skill outputs" [ref=e113]:
+            - generic [ref=e114]:
+              - paragraph [ref=e115]: You ask one question
+              - img [ref=e117]
+              - paragraph [ref=e119]: The skill writes five explanation levels
+            - link "How to install" [ref=e120]:
+              - /url: "#install"
+      - generic [ref=e123]:
+        - generic [ref=e124]:
+          - heading "See the output." [level=2] [ref=e125]
+          - paragraph [ref=e126]: Pick a topic. The prompt stays short. The answer gets rewritten at ages 5, 7, 9, 12, and 16, without needing a second explanation meeting.
+        - generic [ref=e127]:
+          - generic [ref=e128]:
+            - tablist "Example topics" [ref=e130]:
+              - tab "Why Do We Have A Surplus?" [selected] [ref=e131]
+              - tab "Why Is Everything Pricier?" [ref=e132]
+              - tab "How Do Plants Make Food?" [ref=e133]
+              - tab "Why Did My Taxes Jump?" [ref=e134]
+              - tab "Why Is Measles Spreading?" [ref=e135]
+            - generic "Scroll topics" [ref=e136]:
+              - button "Show previous topic" [ref=e137]:
+                - img [ref=e138]
+              - button "Show next topic" [ref=e140]:
+                - img [ref=e141]
+          - tabpanel "Why Do We Have A Surplus?" [ref=e143]:
+            - paragraph [ref=e144]: Example prompt
+            - generic "Explain It Like I'm Five why do we have a surplus?" [ref=e146]:
+              - generic [ref=e147]: Explain It Like I'm Five
+              - generic [ref=e148]: why do we have a surplus?
+            - generic [ref=e150]:
+              - paragraph [ref=e151]:
+                - generic [ref=e152]: "5:"
+                - text: A surplus means you have money left after paying for the things you needed.
+              - paragraph [ref=e153]: "---------------"
+              - paragraph [ref=e154]:
+                - generic [ref=e155]: "7:"
+                - text: In a budget, a surplus means you planned some money for spending, but part of it did not get used.
+              - paragraph [ref=e156]: "---------------"
+              - paragraph [ref=e157]:
+                - generic [ref=e158]: "9:"
+                - text: A budget surplus happens when income is higher than spending, or when spending ends up lower than expected. The leftover amount is the surplus.
+              - paragraph [ref=e159]: "---------------"
+              - paragraph [ref=e160]:
+                - generic [ref=e161]: "12:"
+                - text: A budget surplus is the amount left when actual revenue or available funds are greater than actual spending over the same period. In a company or office budget, that usually means some planned money was not spent.
+              - paragraph [ref=e162]: "---------------"
+              - paragraph [ref=e163]:
+                - generic [ref=e164]: "16:"
+                - text: A budget surplus is the positive balance that remains when revenue or allocated funds exceed expenditures for a defined period. It can result from higher-than-expected income, lower-than-expected costs, delayed purchases, or deliberate underspending, and the next question is usually whether to save it, reallocate it, or return it.
+      - generic [ref=e167]:
+        - generic [ref=e168]:
+          - heading "Add the skill in three short steps." [level=2] [ref=e169]
+          - paragraph [ref=e170]: This is a Markdown skill file for AI agents. Download it, add it to Codex, Claude Code, Cursor, or a similar setup, and ask your question as usual. No onboarding committee required.
+        - generic [ref=e171]:
+          - article [ref=e172]:
+            - img "A hand placing the skill into an AI app." [ref=e174]
+            - generic [ref=e175]:
+              - paragraph [ref=e176]: Step 1
+              - heading "Download the file." [level=3] [ref=e177]
+              - paragraph [ref=e178]: Grab the skill and keep it somewhere easy to find.
+          - article [ref=e179]:
+            - img "A chat window splitting into cleaner answer layers." [ref=e181]
+            - generic [ref=e182]:
+              - paragraph [ref=e183]: Step 2
+              - heading "Add it to your agent." [level=3] [ref=e184]
+              - paragraph [ref=e185]: Use it in Codex, Claude Code, Cursor, or a similar AI setup.
+          - article [ref=e186]:
+            - img "A person having an aha moment while learning." [ref=e188]
+            - generic [ref=e189]:
+              - paragraph [ref=e190]: Step 3
+              - heading "Ask your question." [level=3] [ref=e191]
+              - paragraph [ref=e192]: The skill rewrites the answer in five levels, so you can start simple and keep going.
+      - region "The science" [ref=e195]:
+        - generic [ref=e196]:
+          - heading "Why this format works." [level=2] [ref=e197]
+          - paragraph [ref=e198]: "The tone is cheeky. The method is not. Research on plain language, segmentation, scaffolding, and relevant humor points in the same direction: people stay oriented longer when explanations arrive in smaller, better-signposted chunks instead of one big verbal performance."
+        - generic [ref=e199]:
+          - article [ref=e200]:
+            - generic [ref=e201]:
+              - heading "Plain language improves first-pass comprehension." [level=3] [ref=e202]
+              - paragraph [ref=e203]: Simpler wording improves early understanding and usability, especially before readers have enough background to decode specialist terms.
+              - generic [ref=e204]:
+                - paragraph [ref=e205]: Sources
+                - generic [ref=e206]:
+                  - link "Ayre et al., 2024 JAMA Network Open, 2024" [ref=e207]:
+                    - /url: https://jamanetwork.com/journals/jamanetworkopen/fullarticle/2824548
+                    - generic [ref=e208]: Ayre et al., 2024
+                    - generic [ref=e209]: JAMA Network Open, 2024
+                  - link "Feinberg et al., 2024 Scientific Reports, 2024" [ref=e210]:
+                    - /url: https://www.nature.com/articles/s41598-024-64139-9
+                    - generic [ref=e211]: Feinberg et al., 2024
+                    - generic [ref=e212]: Scientific Reports, 2024
+          - article [ref=e213]:
+            - generic [ref=e214]:
+              - heading "Segmentation reduces cognitive load." [level=3] [ref=e215]
+              - paragraph [ref=e216]: Breaking an explanation into shorter units lowers processing burden and can improve comprehension and retention.
+              - generic [ref=e217]:
+                - paragraph [ref=e218]: Sources
+                - generic [ref=e219]:
+                  - link "Liu, 2024 BMC Psychology, 2024" [ref=e220]:
+                    - /url: https://bmcpsychology.biomedcentral.com/articles/10.1186/s40359-023-01489-5
+                    - generic [ref=e221]: Liu, 2024
+                    - generic [ref=e222]: BMC Psychology, 2024
+                  - link "Li et al., 2023 Computers & Education, 2023" [ref=e223]:
+                    - /url: https://www.sciencedirect.com/science/article/pii/S0360131523000702
+                    - generic [ref=e224]: Li et al., 2023
+                    - generic [ref=e225]: Computers & Education, 2023
+          - article [ref=e226]:
+            - generic [ref=e227]:
+              - heading "Scaffolding helps later detail stick." [level=3] [ref=e228]
+              - paragraph [ref=e229]: Supportive structure helps people build a workable mental model first, which makes denser technical detail easier to place.
+              - generic [ref=e230]:
+                - paragraph [ref=e231]: Sources
+                - generic [ref=e232]:
+                  - link "Li et al., 2023 Computers & Education, 2023" [ref=e233]:
+                    - /url: https://www.sciencedirect.com/science/article/pii/S0360131523000702
+                    - generic [ref=e234]: Li et al., 2023
+                    - generic [ref=e235]: Computers & Education, 2023
+                  - link "Liu, 2024 BMC Psychology, 2024" [ref=e236]:
+                    - /url: https://bmcpsychology.biomedcentral.com/articles/10.1186/s40359-023-01489-5
+                    - generic [ref=e237]: Liu, 2024
+                    - generic [ref=e238]: BMC Psychology, 2024
+          - article [ref=e239]:
+            - generic [ref=e240]:
+              - heading "Relevant humor can improve attention." [level=3] [ref=e241]
+              - paragraph [ref=e242]: Brief, content-related humor can support engagement, provided it does not distract from the instructional point.
+              - generic [ref=e243]:
+                - paragraph [ref=e244]: Sources
+                - generic [ref=e245]:
+                  - link "Lu'mu et al., 2023 Heliyon, 2023" [ref=e246]:
+                    - /url: https://www.sciencedirect.com/science/article/pii/S2405844023002426
+                    - generic [ref=e247]: Lu'mu et al., 2023
+                    - generic [ref=e248]: Heliyon, 2023
+                  - link "Pinto & Riesch, 2025 Bulletin of Science, Technology & Society, 2025" [ref=e249]:
+                    - /url: https://journals.sagepub.com/doi/10.1177/02704676251353101
+                    - generic [ref=e250]: Pinto & Riesch, 2025
+                    - generic [ref=e251]: Bulletin of Science, Technology & Society, 2025
+      - generic [ref=e255]:
+        - heading "Put it in your agent." [level=2] [ref=e256]
+        - paragraph [ref=e257]: You do not need a smarter answer. You need one you can actually follow before everyone starts nodding like they got it.
+        - generic [ref=e258]:
+          - link "Download the skill" [ref=e259]:
+            - /url: ./downloads/explain-it-like-im-5.md
+          - link "If it helped, tip me" [ref=e260]:
+            - /url: https://buymeacoffee.com/explainitlikeim
+  - generic [ref=e261]:
+    - button "Open Control Panel" [ref=e267]
+    - button "Hide Inline Fallback" [ref=e268]
+  - complementary "Site control panel" [ref=e270]:
+    - generic [ref=e271]:
+      - generic [ref=e272]:
+        - paragraph [ref=e273]: Linked control panel
+        - heading "Live page controls" [level=2] [ref=e274]
+        - paragraph [ref=e275]: Levels tune the page depth system. Layout and motion still update the hero letters live.
+      - generic [ref=e276]:
+        - button "Advanced Levels" [ref=e277]
+        - button "Reset" [ref=e278]
+    - generic [ref=e279]:
+      - paragraph [ref=e280]: Use Edit Layout to drag the hero letters into place, then save that composition as the new default.
+      - generic [ref=e281]:
+        - button "Edit Layout" [active] [ref=e426]
+        - button "Use Reference" [ref=e427]
+    - generic [ref=e284]:
+      - generic [ref=e285]:
+        - heading "Levels" [level=3] [ref=e286]
+        - generic [ref=e287]:
+          - generic [ref=e288]:
+            - generic [ref=e289]:
+              - generic [ref=e290]: Level -1
+              - generic [ref=e291]: "1.00"
+            - slider "Level -1 1.00" [ref=e292]: "1"
+          - generic [ref=e293]:
+            - generic [ref=e294]:
+              - generic [ref=e295]: Level 0
+              - generic [ref=e296]: "1.00"
+            - slider "Level 0 1.00" [ref=e297]: "1"
+          - generic [ref=e298]:
+            - generic [ref=e299]:
+              - generic [ref=e300]: Level 1
+              - generic [ref=e301]: "1.00"
+            - slider "Level 1 1.00" [ref=e302]: "1"
+          - generic [ref=e303]:
+            - generic [ref=e304]:
+              - generic [ref=e305]: Level 2
+              - generic [ref=e306]: "1.00"
+            - slider "Level 2 1.00" [ref=e307]: "1"
+          - generic [ref=e308]:
+            - generic [ref=e309]:
+              - generic [ref=e310]: Level 3
+              - generic [ref=e311]: "1.00"
+            - slider "Level 3 1.00" [ref=e312]: "1"
+      - generic [ref=e313]:
+        - heading "Responses" [level=3] [ref=e314]
+        - generic [ref=e315]:
+          - generic [ref=e316]:
+            - generic [ref=e317]:
+              - generic [ref=e318]: Shadow Strength
+              - generic [ref=e319]: "1.00"
+            - slider "Shadow Strength 1.00" [ref=e320]: "1"
+          - generic [ref=e321]:
+            - generic [ref=e322]:
+              - generic [ref=e323]: Shadow Softness
+              - generic [ref=e324]: "1.00"
+            - slider "Shadow Softness 1.00" [ref=e325]: "1"
+          - generic [ref=e326]:
+            - generic [ref=e327]:
+              - generic [ref=e328]: Light Strength
+              - generic [ref=e329]: "1.00"
+            - slider "Light Strength 1.00" [ref=e330]: "1"
+          - generic [ref=e331]:
+            - generic [ref=e332]:
+              - generic [ref=e333]: Fill Contrast
+              - generic [ref=e334]: "1.00"
+            - slider "Fill Contrast 1.00" [ref=e335]: "1"
+      - generic [ref=e336]:
+        - heading "Layout" [level=3] [ref=e337]
+        - generic [ref=e339]:
+          - generic [ref=e340]:
+            - generic [ref=e341]: Size
+            - generic [ref=e342]: 323px
+          - slider "Size 323px" [ref=e343]: "323"
+      - generic [ref=e344]:
+        - heading "Float" [level=3] [ref=e345]
+        - generic [ref=e346]:
+          - generic [ref=e347]:
+            - generic [ref=e348]:
+              - generic [ref=e349]: Float X
+              - generic [ref=e350]: "1.00"
+            - slider "Float X 1.00" [ref=e351]: "1"
+          - generic [ref=e352]:
+            - generic [ref=e353]:
+              - generic [ref=e354]: Float Y
+              - generic [ref=e355]: "1.00"
+            - slider "Float Y 1.00" [ref=e356]: "1"
+          - generic [ref=e357]:
+            - generic [ref=e358]:
+              - generic [ref=e359]: Float Speed
+              - generic [ref=e360]: "1.00"
+            - slider "Float Speed 1.00" [ref=e361]: "1"
+          - generic [ref=e362]:
+            - generic [ref=e363]:
+              - generic [ref=e364]: Float Twist
+              - generic [ref=e365]: "1.00"
+            - slider "Float Twist 1.00" [ref=e366]: "1"
+      - generic [ref=e367]:
+        - heading "Hover Bounce" [level=3] [ref=e368]
+        - generic [ref=e369]:
+          - generic [ref=e370]:
+            - generic [ref=e371]:
+              - generic [ref=e372]: Hover Sink
+              - generic [ref=e373]: "0.46"
+            - slider "Hover Sink 0.46" [ref=e374]: "0.46"
+          - generic [ref=e375]:
+            - generic [ref=e376]:
+              - generic [ref=e377]: Hover Lean
+              - generic [ref=e378]: "2.24"
+            - slider "Hover Lean 2.24" [ref=e379]: "2.24"
+          - generic [ref=e380]:
+            - generic [ref=e381]:
+              - generic [ref=e382]: Bounce Height
+              - generic [ref=e383]: "1.30"
+            - slider "Bounce Height 1.30" [ref=e384]: "1.3"
+          - generic [ref=e385]:
+            - generic [ref=e386]:
+              - generic [ref=e387]: Bounce Twist
+              - generic [ref=e388]: "1.88"
+            - slider "Bounce Twist 1.88" [ref=e389]: "1.88"
+          - generic [ref=e390]:
+            - generic [ref=e391]:
+              - generic [ref=e392]: Bounce Speed
+              - generic [ref=e393]: "0.37"
+            - slider "Bounce Speed 0.37" [ref=e394]: "0.37"
+          - generic [ref=e395]:
+            - generic [ref=e396]:
+              - generic [ref=e397]: Bounce Settle
+              - generic [ref=e398]: "1.43"
+            - slider "Bounce Settle 1.43" [ref=e399]: "1.43"
+      - generic [ref=e400]:
+        - heading "Sticky Motion" [level=3] [ref=e401]
+        - generic [ref=e402]:
+          - generic [ref=e403]:
+            - generic [ref=e404]:
+              - generic [ref=e405]: Sticky Window
+              - generic [ref=e406]: 196px
+            - slider "Sticky Window 196px" [ref=e407]: "196"
+          - generic [ref=e408]:
+            - generic [ref=e409]:
+              - generic [ref=e410]: Catch Drift
+              - generic [ref=e411]: "1.36"
+            - slider "Catch Drift 1.36" [ref=e412]: "1.36"
+          - generic [ref=e413]:
+            - generic [ref=e414]:
+              - generic [ref=e415]: Release Drift
+              - generic [ref=e416]: "1.24"
+            - slider "Release Drift 1.24" [ref=e417]: "1.24"
+      - generic [ref=e418]:
+        - heading "Letters" [level=3] [ref=e419]
+        - generic [ref=e421]:
+          - generic [ref=e422]:
+            - generic [ref=e423]: Vibrance
+            - generic [ref=e424]: "2.17"
+          - slider "Vibrance 2.17" [ref=e425]: "2.17"
