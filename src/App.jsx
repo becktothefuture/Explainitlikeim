@@ -1,11 +1,11 @@
 import { Fragment, useEffect, useEffectEvent, useLayoutEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
+import { createPortal, flushSync } from 'react-dom';
 
+import CustomCursor from './components/CustomCursor.jsx';
 import MagnetCanvas from './components/MagnetCanvas.jsx';
 import { clamp, getMagnetWidthForLabel } from './components/magnetUtils.js';
 import {
   applyThemeTokens,
-  EXAMPLE_TAB_COLORS,
   getLevelControlFactors,
   LEVEL_CONTROL_DEFAULTS,
   LEVEL_CONTROL_STORAGE_KEY,
@@ -30,6 +30,9 @@ const EXAMPLE_TAB_VIEWPORT_HEIGHT =
   EXAMPLE_TAB_HEIGHT * EXAMPLE_TAB_VISIBLE_COUNT +
   EXAMPLE_TAB_GAP * (EXAMPLE_TAB_VISIBLE_COUNT - 1);
 const EXAMPLE_TAB_TRANSITION_MS = 340;
+const EXAMPLE_TAB_WINDOW_START = -1;
+const EXAMPLE_TAB_WINDOW_END = EXAMPLE_TAB_VISIBLE_COUNT;
+const EXAMPLE_TAB_WINDOW_COUNT = EXAMPLE_TAB_VISIBLE_COUNT + 2;
 const HERO_CONTROL_STORAGE_KEY = 'eli5-hero-magnet-controls-v14';
 const HERO_LEGACY_CONTROL_STORAGE_KEYS = [
   'eli5-hero-magnet-controls-v13',
@@ -49,6 +52,10 @@ const HERO_LAYOUT_STORAGE_DEPRECATED_KEYS = [
 ];
 const HERO_CONTROL_WINDOW_NAME = 'eli5-hero-control-panel';
 const HERO_CONTROL_WINDOW_TITLE = "Config Panel for Explain It Like I'm Five";
+const APP_VIEWS = {
+  home: 'home',
+  depthLab: 'depth-lab',
+};
 const HERO_TITLE_SLOT_PADDING_X = 28;
 const HERO_TITLE_SLOT_PADDING_Y = 24;
 const HERO_SLOT_MIN_HEIGHT = 238;
@@ -60,7 +67,7 @@ const HERO_VISUAL_PAD_MIN = 5 / HERO_VISUAL_PAD_SCALE;
 const HERO_SIZE_MIN = 72;
 const HERO_SIZE_MAX = 560;
 const HERO_LAYOUT_REFERENCE_SIZE = 269;
-const HERO_DEFAULT_SIZE = Math.round(HERO_LAYOUT_REFERENCE_SIZE * 1.26);
+const HERO_DEFAULT_SIZE = 342;
 const HERO_LAYOUT_VERTICAL_COMPRESSION = 0.4;
 const HERO_LAYOUT_MIGRATION_EXPANSION = 1.35;
 const HERO_AUTHORED_LETTER_GAP = -48;
@@ -68,27 +75,27 @@ const HERO_AUTHORED_WORD_GAP = 0.07;
 const HERO_AUTHORED_LINE_GAP = 48;
 
 const HERO_REFERENCE_LAYOUT = {
-  'hero-0-0-E': { cx: 0.105, cy: 0.258, rotation: -4.4 },
-  'hero-0-1-X': { cx: 0.207, cy: 0.226, rotation: -16.8 },
-  'hero-0-2-P': { cx: 0.331, cy: 0.224, rotation: -0.8 },
-  'hero-0-3-L': { cx: 0.438, cy: 0.234, rotation: -1.6 },
-  'hero-0-4-A': { cx: 0.546, cy: 0.222, rotation: 2.8 },
-  'hero-0-5-I': { cx: 0.624, cy: 0.236, rotation: -4.8 },
-  'hero-0-6-N': { cx: 0.704, cy: 0.226, rotation: -1.4 },
-  'hero-0-8-I': { cx: 0.806, cy: 0.23, rotation: 0.4 },
-  'hero-0-9-T': { cx: 0.891, cy: 0.206, rotation: -1.9 },
-  'hero-1-0-L': { cx: 0.287, cy: 0.544, rotation: 1.6 },
-  'hero-1-1-I': { cx: 0.373, cy: 0.524, rotation: 0.2 },
-  'hero-1-2-K': { cx: 0.453, cy: 0.503, rotation: 4.9 },
-  'hero-1-3-E': { cx: 0.553, cy: 0.516, rotation: -5.8 },
-  'hero-1-5-I': { cx: 0.647, cy: 0.486, rotation: 0.8 },
-  "hero-1-6-'": { cx: 0.687, cy: 0.44, rotation: 4.2 },
-  'hero-1-7-M': { cx: 0.769, cy: 0.531, rotation: 8.4 },
-  'hero-2-0-F': { cx: 0.347, cy: 0.784, rotation: 7.9 },
-  'hero-2-1-I': { cx: 0.43, cy: 0.756, rotation: -6.7 },
-  'hero-2-2-V': { cx: 0.505, cy: 0.741, rotation: 6.2 },
-  'hero-2-3-E': { cx: 0.608, cy: 0.773, rotation: -2.3 },
-  'hero-2-4-…': { cx: 0.772, cy: 0.845, rotation: -1.2 },
+  'hero-0-0-E': { cx: 0.09063788679884617, cy: 0.215293138154343, rotation: -4.4 },
+  'hero-0-1-X': { cx: 0.20003328441280635, cy: 0.25373733993552533, rotation: -16.8 },
+  'hero-0-2-P': { cx: 0.31180379703034633, cy: 0.1911313421766937, rotation: -0.8 },
+  'hero-0-3-L': { cx: 0.40498212129196703, cy: 0.2085115312242193, rotation: -1.6 },
+  'hero-0-4-A': { cx: 0.5094788556644712, cy: 0.21223682900379473, rotation: 2.8 },
+  'hero-0-5-I': { cx: 0.5840169303270579, cy: 0.19984109514826218, rotation: -4.8 },
+  'hero-0-6-N': { cx: 0.6720354452753317, cy: 0.1911313421766937, rotation: -1.4 },
+  'hero-0-8-I': { cx: 0.814576005387794, cy: 0.24012737003703716, rotation: 0.4 },
+  'hero-0-9-T': { cx: 0.8842110735271341, cy: 0.20293998199271393, rotation: -1.9 },
+  'hero-1-0-L': { cx: 0.26229153487107065, cy: 0.5183693183441859, rotation: 1.6 },
+  'hero-1-1-I': { cx: 0.324938351963876, cy: 0.5108100143978981, rotation: 0.2 },
+  'hero-1-2-K': { cx: 0.40618815096037864, cy: 0.5084894061564154, rotation: 4.9 },
+  'hero-1-3-E': { cx: 0.5057541382084645, cy: 0.48033934236980635, rotation: -5.8 },
+  'hero-1-5-I': { cx: 0.6746017560905666, cy: 0.47564468878588606, rotation: 0.8 },
+  "hero-1-6-'": { cx: 0.7161723046147389, cy: 0.5818085679502267, rotation: 4.2 },
+  'hero-1-7-M': { cx: 0.8185703456253869, cy: 0.5097354360844456, rotation: 8.4 },
+  'hero-2-0-F': { cx: 0.3700734703358319, cy: 0.8215370722404887, rotation: 7.9 },
+  'hero-2-1-I': { cx: 0.4428731929818868, cy: 0.8186987097317433, rotation: -6.7 },
+  'hero-2-2-V': { cx: 0.517564767548864, cy: 0.7835555077611736, rotation: 6.2 },
+  'hero-2-3-E': { cx: 0.6310474131834947, cy: 0.7768616714773481, rotation: -2.3 },
+  'hero-2-4-…': { cx: 0.7672987838425523, cy: 0.7945113571545369, rotation: -1.2 },
 };
 
 const BOARD_LAYOUTS = {
@@ -129,7 +136,7 @@ const HERO_MAGNET_DEFAULTS = {
   stickyEaseBand: 196,
   stickyEaseEnterStrength: 1.36,
   stickyEaseReleaseStrength: 1.24,
-  vibrance: 2.17,
+  vibrance: 1.88,
   faceContrast: 1.26,
   innerLightOpacity: 1,
   innerLightOffsetY: 3.4,
@@ -197,47 +204,53 @@ const HERO_CONTROL_FIELDS = HERO_CONTROL_SECTIONS.flatMap((section) => section.f
 const HERO_CONTROL_KEYS = new Set(HERO_CONTROL_FIELDS.map((field) => field.key));
 const LEVEL_CONTROL_SECTIONS = [
   {
-    title: 'Levels',
+    title: 'Scene Geometry',
     fields: [
-      { key: 'levelMinus1Amount', label: 'Level -1', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
-      { key: 'level0Amount', label: 'Level 0', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
-      { key: 'level1Amount', label: 'Level 1', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
-      { key: 'level2Amount', label: 'Level 2', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
-      { key: 'level3Amount', label: 'Level 3', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
+      { key: 'sceneLevelSpacing', label: 'Level Spacing', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
+      { key: 'sceneInsetDepth', label: 'Inset Depth', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
     ],
   },
   {
-    title: 'Responses',
+    title: 'Light and Material',
     fields: [
-      { key: 'responseShadowStrength', label: 'Shadow Strength', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
-      { key: 'responseShadowSoftness', label: 'Shadow Softness', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
-      { key: 'responseLightStrength', label: 'Light Strength', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
-      { key: 'responseFillContrast', label: 'Fill Contrast', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
+      { key: 'sceneContactFocus', label: 'Contact Focus', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
+      { key: 'sceneShadowFalloff', label: 'Shadow Falloff', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
+      { key: 'sceneLightStrength', label: 'Light Strength', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
+      { key: 'sceneMaterialContrast', label: 'Material Contrast', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
     ],
   },
 ];
-const LEVEL_ADVANCED_META = [
-  { prefix: 'levelMinus1', title: 'Advanced: Level -1' },
-  { prefix: 'level0', title: 'Advanced: Level 0' },
-  { prefix: 'level1', title: 'Advanced: Level 1' },
-  { prefix: 'level2', title: 'Advanced: Level 2' },
-  { prefix: 'level3', title: 'Advanced: Level 3' },
-];
-const LEVEL_ADVANCED_SECTIONS = LEVEL_ADVANCED_META.map(({ prefix, title }) => ({
-  title,
-  fields: [
-    { key: `${prefix}ShadowTrim`, label: 'Shadow Trim', min: -0.75, max: 0.75, step: 0.01, format: (value) => value.toFixed(2) },
-    { key: `${prefix}LightTrim`, label: 'Light Trim', min: -0.75, max: 0.75, step: 0.01, format: (value) => value.toFixed(2) },
-    { key: `${prefix}FillTrim`, label: 'Fill Trim', min: -0.75, max: 0.75, step: 0.01, format: (value) => value.toFixed(2) },
-  ],
-}));
 const LEVEL_CONTROL_KEYS = new Set(Object.keys(LEVEL_CONTROL_DEFAULTS));
 
 const HOW_EXAMPLE = {
   skill: "Explain It Like I'm Five",
   prompt: 'why do we have a surplus?',
 };
-const HOW_STORY_EXAMPLE_SLUG = 'budget-surplus';
+
+function readAppView() {
+  if (typeof window === 'undefined') {
+    return APP_VIEWS.home;
+  }
+
+  const view = new URLSearchParams(window.location.search).get('view');
+  return view === APP_VIEWS.depthLab ? APP_VIEWS.depthLab : APP_VIEWS.home;
+}
+
+function writeAppView(nextView) {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  const url = new URL(window.location.href);
+
+  if (nextView === APP_VIEWS.home) {
+    url.searchParams.delete('view');
+  } else {
+    url.searchParams.set('view', nextView);
+  }
+
+  window.history.pushState({}, '', `${url.pathname}${url.search}${url.hash}`);
+}
 
 const HERO_COPY = {
   badge: 'Skill for AI agents',
@@ -287,7 +300,7 @@ const EXAMPLES = [
     slug: 'budget-surplus',
     category: 'Money',
     subject: 'Why Do We Have A Surplus?',
-    prompt: 'Explain why a budget can end with a surplus in simple steps from age 5 to 16.',
+    prompt: 'why do we have a surplus?',
     bands: [
       {
         age: '5',
@@ -315,7 +328,7 @@ const EXAMPLES = [
     slug: 'inflation',
     category: 'Economics',
     subject: 'Inflation',
-    prompt: 'Explain why prices keep rising in simple steps from age 5 to 16.',
+    prompt: 'Why do prices keep going up?',
     bands: [
       { age: '5', copy: 'Prices creep up, so your coins buy a little less than before.' },
       {
@@ -340,7 +353,7 @@ const EXAMPLES = [
     slug: 'photosynthesis',
     category: 'Science',
     subject: 'Photosynthesis',
-    prompt: 'Explain how plants make food in simple steps from age 5 to 16.',
+    prompt: 'How do plants make food?',
     bands: [
       { age: '5', copy: 'Plants make their own food from sunlight, water, and air.' },
       {
@@ -365,7 +378,7 @@ const EXAMPLES = [
     slug: 'tax-brackets',
     category: 'Economics',
     subject: 'Tax Brackets',
-    prompt: 'Explain tax brackets and why a higher bracket does not tax all of your income at that higher rate, in simple steps from age 5 to 16.',
+    prompt: 'How do tax brackets work?',
     bands: [
       {
         age: '5',
@@ -393,7 +406,7 @@ const EXAMPLES = [
     slug: 'measles-outbreak',
     category: 'Health',
     subject: 'Measles Outbreak',
-    prompt: 'Explain a measles outbreak and why it spreads so quickly in simple steps from age 5 to 16.',
+    prompt: 'Why does measles spread so fast?',
     bands: [
       {
         age: '5',
@@ -421,7 +434,7 @@ const EXAMPLES = [
     slug: 'tariffs-prices',
     category: 'Economics',
     subject: 'Tariffs & Prices',
-    prompt: 'Explain tariffs and why they can raise prices in simple steps from age 5 to 16.',
+    prompt: 'Why can tariffs raise prices?',
     bands: [
       {
         age: '5',
@@ -449,7 +462,7 @@ const EXAMPLES = [
     slug: 'merge-conflicts',
     category: 'Code',
     subject: 'Merge Conflicts',
-    prompt: 'Explain merge conflicts and why Git stops to ask for help in simple steps from age 5 to 16.',
+    prompt: 'Why is Git asking for help?',
     bands: [
       {
         age: '5',
@@ -477,7 +490,7 @@ const EXAMPLES = [
     slug: 'api-rate-limits',
     category: 'Software',
     subject: 'API Rate Limits',
-    prompt: 'Explain API rate limits and why a service tells you to slow down in simple steps from age 5 to 16.',
+    prompt: 'Why is this API telling me to slow down?',
     bands: [
       {
         age: '5',
@@ -505,7 +518,7 @@ const EXAMPLES = [
     slug: 'peer-review',
     category: 'Research',
     subject: 'Peer Review',
-    prompt: 'Explain peer review and who checks research before publication in simple steps from age 5 to 16.',
+    prompt: 'Who checks research before it gets published?',
     bands: [
       {
         age: '5',
@@ -533,7 +546,7 @@ const EXAMPLES = [
     slug: 'interest-rates',
     category: 'Economics',
     subject: 'Interest Rates',
-    prompt: 'Explain interest rates and why they go up or down in simple steps from age 5 to 16.',
+    prompt: 'Why do interest rates go up or down?',
     bands: [
       {
         age: '5',
@@ -561,7 +574,7 @@ const EXAMPLES = [
     slug: 'technical-debt',
     category: 'Code',
     subject: 'Technical Debt',
-    prompt: 'Explain technical debt and why rushed code gets harder to change later in simple steps from age 5 to 16.',
+    prompt: 'What is technical debt?',
     bands: [
       {
         age: '5',
@@ -587,12 +600,9 @@ const EXAMPLES = [
   },
 ];
 
-const EXAMPLE_TAB_STYLES = [
-  { color: EXAMPLE_TAB_COLORS[0], tilt: -3 },
-  { color: EXAMPLE_TAB_COLORS[1], tilt: 2 },
-  { color: EXAMPLE_TAB_COLORS[2], tilt: -2 },
-  { color: EXAMPLE_TAB_COLORS[3], tilt: 3 },
-];
+const EXAMPLE_TAB_SLOT_SCALES = [0, 1, 0.97, 0.94, 0.91, 0.88, 0];
+const EXAMPLE_TAB_SLOT_TILTS = [-2, -4, 2, -2, 3, -1, 2];
+const EXAMPLE_TAB_SLOT_COLOR_INDEXES = [5, 0, 1, 2, 3, 4, 5];
 
 const SCIENCE_SOURCES = [
   {
@@ -1018,7 +1028,7 @@ function expandHeroLayoutVertical(layout = {}, factor = HERO_LAYOUT_MIGRATION_EX
 }
 
 function getReferenceHeroLayout() {
-  return compactHeroLayoutVertical(HERO_REFERENCE_LAYOUT);
+  return sanitizeHeroLayout(HERO_REFERENCE_LAYOUT);
 }
 
 function getHeroLayoutRenderExpansion(heroMagnetControls = HERO_MAGNET_DEFAULTS) {
@@ -1548,18 +1558,6 @@ function useStickyEase({
   ]);
 }
 
-function getExampleTabVisuals(slotIndex) {
-  const scales = [1, 0.97, 0.94, 0.91, 0.88];
-  const scale = slotIndex >= 0 && slotIndex < scales.length
-    ? scales[slotIndex]
-    : 0;
-
-  return {
-    offsetY: EXAMPLE_TAB_STEP * slotIndex,
-    scale,
-  };
-}
-
 function wrapIndex(index, length) {
   if (length <= 0) {
     return 0;
@@ -1568,14 +1566,33 @@ function wrapIndex(index, length) {
   return ((index % length) + length) % length;
 }
 
-function getExampleTabTrackItems(examples, startIndex) {
+function getExampleTabSlotVisuals(slotIndex) {
+  const boundedSlotIndex = clamp(
+    slotIndex,
+    EXAMPLE_TAB_WINDOW_START,
+    EXAMPLE_TAB_WINDOW_END,
+  );
+  const mapIndex = boundedSlotIndex - EXAMPLE_TAB_WINDOW_START;
+  const layerSlotIndex = clamp(boundedSlotIndex, 0, EXAMPLE_TAB_VISIBLE_COUNT - 1);
+
+  return {
+    offsetY: EXAMPLE_TAB_STEP * boundedSlotIndex,
+    scale: EXAMPLE_TAB_SLOT_SCALES[mapIndex],
+    tilt: EXAMPLE_TAB_SLOT_TILTS[mapIndex],
+    color: MAGNET_COLORS[EXAMPLE_TAB_SLOT_COLOR_INDEXES[mapIndex]],
+    layer: String(30 - layerSlotIndex),
+    isVisible: boundedSlotIndex >= 0 && boundedSlotIndex < EXAMPLE_TAB_VISIBLE_COUNT,
+  };
+}
+
+function getExampleTabRingItems(examples, committedIndex) {
   if (examples.length === 0) {
     return [];
   }
 
-  return Array.from({ length: EXAMPLE_TAB_VISIBLE_COUNT + 2 }, (_, offset) => {
-    const slotIndex = offset - 1;
-    const exampleIndex = wrapIndex(startIndex + slotIndex, examples.length);
+  return Array.from({ length: EXAMPLE_TAB_WINDOW_COUNT }, (_, offset) => {
+    const slotIndex = EXAMPLE_TAB_WINDOW_START + offset;
+    const exampleIndex = wrapIndex(committedIndex + slotIndex, examples.length);
     const example = examples[exampleIndex];
 
     return {
@@ -1767,113 +1784,118 @@ function buildCenteredHeroBoardRect(
 
 function buildHeroLetterLevelProps(levelControls, vibrance = HERO_MAGNET_DEFAULTS.vibrance) {
   const level3 = getLevelControlFactors(levelControls, 'level3');
+  const shadowStrengthDelta = level3.shadowStrength - 1;
+  const shadowSoftnessDelta = level3.shadowSoftness - 1;
+  const amountDelta = level3.amount - 1;
 
   return {
     vibrance,
     faceContrast: clamp(HERO_MAGNET_DEFAULTS.faceContrast * (1 + (level3.fillContrast - 1) * 0.42), 0, 2),
     innerLightOpacity: clamp(
       HERO_MAGNET_DEFAULTS.innerLightOpacity *
-        (1 + (level3.lightStrength - 1) * 0.36 + (level3.amount - 1) * 0.08),
+        (1 + (level3.lightStrength - 1) * 0.36 + amountDelta * 0.08),
       0,
       1,
     ),
     innerLightOffsetY: clamp(
-      HERO_MAGNET_DEFAULTS.innerLightOffsetY * (1 + (level3.amount - 1) * 0.24),
+      HERO_MAGNET_DEFAULTS.innerLightOffsetY * (1 + amountDelta * 0.24),
       0,
       12,
     ),
     innerLightBlur: clamp(
       HERO_MAGNET_DEFAULTS.innerLightBlur *
-        (1 + (level3.lightStrength - 1) * 0.22 + (level3.shadowSoftness - 1) * 0.08),
+        (1 + (level3.lightStrength - 1) * 0.22 + shadowSoftnessDelta * 0.08),
       0,
       16,
     ),
     innerShadeOpacity: clamp(
-      HERO_MAGNET_DEFAULTS.innerShadeOpacity * (1 + (level3.shadowStrength - 1) * 0.35),
+      HERO_MAGNET_DEFAULTS.innerShadeOpacity * (1 + shadowStrengthDelta * 0.18),
       0,
       1,
     ),
     innerShadeOffsetX: clamp(
-      HERO_MAGNET_DEFAULTS.innerShadeOffsetX * (1 + (level3.amount - 1) * 0.18),
+      HERO_MAGNET_DEFAULTS.innerShadeOffsetX * (1 + amountDelta * 0.18),
       0,
       12,
     ),
     innerShadeOffsetY: clamp(
-      HERO_MAGNET_DEFAULTS.innerShadeOffsetY * (1 + (level3.amount - 1) * 0.18),
+      HERO_MAGNET_DEFAULTS.innerShadeOffsetY * (1 + amountDelta * 0.18),
       0,
       12,
     ),
     innerShadeBlur: clamp(
-      HERO_MAGNET_DEFAULTS.innerShadeBlur * (1 + (level3.shadowSoftness - 1) * 0.18),
+      HERO_MAGNET_DEFAULTS.innerShadeBlur * (1 + shadowSoftnessDelta * 0.18),
       0,
       16,
     ),
     depthContrast: clamp(
-      HERO_MAGNET_DEFAULTS.depthContrast * (1 + (level3.fillContrast - 1) * 0.26),
+      HERO_MAGNET_DEFAULTS.depthContrast *
+        (1 + (level3.fillContrast - 1) * 0.26 + shadowStrengthDelta * 0.34),
       0,
       2,
     ),
     depthOffsetX: clamp(
-      HERO_MAGNET_DEFAULTS.depthOffsetX * (1 + (level3.amount - 1) * 0.35),
+      HERO_MAGNET_DEFAULTS.depthOffsetX * (1 + amountDelta * 0.35),
       0,
       12,
     ),
     depthOffsetY: clamp(
       HERO_MAGNET_DEFAULTS.depthOffsetY *
-        (1 + (level3.amount - 1) * 0.42 + (level3.shadowStrength - 1) * 0.16),
+        (1 + amountDelta * 0.42 + shadowStrengthDelta * 0.22),
       0,
       20,
     ),
     depthSpread: Math.round(
       clamp(
         HERO_MAGNET_DEFAULTS.depthSpread +
-          (level3.amount - 1) * 1.8 +
-          (level3.shadowSoftness - 1) * 0.8,
+          amountDelta * 1.8 +
+          shadowSoftnessDelta * 0.8 +
+          shadowStrengthDelta * 0.9,
         0,
         6,
       ),
     ),
     groundShadow1Opacity: clamp(
       HERO_MAGNET_DEFAULTS.groundShadow1Opacity *
-        (1 + (level3.shadowStrength - 1) * 0.35 + (level3.amount - 1) * 0.12),
+        (1 + shadowStrengthDelta * 0.9 + amountDelta * 0.14),
       0,
       1,
     ),
     groundShadow1OffsetX: clamp(
-      HERO_MAGNET_DEFAULTS.groundShadow1OffsetX * (1 + (level3.amount - 1) * 0.22),
+      HERO_MAGNET_DEFAULTS.groundShadow1OffsetX * (1 + amountDelta * 0.22),
       0,
       24,
     ),
     groundShadow1OffsetY: clamp(
-      HERO_MAGNET_DEFAULTS.groundShadow1OffsetY * (1 + (level3.amount - 1) * 0.3),
+      HERO_MAGNET_DEFAULTS.groundShadow1OffsetY * (1 + amountDelta * 0.3),
       0,
       40,
     ),
     groundShadow1Blur: clamp(
       HERO_MAGNET_DEFAULTS.groundShadow1Blur *
-        (1 + (level3.shadowSoftness - 1) * 0.36 + (level3.amount - 1) * 0.16),
+        (1 + shadowSoftnessDelta * 0.36 + amountDelta * 0.16),
       0,
       40,
     ),
     groundShadow2Opacity: clamp(
       HERO_MAGNET_DEFAULTS.groundShadow2Opacity *
-        (1 + (level3.shadowStrength - 1) * 0.42 + (level3.amount - 1) * 0.1),
+        (1 + shadowStrengthDelta * 1.05 + amountDelta * 0.12),
       0,
       1,
     ),
     groundShadow2OffsetX: clamp(
-      HERO_MAGNET_DEFAULTS.groundShadow2OffsetX * (1 + (level3.amount - 1) * 0.2),
+      HERO_MAGNET_DEFAULTS.groundShadow2OffsetX * (1 + amountDelta * 0.2),
       0,
       36,
     ),
     groundShadow2OffsetY: clamp(
-      HERO_MAGNET_DEFAULTS.groundShadow2OffsetY * (1 + (level3.amount - 1) * 0.26),
+      HERO_MAGNET_DEFAULTS.groundShadow2OffsetY * (1 + amountDelta * 0.26),
       0,
       56,
     ),
     groundShadow2Blur: clamp(
       HERO_MAGNET_DEFAULTS.groundShadow2Blur *
-        (1 + (level3.shadowSoftness - 1) * 0.42 + (level3.amount - 1) * 0.14),
+        (1 + shadowSoftnessDelta * 0.42 + amountDelta * 0.14),
       0,
       72,
     ),
@@ -2059,44 +2081,7 @@ function applyPersistedHeroLayout(
     };
   });
 
-  const heroBounds = getHeroVisualBounds(positionedMagnets);
-
-  if (!heroBounds) {
-    return positionedMagnets;
-  }
-
-  const desiredShiftX =
-    heroRect.left + heroRect.width / 2 - (heroBounds.left + heroBounds.right) / 2;
-  const desiredShiftY =
-    heroRect.top + heroRect.height / 2 - (heroBounds.top + heroBounds.bottom) / 2;
-  const minShiftX = heroRect.left - heroBounds.left;
-  const maxShiftX = heroRect.left + heroRect.width - heroBounds.right;
-  const minShiftY = heroRect.top - heroBounds.top;
-  const maxShiftY = heroRect.top + heroRect.height - heroBounds.bottom;
-  const shiftX =
-    heroBounds.right - heroBounds.left <= heroRect.width
-      ? clamp(desiredShiftX, minShiftX, maxShiftX)
-      : desiredShiftX;
-  const shiftY =
-    heroBounds.bottom - heroBounds.top <= heroRect.height
-      ? clamp(desiredShiftY, minShiftY, maxShiftY)
-      : desiredShiftY;
-
-  if (Math.abs(shiftX) < 0.01 && Math.abs(shiftY) < 0.01) {
-    return positionedMagnets;
-  }
-
-  return positionedMagnets.map((magnet) => {
-    if (magnet.boardId !== 'hero') {
-      return magnet;
-    }
-
-    return {
-      ...magnet,
-      x: magnet.x + shiftX,
-      y: magnet.y + shiftY,
-    };
-  });
+  return positionedMagnets;
 }
 
 function buildFallbackBoardRects() {
@@ -2276,11 +2261,9 @@ function ControlPanelSurface({
   caption,
   controls,
   sections,
-  isAdvancedLevelsVisible = false,
   isLayoutEditing = false,
   onChange,
   onReset,
-  onToggleAdvancedLevels,
   onStartLayoutEdit,
   onSaveLayoutEdit,
   onCancelLayoutEdit,
@@ -2294,22 +2277,12 @@ function ControlPanelSurface({
           <p className="eli5-control-panel__eyebrow">{eyebrow}</p>
           <h2>{title}</h2>
           <p className="eli5-control-panel__caption">{caption}</p>
-        </div>
+      </div>
 
-        <div className="eli5-control-panel__actions">
-          {onToggleAdvancedLevels ? (
-            <button
-              type="button"
-              className="eli5-control-panel__reset"
-              onClick={onToggleAdvancedLevels}
-            >
-              {isAdvancedLevelsVisible ? 'Hide Advanced' : 'Advanced Levels'}
-            </button>
-          ) : null}
-
-          <button
-            type="button"
-            className="eli5-control-panel__reset"
+      <div className="eli5-control-panel__actions">
+        <button
+          type="button"
+          className="eli5-control-panel__reset"
             onClick={onReset}
           >
             Reset
@@ -2405,6 +2378,197 @@ function ControlPanelSurface({
   );
 }
 
+function DepthLabCard({
+  level,
+  title,
+  detail,
+  tone = 'default',
+  children,
+}) {
+  return (
+    <article className={`eli5-depth-lab__card eli5-depth-lab__card--${tone}`}>
+      <div className="eli5-depth-lab__card-copy">
+        <p className="eli5-depth-lab__card-level">{level}</p>
+        <h2>{title}</h2>
+        <p>{detail}</p>
+      </div>
+
+      <div className="eli5-depth-lab__card-demo">
+        {children}
+      </div>
+    </article>
+  );
+}
+
+function DepthLabView({
+  controls,
+  sections,
+  onChange,
+  onReset,
+  onReturnHome,
+}) {
+  return (
+    <div className="eli5-page eli5-page--depth-lab">
+      <CustomCursor />
+
+      <main className="eli5-main eli5-main--depth-lab">
+        <div className="eli5-depth-lab">
+          <div className="eli5-depth-lab__topbar">
+            <div className="eli5-depth-lab__intro">
+              <p className="eli5-depth-lab__eyebrow">Depth Lab</p>
+              <h1>Test the page depth stack without poking the whole landing page.</h1>
+              <p>
+                The grid shows the inset field, the page plane, buttons and pills, floating chrome, and the cursor. The controls on the right tune one shared depth scene for the whole site.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              className="eli5-button eli5-button--secondary"
+              onClick={onReturnHome}
+            >
+              Back to landing page
+            </button>
+          </div>
+
+          <div className="eli5-depth-lab__layout">
+            <section className="eli5-depth-lab__stage" aria-label="Depth preview grid">
+              <div className="eli5-depth-lab__grid">
+                <DepthLabCard
+                  level="Level -1"
+                  title="Intrusion"
+                  detail="This should read as pushed into the page. Shadow above. Light below."
+                  tone="inset"
+                >
+                  <div className="eli5-prompt-field__shell eli5-depth-lab__field-demo">
+                    <span className="eli5-prompt-field__skill">Skills for AI agents</span>
+                    <span className="eli5-depth-lab__field-copy">Inset form field</span>
+                  </div>
+                </DepthLabCard>
+
+                <DepthLabCard
+                  level="Level 0"
+                  title="Printed on the page"
+                  detail="No lift. No recess. Just content sitting on the paper."
+                  tone="page"
+                >
+                  <div className="eli5-depth-lab__page-demo">
+                    <p className="eli5-depth-lab__page-kicker">Level 0 copy</p>
+                    <h3>Printed surface</h3>
+                    <p>
+                      This is the page plane. It should feel calm and almost shadowless.
+                    </p>
+                  </div>
+                </DepthLabCard>
+
+                <DepthLabCard
+                  level="Level 1"
+                  title="Buttons"
+                  detail="Closer to the page, so the contact shadow should be sharper and more anchored."
+                  tone="button"
+                >
+                  <div className="eli5-depth-lab__button-row">
+                    <button type="button" className="eli5-button eli5-button--primary">
+                      Primary
+                    </button>
+                    <button type="button" className="eli5-button eli5-button--secondary">
+                      Secondary
+                    </button>
+                  </div>
+                </DepthLabCard>
+
+                <DepthLabCard
+                  level="Level 1"
+                  title="Pill / Tab"
+                  detail="Same level as the buttons, but on a smaller footprint so it is easier to judge the edge."
+                  tone="pill"
+                >
+                  <div className="eli5-depth-lab__pill-row">
+                    <span className="eli5-depth-lab__pill-sample">What it does</span>
+                    <span className="eli5-depth-lab__pill-sample eli5-depth-lab__pill-sample--active">See output</span>
+                  </div>
+                </DepthLabCard>
+
+                <DepthLabCard
+                  level="Level 2"
+                  title="Floating menu"
+                  detail="This sits furthest from the page, so the shadow can travel more and blur more."
+                  tone="menu"
+                >
+                  <div className="eli5-depth-lab__menu-demo">
+                    <div className="eli5-depth-lab__menu-links" aria-hidden="true">
+                      <span>What it does</span>
+                      <span>See output</span>
+                      <span>Install</span>
+                    </div>
+                    <button type="button" className="eli5-button eli5-button--primary eli5-button--header">
+                      Download
+                    </button>
+                  </div>
+                </DepthLabCard>
+
+                <DepthLabCard
+                  level="Level 3"
+                  title="Cursor reference"
+                  detail="Using the cursor as the level-3 reference for now. It stays on the top layer and reacts to the same level-3 depth controls."
+                  tone="reference"
+                >
+                  <div className="eli5-depth-lab__reference-stack">
+                    <div className="eli5-depth-lab__reference-row">
+                      <div className="eli5-depth-lab__cursor-swatch" aria-hidden="true">
+                        <span className="eli5-depth-lab__cursor-glow" />
+                        <img src="/assets/cursors/pointer.png" alt="" draggable="false" />
+                      </div>
+                    </div>
+                    <div className="eli5-depth-lab__reference-grid" aria-hidden="true">
+                      <span
+                        className="eli5-depth-lab__reference-tile"
+                        style={{ '--reference-tile-fill': 'var(--magnet-coral)' }}
+                      >
+                        E
+                      </span>
+                      <span
+                        className="eli5-depth-lab__reference-tile"
+                        style={{ '--reference-tile-fill': 'var(--magnet-amber)' }}
+                      >
+                        L
+                      </span>
+                      <span
+                        className="eli5-depth-lab__reference-tile"
+                        style={{ '--reference-tile-fill': 'var(--magnet-mint)' }}
+                      >
+                        I
+                      </span>
+                      <span
+                        className="eli5-depth-lab__reference-tile"
+                        style={{ '--reference-tile-fill': 'var(--magnet-blue)' }}
+                      >
+                        5
+                      </span>
+                    </div>
+                  </div>
+                </DepthLabCard>
+              </div>
+            </section>
+
+            <div className="eli5-depth-lab__panel">
+              <ControlPanelSurface
+                eyebrow="Linked control panel"
+                title="Depth scene controls"
+                caption="These are the same saved scene controls the landing page uses. Change them here and the whole depth system stays in sync."
+                controls={controls}
+                sections={sections}
+                onChange={onChange}
+                onReset={onReset}
+              />
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
+
 function isTypingTarget(target) {
   if (!(target instanceof HTMLElement)) {
     return false;
@@ -2448,53 +2612,21 @@ function TypedPromptField({
   );
 }
 
-function StoryExampleCard({ example }) {
-  if (!example) {
-    return null;
-  }
-
-  return (
-    <article className="eli5-story-example">
-      <div className="eli5-story-example__header">
-        <p className="eli5-story-example__eyebrow">Surplus example</p>
-        <h3>{example.subject}</h3>
-        <p className="eli5-story-example__caption">
-          One plain question. Five increasingly complete answers. Finance eventually stops sounding like a prank.
-        </p>
-      </div>
-
-      <TypedPromptField
-        label="Example prompt"
-        skill="Explain It Like I'm Five"
-        prompt={getExamplePromptText(example)}
-        className="eli5-story-example__prompt"
-        ariaLabel={`Explain It Like I'm Five ${getExamplePromptText(example)}`}
-      />
-
-      <div className="eli5-story-example__rows">
-        {example.bands.map((band) => (
-          <div key={band.age} className="eli5-story-example__row">
-            <p className="eli5-story-example__age">{band.age}</p>
-            <p className="eli5-story-example__copy">{band.copy}</p>
-          </div>
-        ))}
-      </div>
-    </article>
-  );
-}
-
 function ExampleTopicTabs({
   examples,
   activeSlug,
   onSelect,
 }) {
   const focusTargetIndexRef = useRef(null);
-  const internalCommittedSlugRef = useRef(activeSlug);
   const transitionTimeoutRef = useRef(0);
+  const resetFrameRef = useRef(0);
   const activeIndex = Math.max(0, examples.findIndex((example) => example.slug === activeSlug));
-  const [displayIndex, setDisplayIndex] = useState(activeIndex);
+  const [committedIndex, setCommittedIndex] = useState(activeIndex);
   const [queuedSteps, setQueuedSteps] = useState(0);
-  const [animationDirection, setAnimationDirection] = useState(0);
+  const [direction, setDirection] = useState(0);
+  const [phase, setPhase] = useState('idle');
+  const isAnimating = phase === 'animating';
+  const isResetting = phase === 'resetting';
 
   const clearPendingTransition = useEffectEvent(() => {
     if (typeof window === 'undefined') {
@@ -2502,7 +2634,9 @@ function ExampleTopicTabs({
     }
 
     window.clearTimeout(transitionTimeoutRef.current);
+    window.cancelAnimationFrame(resetFrameRef.current);
     transitionTimeoutRef.current = 0;
+    resetFrameRef.current = 0;
   });
 
   const focusExampleIndex = useEffectEvent((nextIndex) => {
@@ -2519,19 +2653,39 @@ function ExampleTopicTabs({
     });
   });
 
-  const finishTransition = useEffectEvent((nextIndex) => {
+  const finishTransition = useEffectEvent((stepDirection) => {
     clearPendingTransition();
-    setDisplayIndex(nextIndex);
-    setAnimationDirection(0);
-    const nextSlug = examples[nextIndex]?.slug ?? activeSlug;
+    const nextIndex = wrapIndex(committedIndex + stepDirection, examples.length);
+    const remainingSteps = queuedSteps - stepDirection;
 
-    internalCommittedSlugRef.current = nextSlug;
-    onSelect(nextSlug);
+    flushSync(() => {
+      setPhase('resetting');
+      setCommittedIndex(nextIndex);
+      setQueuedSteps(remainingSteps);
+      setDirection(0);
+    });
 
-    if (queuedSteps === 0 && focusTargetIndexRef.current === nextIndex) {
-      focusExampleIndex(focusTargetIndexRef.current);
-      focusTargetIndexRef.current = null;
+    if (typeof window !== 'undefined') {
+      resetFrameRef.current = window.requestAnimationFrame(() => {
+        setPhase('idle');
+        resetFrameRef.current = 0;
+
+        if (remainingSteps === 0 && focusTargetIndexRef.current === nextIndex) {
+          focusExampleIndex(nextIndex);
+          focusTargetIndexRef.current = null;
+        }
+      });
+    } else {
+      setPhase('idle');
+
+      if (remainingSteps === 0 && focusTargetIndexRef.current === nextIndex) {
+        focusExampleIndex(nextIndex);
+        focusTargetIndexRef.current = null;
+      }
     }
+
+    const nextSlug = examples[nextIndex]?.slug ?? activeSlug;
+    onSelect(nextSlug);
   });
 
   useEffect(() => () => {
@@ -2539,55 +2693,48 @@ function ExampleTopicTabs({
   }, [clearPendingTransition]);
 
   useEffect(() => {
-    if (animationDirection !== 0 || queuedSteps !== 0) {
-      return;
-    }
-
-    const currentSlug = examples[displayIndex]?.slug;
-
-    if (!activeSlug || activeSlug === currentSlug || activeSlug === internalCommittedSlugRef.current) {
+    if (!activeSlug || isAnimating || isResetting || queuedSteps !== 0) {
       return;
     }
 
     const externalIndex = examples.findIndex((example) => example.slug === activeSlug);
 
-    if (externalIndex < 0) {
+    if (externalIndex < 0 || externalIndex === committedIndex) {
       return;
     }
 
-    internalCommittedSlugRef.current = activeSlug;
-    setDisplayIndex(externalIndex);
-  }, [activeSlug, animationDirection, displayIndex, examples, queuedSteps]);
+    setCommittedIndex(externalIndex);
+  }, [activeSlug, committedIndex, examples, isAnimating, isResetting, queuedSteps]);
 
   useEffect(() => {
-    if (examples.length === 0 || animationDirection !== 0 || queuedSteps === 0) {
+    if (examples.length === 0 || phase !== 'idle' || queuedSteps === 0) {
       return;
     }
 
-    const direction = queuedSteps > 0 ? 1 : -1;
-    const nextIndex = wrapIndex(displayIndex + direction, examples.length);
+    const nextDirection = queuedSteps > 0 ? 1 : -1;
+    const nextIndex = wrapIndex(committedIndex + nextDirection, examples.length);
     const nextExample = examples[nextIndex];
 
     if (!nextExample) {
       return;
     }
 
-    setQueuedSteps((currentSteps) => currentSteps - direction);
-    setAnimationDirection(direction);
+    setDirection(nextDirection);
+    setPhase('animating');
 
     if (typeof window === 'undefined') {
-      finishTransition(nextIndex);
+      finishTransition(nextDirection);
       return;
     }
 
     transitionTimeoutRef.current = window.setTimeout(() => {
-      finishTransition(nextIndex);
+      finishTransition(nextDirection);
     }, EXAMPLE_TAB_TRANSITION_MS + 40);
   }, [
-    animationDirection,
-    displayIndex,
+    committedIndex,
     finishTransition,
     examples,
+    phase,
     queuedSteps,
   ]);
 
@@ -2602,9 +2749,9 @@ function ExampleTopicTabs({
     clearPendingTransition();
     focusTargetIndexRef.current = shouldFocus ? wrappedIndex : null;
     setQueuedSteps(0);
-    setAnimationDirection(0);
-    setDisplayIndex(wrappedIndex);
-    internalCommittedSlugRef.current = targetExample.slug;
+    setDirection(0);
+    setPhase('idle');
+    setCommittedIndex(wrappedIndex);
     onSelect(targetExample.slug);
 
     if (shouldFocus) {
@@ -2625,11 +2772,11 @@ function ExampleTopicTabs({
       return;
     }
 
-    if (animationDirection !== 0 || queuedSteps !== 0) {
+    if (phase !== 'idle' || queuedSteps !== 0) {
       return;
     }
 
-    const delta = wrapIndex(wrappedIndex - displayIndex, examples.length);
+    const delta = wrapIndex(wrappedIndex - committedIndex, examples.length);
 
     if (delta === 0) {
       if (shouldFocus) {
@@ -2643,7 +2790,7 @@ function ExampleTopicTabs({
   };
 
   const queueStep = (direction, shouldFocus = false) => {
-    const nextIndex = wrapIndex(displayIndex + direction, examples.length);
+    const nextIndex = wrapIndex(committedIndex + direction, examples.length);
     const targetExample = examples[nextIndex];
 
     if (!targetExample) {
@@ -2655,7 +2802,7 @@ function ExampleTopicTabs({
       return;
     }
 
-    if (animationDirection !== 0 || queuedSteps !== 0) {
+    if (phase !== 'idle' || queuedSteps !== 0) {
       return;
     }
 
@@ -2688,20 +2835,19 @@ function ExampleTopicTabs({
     }
   };
 
-  const handleSlotTransitionEnd = (event) => {
-    if (event.target !== event.currentTarget || event.propertyName !== 'transform' || animationDirection === 0) {
+  const handleTrackTransitionEnd = (event) => {
+    if (event.target !== event.currentTarget || event.propertyName !== 'transform' || !isAnimating) {
       return;
     }
 
-    if (event.currentTarget.dataset.slotIndex !== '0') {
-      return;
-    }
-
-    const nextIndex = wrapIndex(displayIndex + animationDirection, examples.length);
-    finishTransition(nextIndex);
+    finishTransition(direction);
   };
 
-  const tabTrack = getExampleTabTrackItems(examples, displayIndex);
+  const tabTrack = getExampleTabRingItems(examples, committedIndex);
+  const trackShift = isAnimating
+    ? `${-direction * EXAMPLE_TAB_STEP}px`
+    : '0px';
+  const measureVisuals = getExampleTabSlotVisuals(0);
 
   return (
     <div
@@ -2709,23 +2855,21 @@ function ExampleTopicTabs({
       style={{
         '--example-tab-item-height': `${EXAMPLE_TAB_HEIGHT}px`,
         '--example-tab-gap': `${EXAMPLE_TAB_GAP}px`,
+        '--example-tab-step': `${EXAMPLE_TAB_STEP}px`,
         '--example-tab-viewport-height': `${EXAMPLE_TAB_VIEWPORT_HEIGHT}px`,
       }}
     >
       <div className="eli5-example-tabs__viewport">
         <div className="eli5-example-tabs__measure" aria-hidden="true">
-          {examples.map((example, index) => {
-            const tabStyle = EXAMPLE_TAB_STYLES[index % EXAMPLE_TAB_STYLES.length];
-
+          {examples.map((example) => {
             return (
               <span
                 key={`measure-${example.slug}`}
                 className="eli5-example-tab eli5-example-tab--measure"
                 style={{
-                  '--example-tab-color': tabStyle.color,
+                  '--example-tab-color': measureVisuals.color,
                   '--example-tab-tilt': '0deg',
                   '--example-tab-scale': '1',
-                  '--example-tab-offset-y': '0px',
                 }}
               >
                 {example.subject}
@@ -2735,10 +2879,14 @@ function ExampleTopicTabs({
         </div>
 
         <div
-          className="eli5-example-tabs__list"
+          className={`eli5-example-tabs__list${isResetting ? ' is-resetting' : ''}`}
           role="tablist"
           aria-label="Example topics"
           aria-orientation="vertical"
+          style={{
+            '--example-tab-track-shift': trackShift,
+          }}
+          onTransitionEnd={handleTrackTransitionEnd}
         >
           {tabTrack.map((item) => {
             const {
@@ -2747,40 +2895,42 @@ function ExampleTopicTabs({
               slotIndex,
             } = item;
             const isActive = example.slug === activeSlug;
-            const tabStyle = EXAMPLE_TAB_STYLES[exampleIndex % EXAMPLE_TAB_STYLES.length];
-            const renderedSlotIndex = slotIndex + (animationDirection > 0 ? -1 : animationDirection < 0 ? 1 : 0);
-            const visuals = getExampleTabVisuals(renderedSlotIndex);
-            const layerSlot = Math.max(Math.min(renderedSlotIndex, EXAMPLE_TAB_VISIBLE_COUNT - 1), 0);
-            const isWithinVisibleRange = renderedSlotIndex >= 0 && renderedSlotIndex < EXAMPLE_TAB_VISIBLE_COUNT;
+            const sourceVisuals = getExampleTabSlotVisuals(slotIndex);
+            const targetSlotIndex = isAnimating
+              ? slotIndex - direction
+              : slotIndex;
+            const visualState = getExampleTabSlotVisuals(targetSlotIndex);
+            const isWithinVisibleRange = slotIndex >= 0 && slotIndex < EXAMPLE_TAB_VISIBLE_COUNT;
+            const isAriaVisible = isAnimating
+              ? visualState.isVisible
+              : isWithinVisibleRange;
 
             return (
               <div
                 key={`slot-${slotIndex}`}
-                data-slot-index={slotIndex}
                 className="eli5-example-tabs__slot"
                 style={{
-                  '--example-tab-offset-y': `${visuals.offsetY}px`,
-                  '--example-tab-scale': visuals.scale.toFixed(3),
-                  '--example-tab-layer': String(30 - layerSlot),
-                  pointerEvents: isWithinVisibleRange ? undefined : 'none',
+                  '--example-tab-slot-y': `${sourceVisuals.offsetY}px`,
+                  '--example-tab-layer': visualState.layer,
+                  pointerEvents: phase === 'idle' && isWithinVisibleRange ? undefined : 'none',
                 }}
-                aria-hidden={isWithinVisibleRange ? undefined : 'true'}
-                onTransitionEnd={handleSlotTransitionEnd}
+                aria-hidden={isAriaVisible ? undefined : 'true'}
               >
                 <button
                   id={`example-tab-${example.slug}`}
                   type="button"
                   role="tab"
-                  tabIndex={isActive && isWithinVisibleRange ? 0 : -1}
+                  tabIndex={isActive && phase === 'idle' && isWithinVisibleRange ? 0 : -1}
                   aria-selected={isActive}
                   aria-controls={`example-panel-${example.slug}`}
-                  className={`eli5-example-tab${isActive ? ' is-active' : ''}`}
+                  className={`eli5-example-tab${isActive ? ' is-active' : ''}${isResetting ? ' is-resetting' : ''}`}
                   style={{
-                    '--example-tab-color': tabStyle.color,
-                    '--example-tab-tilt': `${tabStyle.tilt}deg`,
+                    '--example-tab-color': visualState.color,
+                    '--example-tab-tilt': `${visualState.tilt}deg`,
+                    '--example-tab-scale': visualState.scale.toFixed(3),
                   }}
                   onClick={() => {
-                    if (animationDirection === 0 && queuedSteps === 0) {
+                    if (phase === 'idle' && queuedSteps === 0) {
                       queueForwardSelection(exampleIndex);
                     }
                   }}
@@ -2998,6 +3148,7 @@ export default function App() {
   const playfieldBoardRef = useRef(null);
   const howSectionRef = useRef(null);
   const controlPanelWindowRef = useRef(null);
+  const [appView, setAppView] = useState(() => readAppView());
   const [activeExampleSlug, setActiveExampleSlug] = useState(EXAMPLES[0]?.slug ?? '');
   const [heroTitleSlot, setHeroTitleSlot] = useState(() =>
     buildHeroTitleSlot(buildFallbackBoardRects().hero),
@@ -3050,10 +3201,7 @@ export default function App() {
       : null;
 
     const resolvedHeroStageRect = heroStageRect ?? buildFallbackBoardRects().hero;
-    const heroLayoutForRender = expandHeroLayoutVertical(
-      activeHeroLayout,
-      getHeroLayoutRenderExpansion(heroMagnetControls),
-    );
+    const heroLayoutForRender = activeHeroLayout;
     const provisionalHeroSlot = buildHeroTitleSlot(resolvedHeroStageRect);
     const nextHeroSlot = provisionalHeroSlot;
     const nextHeroRect = heroBoardRect
@@ -3177,6 +3325,33 @@ export default function App() {
     });
   }, [heroSavedLayout]);
 
+  useEffect(() => {
+    const handlePopState = () => {
+      setAppView(readAppView());
+    };
+
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (appView !== APP_VIEWS.depthLab) {
+      return;
+    }
+
+    setIsInlineFallbackOpen(false);
+    setControlPanelHost(null);
+
+    if (controlPanelWindowRef.current && !controlPanelWindowRef.current.closed) {
+      controlPanelWindowRef.current.close();
+    }
+
+    controlPanelWindowRef.current = null;
+  }, [appView]);
+
   const handlePanelControlChange = useEffectEvent((key, value) => {
     if (LEVEL_CONTROL_KEYS.has(key)) {
       setLevelControls((current) =>
@@ -3198,6 +3373,10 @@ export default function App() {
 
   const handlePanelControlReset = useEffectEvent(() => {
     setHeroMagnetControls(HERO_MAGNET_DEFAULTS);
+    setLevelControls(LEVEL_CONTROL_DEFAULTS);
+  });
+
+  const handleLevelControlReset = useEffectEvent(() => {
     setLevelControls(LEVEL_CONTROL_DEFAULTS);
   });
 
@@ -3258,6 +3437,10 @@ export default function App() {
   });
 
   const openExternalControlPanel = useEffectEvent(() => {
+    if (appView === APP_VIEWS.depthLab) {
+      return;
+    }
+
     if (isHeroLayoutEditing) {
       setIsInlineFallbackOpen(true);
       return;
@@ -3286,6 +3469,10 @@ export default function App() {
   });
 
   const toggleControlPanelVisibility = useEffectEvent(() => {
+    if (appView === APP_VIEWS.depthLab) {
+      return;
+    }
+
     if (isHeroLayoutEditing) {
       setIsInlineFallbackOpen((current) => !current);
       return;
@@ -3297,6 +3484,11 @@ export default function App() {
     }
 
     openExternalControlPanel();
+  });
+
+  const handleSetAppView = useEffectEvent((nextView) => {
+    writeAppView(nextView);
+    setAppView(nextView);
   });
 
   useEffect(() => {
@@ -3318,6 +3510,10 @@ export default function App() {
 
   useEffect(() => {
     const handleKeyDown = (event) => {
+      if (appView === APP_VIEWS.depthLab) {
+        return;
+      }
+
       if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) {
         return;
       }
@@ -3339,12 +3535,10 @@ export default function App() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [toggleControlPanelVisibility]);
+  }, [appView, toggleControlPanelVisibility]);
 
   const activeExample =
     EXAMPLES.find((example) => example.slug === activeExampleSlug) ?? EXAMPLES[0];
-  const howStoryExample =
-    EXAMPLES.find((example) => example.slug === HOW_STORY_EXAMPLE_SLUG) ?? EXAMPLES[0];
   const panelControls = {
     ...heroMagnetControls,
     ...levelControls,
@@ -3354,10 +3548,30 @@ export default function App() {
     ...LEVEL_CONTROL_SECTIONS,
     ...(isAdvancedLevelsVisible ? LEVEL_ADVANCED_SECTIONS : []),
   ];
+  const depthLabSections = [
+    ...LEVEL_CONTROL_SECTIONS,
+    ...(isAdvancedLevelsVisible ? LEVEL_ADVANCED_SECTIONS : []),
+  ];
   const isControlPanelVisible = isInlineFallbackOpen || Boolean(controlPanelHost);
+  const isDepthLabView = appView === APP_VIEWS.depthLab;
+
+  if (isDepthLabView) {
+    return (
+      <DepthLabView
+        controls={levelControls}
+        sections={depthLabSections}
+        isAdvancedLevelsVisible={isAdvancedLevelsVisible}
+        onChange={handlePanelControlChange}
+        onReset={handleLevelControlReset}
+        onToggleAdvancedLevels={handleToggleAdvancedLevels}
+        onReturnHome={() => handleSetAppView(APP_VIEWS.home)}
+      />
+    );
+  }
 
   return (
     <div className="eli5-page">
+      <CustomCursor />
       <main className="eli5-main">
         <div className="eli5-shell">
           <div className="eli5-surface">
@@ -3454,8 +3668,6 @@ export default function App() {
                         prompt={HOW_EXAMPLE.prompt}
                         className="eli5-how__prompt"
                       />
-
-                      <StoryExampleCard example={howStoryExample} />
 
                       <div className="eli5-how__benefits">
                         {HOW_BENEFITS.map((benefit) => (
@@ -3626,17 +3838,27 @@ export default function App() {
                 <SectionBreak color={SECTION_BREAK_COLORS.red} tilt={-2} width={107} />
 
                 <section id="download" className="eli5-section eli5-section--download">
-                  <div className="eli5-cta">
-                    <h2>Put it in your agent.</h2>
-                    <p>
-                      You do not need a smarter answer. You need one you can actually follow before everyone starts nodding like they got it.
-                    </p>
-                    <div className="eli5-cta__actions">
+                  <div className="eli5-cta-end">
+                    <div className="eli5-cta">
+                      <h2>Put it in your agent.</h2>
+                      <p className="eli5-cta__support">One question in. Five clearer versions out.</p>
+                      <p className="eli5-cta__body">
+                        This is a Markdown skill file for AI agents. Add it once, then use it whenever
+                        an answer starts sounding like somebody booked a meeting to explain a sentence.
+                      </p>
+                      <ul className="eli5-cta__proof" aria-label="Why this skill helps">
+                        <li>One question</li>
+                        <li>Five levels</li>
+                        <li>Works in Codex, Claude Code, Cursor, and similar agents</li>
+                      </ul>
                       <DownloadLink className="eli5-button eli5-button--primary eli5-button--large eli5-button--cta-download">
                         Download the skill
                       </DownloadLink>
-                      <SupportLink className="eli5-button eli5-button--coffee eli5-button--large eli5-button--cta-support">
-                        If it helped, tip me
+                    </div>
+                    <div className="eli5-cta-footer">
+                      <p>Markdown skill file for AI agents</p>
+                      <SupportLink className="eli5-cta-footer__link">
+                        If it helped, buy me a coffee
                       </SupportLink>
                     </div>
                   </div>
@@ -3652,6 +3874,14 @@ export default function App() {
           onClick={toggleControlPanelVisibility}
         >
           {isControlPanelVisible ? 'Hide Control Panel (/)' : 'Show Control Panel (/)'}
+        </button>
+
+        <button
+          type="button"
+          className="eli5-control-launcher__button eli5-control-launcher__button--secondary"
+          onClick={() => handleSetAppView(APP_VIEWS.depthLab)}
+        >
+          Open Depth Lab
         </button>
       </div>
 

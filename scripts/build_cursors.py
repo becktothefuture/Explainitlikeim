@@ -191,7 +191,7 @@ def remove_background(image: Image.Image) -> Image.Image:
     queue: deque[tuple[int, int]] = deque()
     flood_threshold = 30
     expansion_threshold = 42
-    feather_threshold = 60
+    fringe_cut_threshold = 48
 
     neighbors = (
         (1, 0),
@@ -252,42 +252,32 @@ def remove_background(image: Image.Image) -> Image.Image:
         for x, y in additions:
             background[y][x] = True
 
-    result = Image.new("RGBA", rgba.size, (0, 0, 0, 0))
-    result_pixels = result.load()
+    foreground = [[not background[y][x] for x in range(width)] for y in range(height)]
+
     for y in range(height):
         for x in range(width):
-            red, green, blue, _alpha = pixels[x, y]
-            if background[y][x]:
-                result_pixels[x, y] = (0, 0, 0, 0)
+            if not foreground[y][x]:
                 continue
-
-            nearest_color, distance = nearest_background_color((red, green, blue), palette)
-            boundary = any(
+            if not any(
                 0 <= x + dx < width
                 and 0 <= y + dy < height
                 and background[y + dy][x + dx]
                 for dx, dy in neighbors
-            )
+            ):
+                continue
+            _nearest_color, distance = nearest_background_color(pixels[x, y][:3], palette)
+            if distance <= fringe_cut_threshold:
+                foreground[y][x] = False
 
-            alpha = 255
-            if boundary:
-                if distance <= 22:
-                    result_pixels[x, y] = (0, 0, 0, 0)
-                    continue
-                if distance < feather_threshold:
-                    alpha = max(0, min(255, int(round((distance - 22) / (feather_threshold - 22) * 255))))
-                    if alpha < 24:
-                        result_pixels[x, y] = (0, 0, 0, 0)
-                        continue
-                    if alpha < 255:
-                        mix = 1 - (alpha / 255)
-                        red = int(round((red - nearest_color[0] * mix) / (alpha / 255)))
-                        green = int(round((green - nearest_color[1] * mix) / (alpha / 255)))
-                        blue = int(round((blue - nearest_color[2] * mix) / (alpha / 255)))
-                        red = max(0, min(255, red))
-                        green = max(0, min(255, green))
-                        blue = max(0, min(255, blue))
-            result_pixels[x, y] = (red, green, blue, alpha)
+    result = Image.new("RGBA", rgba.size, (0, 0, 0, 0))
+    result_pixels = result.load()
+    for y in range(height):
+        for x in range(width):
+            if not foreground[y][x]:
+                result_pixels[x, y] = (0, 0, 0, 0)
+                continue
+            red, green, blue, _alpha = pixels[x, y]
+            result_pixels[x, y] = (red, green, blue, 255)
 
     result = remove_small_islands(result, min_area=6)
     bbox = result.getbbox()

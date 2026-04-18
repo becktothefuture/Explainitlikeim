@@ -1,24 +1,36 @@
-const COLORS = {
-  bg: '#e9dece',
-  bgSoft: '#f6eddc',
+const FOUNDATIONS = {
+  canvas: '#e9dece',
   paper: '#f6eddc',
   paperStrong: '#fff7ec',
   ink: '#182335',
   inkSubhead: '#314255',
   inkSoft: '#4d5d70',
-  inkQuiet: 'rgba(24, 35, 53, 0.6)',
   inkMuted: 'rgba(24, 35, 53, 0.34)',
   line: 'rgba(24, 35, 53, 0.14)',
-  lineStrong: 'rgba(24, 35, 53, 0.24)',
   blue: '#3a62ff',
+  dark: '#1d140f',
+};
+
+const COLORS = {
+  bg: FOUNDATIONS.canvas,
+  bgSoft: FOUNDATIONS.paper,
+  paper: FOUNDATIONS.paper,
+  paperStrong: FOUNDATIONS.paperStrong,
+  ink: FOUNDATIONS.ink,
+  inkSubhead: FOUNDATIONS.inkSubhead,
+  inkSoft: FOUNDATIONS.inkSoft,
+  inkMuted: FOUNDATIONS.inkMuted,
+  line: FOUNDATIONS.line,
+  lineStrong: 'rgba(24, 35, 53, 0.24)',
+  blue: FOUNDATIONS.blue,
   focus: 'rgba(58, 98, 255, 0.38)',
-  onDark: '#fffdf8',
+  onDark: FOUNDATIONS.paperStrong,
   buttonDarkTop: '#28364b',
   buttonDarkBottom: '#17222f',
-  brandCodex: '#0f1826',
+  brandCodex: FOUNDATIONS.ink,
   brandClaude: '#de7755',
-  brandCursor: '#0f1826',
-  mediaBg: '#1d140f',
+  brandCursor: FOUNDATIONS.ink,
+  mediaBg: FOUNDATIONS.dark,
   magnetCoral: '#ff6e5e',
   magnetAmber: '#ffc239',
   magnetMint: '#29d98d',
@@ -27,7 +39,6 @@ const COLORS = {
   magnetViolet: '#8c69ff',
   dividerGreen: '#29d98d',
   dividerRed: '#ff6e5e',
-  promptVioletText: '#5b38a2',
   magnetTextLight: '#fffaf7',
   magnetTextDark: '#14202d',
   magnetShadow: '#5a3c21',
@@ -74,74 +85,57 @@ export const MAGNET_RENDER_THEME = {
   mask: COLORS.mask,
 };
 
-export const LEVEL_CONTROL_STORAGE_KEY = 'eli5-surface-level-controls-v1';
+export const LEVEL_CONTROL_STORAGE_KEY = 'eli5-scene-depth-controls-v2';
 
 export const LEVEL_CONTROL_DEFAULTS = {
-  levelMinus1Amount: 1,
-  level0Amount: 1,
-  level1Amount: 1,
-  level2Amount: 1,
-  level3Amount: 1,
-  responseShadowStrength: 1,
-  responseShadowSoftness: 1,
-  responseLightStrength: 1,
-  responseFillContrast: 1,
-  levelMinus1ShadowTrim: 0,
-  levelMinus1LightTrim: 0,
-  levelMinus1FillTrim: 0,
-  level0ShadowTrim: 0,
-  level0LightTrim: 0,
-  level0FillTrim: 0,
-  level1ShadowTrim: 0,
-  level1LightTrim: 0,
-  level1FillTrim: 0,
-  level2ShadowTrim: 0,
-  level2LightTrim: 0,
-  level2FillTrim: 0,
-  level3ShadowTrim: 0,
-  level3LightTrim: 0,
-  level3FillTrim: 0,
+  sceneLevelSpacing: 1,
+  sceneInsetDepth: 1,
+  sceneContactFocus: 1,
+  sceneShadowFalloff: 1,
+  sceneLightStrength: 1,
+  sceneMaterialContrast: 1,
 };
 
 const STATIC_THEME_VARS = {
-  '--bg': COLORS.bg,
-  '--bg-soft': 'var(--paper)',
-  '--paper': COLORS.paper,
-  '--paper-strong': COLORS.paperStrong,
-  '--ink': COLORS.ink,
-  '--ink-subhead': COLORS.inkSubhead,
-  '--ink-soft': COLORS.inkSoft,
-  '--ink-quiet': COLORS.inkQuiet,
-  '--ink-muted': COLORS.inkMuted,
-  '--line': COLORS.line,
+  '--foundation-canvas': FOUNDATIONS.canvas,
+  '--foundation-paper': FOUNDATIONS.paper,
+  '--foundation-paper-strong': FOUNDATIONS.paperStrong,
+  '--foundation-ink': FOUNDATIONS.ink,
+  '--foundation-ink-subhead': FOUNDATIONS.inkSubhead,
+  '--foundation-ink-soft': FOUNDATIONS.inkSoft,
+  '--foundation-ink-muted': FOUNDATIONS.inkMuted,
+  '--foundation-line': FOUNDATIONS.line,
+  '--foundation-blue': FOUNDATIONS.blue,
+  '--foundation-dark': FOUNDATIONS.dark,
+  '--bg': 'var(--foundation-canvas)',
+  '--bg-soft': 'var(--foundation-paper)',
+  '--paper': 'var(--foundation-paper)',
+  '--paper-strong': 'var(--foundation-paper-strong)',
+  '--ink': 'var(--foundation-ink)',
+  '--ink-subhead': 'var(--foundation-ink-subhead)',
+  '--ink-soft': 'var(--foundation-ink-soft)',
+  '--ink-muted': 'var(--foundation-ink-muted)',
+  '--line': 'var(--foundation-line)',
   '--line-strong': COLORS.lineStrong,
-  '--blue': COLORS.blue,
+  '--blue': 'var(--foundation-blue)',
   '--focus-ring': COLORS.focus,
-  '--on-dark': COLORS.onDark,
-  '--brand-codex': COLORS.brandCodex,
+  '--on-dark': 'var(--foundation-paper-strong)',
   '--brand-claude': COLORS.brandClaude,
-  '--brand-cursor': COLORS.brandCursor,
-  '--media-bg': COLORS.mediaBg,
+  '--media-bg': 'var(--foundation-dark)',
   '--magnet-coral': COLORS.magnetCoral,
   '--magnet-amber': COLORS.magnetAmber,
   '--magnet-mint': COLORS.magnetMint,
   '--magnet-blue': COLORS.magnetBlue,
   '--magnet-orange': COLORS.magnetOrange,
   '--magnet-violet': COLORS.magnetViolet,
-  '--prompt-violet-text': COLORS.promptVioletText,
   '--surface-border': rgba(COLORS.paperStrong, 0.76),
   '--surface-border-strong': 'var(--surface-border)',
   '--header-border': rgba(WARM_TONES.line, 0.12),
   '--panel-border': 'var(--surface-border)',
   '--floating-border': 'var(--line)',
   '--soft-border': 'var(--line)',
-  '--button-secondary-border': rgba(WARM_TONES.line, 0.18),
-  '--button-support-border': rgba(WARM_TONES.line, 0.14),
-  '--badge-border': rgba(WARM_TONES.accent, 0.18),
-  '--prompt-border': 'var(--badge-border)',
-  '--prompt-skill-border': 'var(--badge-border)',
-  '--coffee-ink': COLORS.ink,
-  '--coffee-border': COLORS.line,
+  '--action-border-soft': rgba(WARM_TONES.line, 0.16),
+  '--action-border-accent': rgba(WARM_TONES.accent, 0.18),
   '--gradient-card': 'linear-gradient(180deg, rgba(255, 253, 249, 0.76), rgba(245, 236, 223, 0.54)), rgba(255, 249, 241, 0.72)',
   '--gradient-warm': 'linear-gradient(180deg, rgba(255, 252, 245, 0.94), rgba(241, 228, 205, 0.86))',
   '--gradient-floating': 'linear-gradient(180deg, rgba(255, 253, 249, 0.98), rgba(246, 236, 220, 0.94))',
@@ -149,27 +143,23 @@ const STATIC_THEME_VARS = {
   '--gradient-violet-accent': 'linear-gradient(180deg, rgba(140, 105, 255, 0.2), rgba(140, 105, 255, 0.1))',
   '--gradient-action-dark': 'linear-gradient(180deg, #28364b 0%, #17222f 100%)',
   '--coffee-gradient': COLORS.magnetAmber,
-  '--coffee-shadow': '0 6px 0 rgba(100, 69, 30, 0.1), 0 16px 18px rgba(73, 53, 28, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.35), inset 0 -1px 0 rgba(185, 151, 0, 0.22)',
-  '--media-summary-border': 'var(--badge-border)',
-  '--media-summary-action-border': 'var(--badge-border)',
   '--media-summary-icon-surface': rgba(COLORS.paperStrong, 0.86),
   '--media-summary-icon-highlight': 'rgba(255, 255, 255, 0.52)',
-  '--media-summary-action-surface': 'var(--media-summary-icon-surface)',
-  '--media-summary-action-shadow': '0 10px 20px rgba(76, 57, 29, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9)',
   '--example-chevron-surface': 'var(--media-summary-icon-surface)',
-  '--science-source-meta': 'rgba(36, 48, 66, 0.58)',
-  '--science-source-meta-strong': 'var(--science-source-meta)',
   '--page-gradient': `radial-gradient(circle at 14% 0%, rgba(255, 190, 104, 0.28), transparent 26%), radial-gradient(circle at 82% 8%, rgba(110, 160, 255, 0.14), transparent 30%), radial-gradient(circle at 50% 116%, rgba(103, 73, 39, 0.11), transparent 38%), linear-gradient(180deg, ${COLORS.paper} 0%, ${COLORS.bg} 100%)`,
   '--page-grid-gradient': `radial-gradient(circle at 20% 12%, rgba(255, 255, 255, 0.2) 0, transparent 22%), radial-gradient(circle at 78% 18%, rgba(115, 82, 40, 0.05) 0, transparent 28%), repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.08) 0, rgba(255, 255, 255, 0.08) 1px, transparent 1px, transparent 22px), repeating-linear-gradient(90deg, rgba(98, 77, 47, 0.015) 0, rgba(98, 77, 47, 0.015) 1px, transparent 1px, transparent 32px)`,
   '--page-vignette': 'inset 0 24px 100px rgba(255, 250, 242, 0.28), inset 0 -56px 136px rgba(100, 71, 36, 0.1)',
   '--tab-sheen-gradient': 'linear-gradient(180deg, rgba(255, 255, 255, 0.24) 0%, rgba(255, 255, 255, 0.05) 38%)',
-  '--separator-color': 'var(--ink-muted)',
   '--headline-shadow': 'none',
-  '--brand-shadow': '0 -1px 0 rgba(255, 251, 243, 0.84), 0 1px 0 rgba(120, 90, 52, 0.1)',
   '--transparent': 'transparent',
 };
 
-const LEVEL_PREFIXES = ['levelMinus1', 'level0', 'level1', 'level2', 'level3'];
+const SCENE_LEVEL_BASES = {
+  level0: 0,
+  level1: 0.38,
+  level2: 0.94,
+  level3: 1.62,
+};
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
@@ -272,21 +262,14 @@ function scaleAroundUnit(value, factor, weight = 1) {
 }
 
 export function sanitizeLevelControls(controls = {}) {
-  const next = {
-    responseShadowStrength: clamp(getFiniteNumber(controls.responseShadowStrength, LEVEL_CONTROL_DEFAULTS.responseShadowStrength), 0, 2.4),
-    responseShadowSoftness: clamp(getFiniteNumber(controls.responseShadowSoftness, LEVEL_CONTROL_DEFAULTS.responseShadowSoftness), 0, 2.4),
-    responseLightStrength: clamp(getFiniteNumber(controls.responseLightStrength, LEVEL_CONTROL_DEFAULTS.responseLightStrength), 0, 2.4),
-    responseFillContrast: clamp(getFiniteNumber(controls.responseFillContrast, LEVEL_CONTROL_DEFAULTS.responseFillContrast), 0, 2.4),
+  return {
+    sceneLevelSpacing: clamp(getFiniteNumber(controls.sceneLevelSpacing, LEVEL_CONTROL_DEFAULTS.sceneLevelSpacing), 0, 2.4),
+    sceneInsetDepth: clamp(getFiniteNumber(controls.sceneInsetDepth, LEVEL_CONTROL_DEFAULTS.sceneInsetDepth), 0, 2.4),
+    sceneContactFocus: clamp(getFiniteNumber(controls.sceneContactFocus, LEVEL_CONTROL_DEFAULTS.sceneContactFocus), 0, 2.4),
+    sceneShadowFalloff: clamp(getFiniteNumber(controls.sceneShadowFalloff, LEVEL_CONTROL_DEFAULTS.sceneShadowFalloff), 0, 2.4),
+    sceneLightStrength: clamp(getFiniteNumber(controls.sceneLightStrength, LEVEL_CONTROL_DEFAULTS.sceneLightStrength), 0, 2.4),
+    sceneMaterialContrast: clamp(getFiniteNumber(controls.sceneMaterialContrast, LEVEL_CONTROL_DEFAULTS.sceneMaterialContrast), 0, 2.4),
   };
-
-  LEVEL_PREFIXES.forEach((prefix) => {
-    next[`${prefix}Amount`] = clamp(getFiniteNumber(controls[`${prefix}Amount`], LEVEL_CONTROL_DEFAULTS[`${prefix}Amount`]), 0, 2.4);
-    next[`${prefix}ShadowTrim`] = clamp(getFiniteNumber(controls[`${prefix}ShadowTrim`], LEVEL_CONTROL_DEFAULTS[`${prefix}ShadowTrim`]), -0.75, 0.75);
-    next[`${prefix}LightTrim`] = clamp(getFiniteNumber(controls[`${prefix}LightTrim`], LEVEL_CONTROL_DEFAULTS[`${prefix}LightTrim`]), -0.75, 0.75);
-    next[`${prefix}FillTrim`] = clamp(getFiniteNumber(controls[`${prefix}FillTrim`], LEVEL_CONTROL_DEFAULTS[`${prefix}FillTrim`]), -0.75, 0.75);
-  });
-
-  return next;
 }
 
 export function loadLevelControls() {
@@ -309,17 +292,112 @@ export function loadLevelControls() {
 
 export function getLevelControlFactors(levelControls = LEVEL_CONTROL_DEFAULTS, prefix) {
   const controls = sanitizeLevelControls(levelControls);
-  const amount = controls[`${prefix}Amount`] ?? LEVEL_CONTROL_DEFAULTS[`${prefix}Amount`];
-  const shadowTrim = controls[`${prefix}ShadowTrim`] ?? 0;
-  const lightTrim = controls[`${prefix}LightTrim`] ?? 0;
-  const fillTrim = controls[`${prefix}FillTrim`] ?? 0;
+  const scene = {
+    levelSpacing: scaleAroundUnit(1, controls.sceneLevelSpacing, 0.78),
+    insetDepth: scaleAroundUnit(1, controls.sceneInsetDepth, 0.84),
+    contactFocus: controls.sceneContactFocus,
+    shadowFalloff: controls.sceneShadowFalloff,
+    lightStrength: controls.sceneLightStrength,
+    materialContrast: controls.sceneMaterialContrast,
+  };
+
+  if (prefix === 'levelMinus1') {
+    const recess = 0.9 * scene.insetDepth;
+
+    return {
+      amount: recess,
+      elevation: -recess,
+      recess,
+      shadowStrength: clamp(1 + (scene.contactFocus - 1) * 0.18 + (scene.insetDepth - 1) * 0.18, 0, 2.8),
+      shadowSoftness: clamp(0.88 + (scene.shadowFalloff - 1) * 0.2 + (scene.insetDepth - 1) * 0.18, 0, 2.8),
+      lightStrength: clamp(scene.lightStrength * (0.98 + (scene.insetDepth - 1) * 0.04), 0, 2.8),
+      fillContrast: clamp(scene.materialContrast * (0.94 + (scene.insetDepth - 1) * 0.12), 0, 2.8),
+      contactFocus: scene.contactFocus,
+      shadowFalloff: scene.shadowFalloff,
+      contactEmphasis: clamp(1.04 + (scene.contactFocus - 1) * 0.22, 0.7, 1.7),
+      ambientEmphasis: clamp(0.9 + (scene.shadowFalloff - 1) * 0.16, 0.6, 1.4),
+      rimLightAlpha: clamp(0.16 * scene.lightStrength * (0.92 + (scene.insetDepth - 1) * 0.12), 0.04, 0.34),
+      rimShadowAlpha: clamp(0.2 * (0.92 + (scene.contactFocus - 1) * 0.34 + (scene.insetDepth - 1) * 0.12), 0.06, 0.38),
+    };
+  }
+
+  if (prefix === 'level0') {
+    return {
+      amount: 0,
+      elevation: 0,
+      shadowStrength: 0.22,
+      shadowSoftness: 0.72,
+      lightStrength: clamp(scene.lightStrength * 0.88, 0, 2.8),
+      fillContrast: clamp(scene.materialContrast * 0.92, 0, 2.8),
+      contactFocus: scene.contactFocus,
+      shadowFalloff: scene.shadowFalloff,
+      contactEmphasis: 0.34,
+      ambientEmphasis: 0.5,
+      rimLightAlpha: clamp(0.035 * scene.lightStrength, 0.01, 0.08),
+      rimShadowAlpha: clamp(0.03 * (0.88 + (scene.contactFocus - 1) * 0.12), 0.01, 0.07),
+    };
+  }
+
+  const baseElevation = SCENE_LEVEL_BASES[prefix] ?? SCENE_LEVEL_BASES.level1;
+  const elevation = baseElevation * scene.levelSpacing;
+  const normalizedElevation = clamp(elevation / SCENE_LEVEL_BASES.level3, 0, 1);
+  const proximity = 1 - normalizedElevation;
 
   return {
-    amount,
-    shadowStrength: clamp(amount * controls.responseShadowStrength + shadowTrim, 0, 2.8),
-    shadowSoftness: clamp(amount * controls.responseShadowSoftness + shadowTrim * 0.35, 0, 2.8),
-    lightStrength: clamp(amount * controls.responseLightStrength + lightTrim, 0, 2.8),
-    fillContrast: clamp(amount * controls.responseFillContrast + fillTrim, 0, 2.8),
+    amount: elevation,
+    elevation,
+    shadowStrength: clamp(
+      0.86 +
+        proximity * 0.18 +
+        elevation * 0.08 +
+        (scene.contactFocus - 1) * 0.2,
+      0,
+      2.8,
+    ),
+    shadowSoftness: clamp(
+      0.7 +
+        elevation * 0.52 +
+        (scene.shadowFalloff - 1) * 0.36,
+      0,
+      2.8,
+    ),
+    lightStrength: clamp(
+      scene.lightStrength * (0.94 + elevation * 0.1),
+      0,
+      2.8,
+    ),
+    fillContrast: clamp(
+      scene.materialContrast * (0.96 + elevation * 0.08),
+      0,
+      2.8,
+    ),
+    contactFocus: scene.contactFocus,
+    shadowFalloff: scene.shadowFalloff,
+    contactEmphasis: clamp(
+      1.1 +
+        proximity * 0.34 +
+        (scene.contactFocus - 1) * 0.32 -
+        (scene.shadowFalloff - 1) * 0.1,
+      0.65,
+      1.8,
+    ),
+    ambientEmphasis: clamp(
+      0.72 +
+        elevation * 0.46 +
+        (scene.shadowFalloff - 1) * 0.32,
+      0.6,
+      2.1,
+    ),
+    rimLightAlpha: clamp(
+      (0.07 + elevation * 0.018) * scene.lightStrength,
+      0.03,
+      0.22,
+    ),
+    rimShadowAlpha: clamp(
+      (0.06 + elevation * 0.024) * (0.88 + (scene.contactFocus - 1) * 0.18),
+      0.03,
+      0.2,
+    ),
   };
 }
 
@@ -406,57 +484,108 @@ function buildRaisedShadow(
     rimShadowColor = MODULE_COLORS.shadowCool,
   } = {},
 ) {
-  const lift = scaleAroundUnit(1, level.amount, 0.72) * depth;
-  const blurScale = (1 + (level.shadowSoftness - 1) * 0.78) * softness;
+  const elevation = Math.max(0, getFiniteNumber(level.elevation, level.amount));
+  const contactFocus = getFiniteNumber(level.contactFocus, 1);
+  const shadowFalloff = getFiniteNumber(level.shadowFalloff, 1);
+  const contactEmphasis = getFiniteNumber(level.contactEmphasis, 1);
+  const ambientEmphasis = getFiniteNumber(level.ambientEmphasis, 1);
+  const blurScale = (1 + (level.shadowSoftness - 1) * 0.72) * softness;
+  const contactLift = depth * clamp(0.54 + elevation * (0.44 + (shadowFalloff - 1) * 0.08), 0.38, 1.8);
+  const ambientLift = depth * clamp(0.82 + elevation * (0.9 + (shadowFalloff - 1) * 0.26), 0.6, 3.1);
+  const farLift = depth * clamp(1.04 + elevation * (1.18 + (shadowFalloff - 1) * 0.38), 0.8, 4.6);
+  const contactBlurScale = clamp(
+    (0.46 + elevation * 0.28 * shadowFalloff) / (0.92 + (contactFocus - 1) * 0.24),
+    0.26,
+    1.4,
+  );
+  const ambientBlurScale = clamp(0.74 + elevation * 0.46 * shadowFalloff, 0.62, 2.5);
+  const farBlurScale = clamp(0.94 + elevation * 0.62 * shadowFalloff, 0.82, 3.2);
+  const rimLightAlpha = clamp(
+    getFiniteNumber(level.rimLightAlpha, insetTopAlpha * level.lightStrength),
+    0,
+    0.48,
+  );
+  const rimShadowAlpha = clamp(
+    getFiniteNumber(level.rimShadowAlpha, insetBottomAlpha * Math.max(level.shadowStrength, level.fillContrast)),
+    0,
+    0.42,
+  );
 
   return buildBoxShadow([
     {
-      y: contactY * lift,
-      blur: contactBlur * blurScale,
+      y: contactY * contactLift,
+      blur: contactBlur * blurScale * contactBlurScale,
       color: shadowColor,
-      alpha: contactAlpha * level.shadowStrength,
+      alpha: contactAlpha * level.shadowStrength * contactEmphasis,
     },
     {
-      y: ambientY * lift,
-      blur: ambientBlur * blurScale,
+      y: ambientY * ambientLift,
+      blur: ambientBlur * blurScale * ambientBlurScale,
       color: ambientColor,
-      alpha: ambientAlpha * level.shadowStrength,
+      alpha: ambientAlpha * level.shadowStrength * ambientEmphasis,
     },
     {
-      y: farY * lift,
-      blur: farBlur * blurScale,
+      y: farY * farLift,
+      blur: farBlur * blurScale * farBlurScale,
       color: ambientColor,
-      alpha: farAlpha * level.shadowStrength,
+      alpha: farAlpha * level.shadowStrength * ambientEmphasis,
     },
     inset
       ? {
         inset: true,
         y: insetTopY,
-        blur: insetTopBlur * blurScale,
+        blur: insetTopBlur * clamp(0.56 + blurScale * 0.18, 0.56, 1.32),
         color: MODULE_COLORS.highlight,
-        alpha: insetTopAlpha * level.lightStrength,
+        alpha: rimLightAlpha,
       }
       : null,
     inset
       ? {
         inset: true,
         y: insetBottomY,
-        blur: insetBottomBlur * blurScale,
+        blur: insetBottomBlur * clamp(0.58 + blurScale * 0.22, 0.58, 1.48),
         color: rimShadowColor,
-        alpha: insetBottomAlpha * Math.max(level.shadowStrength, level.fillContrast),
+        alpha: rimShadowAlpha,
       }
       : null,
   ]);
 }
 
 function buildInsetShadow(level, { accent = MODULE_COLORS.shadowWarm } = {}) {
-  const recess = scaleAroundUnit(1, level.amount, 0.42);
-  const softness = 1 + (level.shadowSoftness - 1) * 0.72;
-  const rimAlpha = 0.14 * level.shadowStrength;
-  const lightAlpha = 0.34 * level.lightStrength;
+  const recess = Math.max(
+    0.1,
+    getFiniteNumber(level.recess, Math.abs(getFiniteNumber(level.elevation, level.amount))),
+  );
+  const softness = 0.82 + (level.shadowSoftness - 1) * 0.56;
+  const contactFocus = getFiniteNumber(level.contactFocus, 1);
+  const topShadowAlpha = clamp(
+    getFiniteNumber(level.rimShadowAlpha, 0.18 * level.shadowStrength) *
+      (0.96 + (contactFocus - 1) * 0.18),
+    0,
+    0.42,
+  );
+  const bottomLightAlpha = clamp(
+    getFiniteNumber(level.rimLightAlpha, 0.16 * level.lightStrength),
+    0,
+    0.38,
+  );
   return buildBoxShadow([
-    { inset: true, y: -1.6 * recess, blur: 8 * softness, color: accent, alpha: rimAlpha },
-    { inset: true, y: 2 * recess, blur: 10 * softness, color: MODULE_COLORS.highlight, alpha: lightAlpha },
+    { inset: true, y: 1.2 * recess, blur: 2.4 * softness, color: accent, alpha: topShadowAlpha },
+    {
+      inset: true,
+      y: 3 * recess,
+      blur: 8.8 * softness,
+      color: MODULE_COLORS.shadowWarmSoft,
+      alpha: clamp(topShadowAlpha * 0.54, 0, 0.28),
+    },
+    {
+      inset: true,
+      y: -1.35 * recess,
+      blur: 2.2 * softness,
+      color: MODULE_COLORS.highlight,
+      alpha: clamp(bottomLightAlpha * 0.82, 0, 0.3),
+    },
+    { inset: true, y: -3 * recess, blur: 8.2 * softness, color: MODULE_COLORS.highlight, alpha: bottomLightAlpha },
   ]);
 }
 
@@ -471,6 +600,22 @@ function buildFloatingSurface(level, strong = false) {
     MODULE_COLORS.neutralWarm,
   );
   return rgba(shifted, 0.86);
+}
+
+function buildCursorShadowFilter(level) {
+  const elevation = Math.max(0, getFiniteNumber(level.elevation, level.amount));
+  const shadowFalloff = getFiniteNumber(level.shadowFalloff, 1);
+  const softness = 0.78 + elevation * 0.28 * shadowFalloff + (level.shadowSoftness - 1) * 0.22;
+  const lift = 0.8 + elevation * (0.52 + (shadowFalloff - 1) * 0.18);
+  const contactAlpha = clamp(0.26 * level.shadowStrength * (0.92 + (level.contactFocus - 1) * 0.18), 0.12, 0.48);
+  const ambientAlpha = clamp(0.16 * level.shadowStrength, 0.08, 0.28);
+  const farAlpha = clamp(0.08 * level.shadowStrength, 0.04, 0.16);
+
+  return [
+    `drop-shadow(0 ${formatPx(2.2 * lift)} ${formatPx(3.2 * softness)} ${rgba(MODULE_COLORS.shadowWarm, contactAlpha)})`,
+    `drop-shadow(0 ${formatPx(6.2 * lift)} ${formatPx(10.8 * softness)} ${rgba(MODULE_COLORS.shadowWarmSoft, ambientAlpha)})`,
+    `drop-shadow(0 ${formatPx(10.4 * lift)} ${formatPx(18.8 * softness)} ${rgba(MODULE_COLORS.shadowWarmSoft, farAlpha)})`,
+  ].join(' ');
 }
 
 function buildScienceCardSurface(level) {
@@ -508,11 +653,13 @@ function buildModularGradients(levelMinus1, level0, level1, level2) {
   });
 
   const sharedWarm = buildModuleGradient(levelMinus1, {
-    topColor: MODULE_COLORS.neutralSoft,
-    bottomColor: MODULE_COLORS.neutralWarm,
+    topColor: mixHex(MODULE_COLORS.neutralSoft, MODULE_COLORS.neutralWarm, 0.72),
+    bottomColor: mixHex(MODULE_COLORS.neutralLight, MODULE_COLORS.neutralSoft, 0.12),
     topAlpha: 1,
     bottomAlpha: 1,
     darkTarget: MODULE_COLORS.neutralDeep,
+    topShiftWeight: 0.04,
+    bottomShiftWeight: 0.08,
   });
 
   const darkAction = buildModuleGradient(level1, {
@@ -554,7 +701,10 @@ function buildThemeVars(levelControls = LEVEL_CONTROL_DEFAULTS) {
   const level0 = getLevelControlFactors(controls, 'level0');
   const level1 = getLevelControlFactors(controls, 'level1');
   const level2 = getLevelControlFactors(controls, 'level2');
+  const level3 = getLevelControlFactors(controls, 'level3');
   const gradients = buildModularGradients(levelMinus1, level0, level1, level2);
+  const cursorShadowFilter = buildCursorShadowFilter(level3);
+  const cursorGlowColor = rgba(MODULE_COLORS.highlight, clamp(0.22 * level3.lightStrength, 0.12, 0.34));
   const shadowSurface = buildRaisedShadow(level0, {
     depth: 0.9,
     softness: 1.16,
@@ -722,44 +872,8 @@ function buildThemeVars(levelControls = LEVEL_CONTROL_DEFAULTS) {
     insetBottomAlpha: 0.01,
   });
   const shadowInstallArt = `drop-shadow(0 ${formatPx(14 * scaleAroundUnit(1, level1.amount, 0.74))} ${formatPx(18 * (1 + (level1.shadowSoftness - 1) * 0.6))} ${rgba(MODULE_COLORS.shadowWarm, 0.14 * level1.shadowStrength)})`;
-  const coffeeShadow = buildRaisedShadow(level1, {
-    depth: 0.64,
-    softness: 0.94,
-    contactY: 2.5,
-    contactBlur: 7.5,
-    contactAlpha: 0.12,
-    ambientY: 7,
-    ambientBlur: 18,
-    ambientAlpha: 0.042,
-    farY: 12,
-    farBlur: 28,
-    farAlpha: 0.016,
-    insetTopBlur: 6,
-    insetTopAlpha: 0.08,
-    insetBottomBlur: 10,
-    insetBottomAlpha: 0.022,
-    rimShadowColor: MODULE_COLORS.shadowWarm,
-  });
-  const mediaActionShadow = buildRaisedShadow(level1, {
-    depth: 0.72,
-    softness: 1.14,
-    contactY: 4.6,
-    contactBlur: 16,
-    contactAlpha: 0.05,
-    ambientY: 10,
-    ambientBlur: 26,
-    ambientAlpha: 0.04,
-    farY: 18,
-    farBlur: 44,
-    farAlpha: 0.028,
-    insetTopBlur: 8,
-    insetTopAlpha: 0.06,
-    insetBottomBlur: 12,
-    insetBottomAlpha: 0.02,
-  });
   const mediaSummaryIconHighlight = rgba(MODULE_COLORS.highlight, 0.52);
   const mediaSummaryIconSurface = rgba(MODULE_COLORS.neutralLight, 0.86);
-  const mediaSummaryActionSurface = rgba(MODULE_COLORS.neutralLight, 0.86);
   return {
     '--gradient-card': gradients.sharedCard,
     '--gradient-warm': gradients.sharedWarm,
@@ -788,11 +902,10 @@ function buildThemeVars(levelControls = LEVEL_CONTROL_DEFAULTS) {
     '--shadow-prompt-skill': shadowInsetViolet,
     '--shadow-pill-inset': shadowInsetWarm,
     '--coffee-gradient': gradients.goldAccent,
-    '--coffee-shadow': coffeeShadow,
     '--media-summary-icon-surface': mediaSummaryIconSurface,
     '--media-summary-icon-highlight': mediaSummaryIconHighlight,
-    '--media-summary-action-surface': mediaSummaryActionSurface,
-    '--media-summary-action-shadow': mediaActionShadow,
+    '--cursor-shadow-filter': cursorShadowFilter,
+    '--cursor-glow-color': cursorGlowColor,
   };
 }
 

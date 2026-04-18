@@ -43,7 +43,7 @@
         box-shadow: 0 14px 36px rgba(61, 43, 20, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.85);
         backdrop-filter: blur(10px);
         display: grid;
-        grid-template-rows: auto auto 1fr;
+        grid-template-rows: auto 1fr;
         gap: 8px;
         padding: 10px;
       }
@@ -76,50 +76,27 @@
         color: var(--board-muted);
       }
 
-      .meta {
-        display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 8px;
-      }
-
-      .meta h2 {
-        margin: 0;
-        font-size: 0.62rem;
-        font-weight: 600;
-        letter-spacing: 0.07em;
-        text-transform: uppercase;
-        color: var(--board-muted);
-      }
-
-      .meta strong {
-        display: block;
-        margin-top: 4px;
-        font-size: 1rem;
-        line-height: 1;
-        letter-spacing: -0.02em;
-      }
-
       .content {
         min-height: 0;
         display: grid;
-        grid-template-rows: auto 1fr auto;
+        grid-template-rows: auto 1fr;
         gap: 8px;
       }
 
       .text-strip {
         display: grid;
-        grid-template-columns: repeat(8, minmax(0, 1fr));
+        grid-template-columns: repeat(6, minmax(0, 1fr));
         gap: 6px;
       }
 
       .text-strip .swatch {
-        grid-template-columns: 24px 1fr;
+        grid-template-columns: 34px 1fr;
       }
 
       .color-groups {
         min-height: 0;
         display: grid;
-        grid-template-columns: repeat(6, minmax(0, 1fr));
+        grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 8px;
       }
 
@@ -139,26 +116,26 @@
 
       .swatches {
         display: grid;
-        gap: 5px;
+        gap: 7px;
       }
 
       .swatch {
         display: grid;
-        grid-template-columns: 24px 1fr;
-        gap: 6px;
+        grid-template-columns: 34px 1fr;
+        gap: 8px;
         align-items: center;
       }
 
       .chip {
-        width: 24px;
-        height: 24px;
-        border-radius: 6px;
+        width: 34px;
+        height: 34px;
+        border-radius: 8px;
         border: 1px solid rgba(0, 0, 0, 0.12);
       }
 
       .token-name {
-        font-size: 0.67rem;
-        line-height: 1.18;
+        font-size: 0.72rem;
+        line-height: 1.2;
         letter-spacing: 0.01em;
         overflow-wrap: anywhere;
       }
@@ -169,23 +146,27 @@
 
       .gradient-grid {
         display: grid;
-        grid-template-columns: repeat(9, minmax(0, 1fr));
+        grid-template-columns: repeat(6, minmax(0, 1fr));
         gap: 6px;
       }
 
       .gradient-item {
         display: grid;
-        gap: 3px;
+        gap: 4px;
+      }
+
+      .group[data-category='Utility'] {
+        grid-column: 4;
       }
 
       .gradient-chip {
-        height: 30px;
+        height: 38px;
         border-radius: 8px;
         border: 1px solid rgba(0, 0, 0, 0.12);
       }
 
       .gradient-name {
-        font-size: 0.58rem;
+        font-size: 0.66rem;
         line-height: 1.1;
         color: var(--board-muted);
         overflow-wrap: anywhere;
@@ -218,7 +199,11 @@
         }
 
         .gradient-grid {
-          grid-template-columns: repeat(6, minmax(0, 1fr));
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+
+        .group[data-category='Utility'] {
+          grid-column: auto;
         }
       }
     </style>
@@ -242,8 +227,6 @@
         </aside>
       </header>
 
-      <section class="meta" id="meta"></section>
-
       <main class="content">
         <section class="card">
           <h3>Text Colors</h3>
@@ -260,9 +243,6 @@
     <p class="status" id="status">Loading token board…</p>
 
     <script type="module">
-      import { applyThemeTokens } from '/src/theme.js';
-
-      const metaEl = document.getElementById('meta');
       const textStripEl = document.getElementById('text-strip');
       const colorGroupsEl = document.getElementById('color-groups');
       const gradientGridEl = document.getElementById('gradient-grid');
@@ -272,8 +252,8 @@
         'Foundation',
         'Text',
         'Actions',
-        'Magnet Letters',
-        'Brand & Compatibility',
+        'Brand',
+        'External',
         'Utility',
       ];
 
@@ -288,7 +268,15 @@
       }
 
       function isColor(value) {
-        return /#|rgba?\(|hsla?\(|\btransparent\b|\bwhite\b|\bblack\b/i.test(value);
+        const normalized = value.trim().toLowerCase();
+        return (
+          normalized.startsWith('#') ||
+          normalized === 'transparent' ||
+          normalized === 'white' ||
+          normalized === 'black' ||
+          /^rgba?\([^)]*\)$/.test(normalized) ||
+          /^hsla?\([^)]*\)$/.test(normalized)
+        );
       }
 
       function escapeHtml(value) {
@@ -300,17 +288,38 @@
           .replaceAll("'", '&#039;');
       }
 
-      function readTokenEntries() {
-        applyThemeTokens(document.documentElement);
-        const computed = getComputedStyle(document.documentElement);
+      function resolveTokenValue(tokenMap, tokenName, chain = new Set()) {
+        const raw = tokenMap[tokenName];
+        if (!raw) return '';
+        if (!raw.includes('var(')) return normalizeValue(raw);
+        if (chain.has(tokenName)) return normalizeValue(raw);
+
+        chain.add(tokenName);
+        const resolved = raw.replace(/var\((--[a-z0-9-]+)(?:\s*,\s*([^)]+))?\)/gi, (_, refName, fallback = '') => {
+          const refValue = resolveTokenValue(tokenMap, refName, chain);
+          if (refValue) return refValue;
+          return fallback ? normalizeValue(fallback) : '';
+        });
+        chain.delete(tokenName);
+        return normalizeValue(resolved);
+      }
+
+      async function loadTokenMap() {
+        const jsonResponse = await fetch('/theme-token-map.json', { cache: 'no-store' });
+        if (!jsonResponse.ok) {
+          throw new Error(`Could not load theme-token-map.json (${jsonResponse.status})`);
+        }
+        return jsonResponse.json();
+      }
+
+      function readTokenEntries(tokenMap) {
         const colors = [];
         const gradients = [];
+        const tokenEntries = Object.entries(tokenMap);
 
-        for (let i = 0; i < computed.length; i += 1) {
-          const name = computed[i];
+        for (const [name] of tokenEntries) {
           if (!name.startsWith('--')) continue;
-
-          const value = normalizeValue(computed.getPropertyValue(name));
+          const value = resolveTokenValue(tokenMap, name);
           if (!value) continue;
 
           if (isGradient(value)) {
@@ -331,39 +340,51 @@
       function categorizeColorToken(tokenName) {
         const name = tokenName.toLowerCase();
 
+        if (name.startsWith('--foundation-')) {
+          return 'Foundation';
+        }
+
         if (
           name.includes('ink') ||
-          name.includes('science-source-meta') ||
-          name.includes('separator-color') ||
-          name.includes('on-dark') ||
-          name.includes('prompt-violet-text')
+          name.includes('on-dark')
         ) {
           return 'Text';
         }
 
-        if (name.startsWith('--magnet-') || name.includes('divider')) {
-          return 'Magnet Letters';
+        if (name.startsWith('--magnet-') || name === '--blue') {
+          return 'Brand';
         }
 
         if (name.startsWith('--brand-')) {
-          return 'Brand & Compatibility';
+          return 'External';
         }
 
         if (
+          name.includes('action-border') ||
           name.includes('button') ||
           name.includes('coffee') ||
           name.includes('badge') ||
-          name.includes('pill') ||
-          name.includes('blue')
+          name.includes('pill')
         ) {
           return 'Actions';
         }
 
         if (
+          name.includes('bg') ||
+          name.includes('border') ||
+          name.includes('divider') ||
+          name.includes('paper') ||
+          name.includes('surface') ||
+          name.includes('floating') ||
+          name.includes('line') ||
+          name.includes('media-bg') ||
+          name.includes('media-summary') ||
+          name.includes('example-chevron') ||
+          name.includes('science-card') ||
+          name.includes('cursor-glow') ||
           name.includes('transparent') ||
           name.includes('focus') ||
-          name.includes('control') ||
-          name.includes('science-source-meta')
+          name.includes('control')
         ) {
           return 'Utility';
         }
@@ -389,28 +410,6 @@
         return groups;
       }
 
-      function renderMeta({ colorCount, gradientCount, grouped }) {
-        const usedGroups = CATEGORY_ORDER.filter((category) => grouped.get(category).length > 0).length;
-        const cards = [
-          { label: 'Color Tokens', value: String(colorCount), note: 'All tokenized colors' },
-          { label: 'Gradient Tokens', value: String(gradientCount), note: 'All tokenized gradients' },
-          { label: 'Color Categories', value: String(usedGroups), note: 'Grouped by appearance' },
-          { label: 'Playful Accent Cut', value: '2 fewer', note: 'Divider green/red now reuse magnet hues' },
-        ];
-
-        metaEl.innerHTML = cards
-          .map(
-            (card) => `
-              <article class="card">
-                <h2>${escapeHtml(card.label)}</h2>
-                <strong>${escapeHtml(card.value)}</strong>
-                <p>${escapeHtml(card.note)}</p>
-              </article>
-            `
-          )
-          .join('');
-      }
-
       function renderColorGroups(grouped) {
         colorGroupsEl.innerHTML = CATEGORY_ORDER.map((category) => {
           if (category === 'Text') {
@@ -420,7 +419,7 @@
           const entries = grouped.get(category) ?? [];
 
           return `
-            <section class="card group">
+            <section class="card group" data-category="${escapeHtml(category)}">
               <h3>${escapeHtml(category)} · ${entries.length}</h3>
               <div class="swatches">
                 ${entries
@@ -473,23 +472,21 @@
           .join('');
       }
 
-      try {
-        const tokenEntries = readTokenEntries();
+      async function renderBoard() {
+        const tokenMap = await loadTokenMap();
+        const tokenEntries = readTokenEntries(tokenMap);
         const grouped = groupColors(tokenEntries.colors);
 
-        renderMeta({
-          colorCount: tokenEntries.colors.length,
-          gradientCount: tokenEntries.gradients.length,
-          grouped,
-        });
         renderTextStrip(grouped);
         renderColorGroups(grouped);
         renderGradients(tokenEntries.gradients);
 
         statusEl.textContent = `Loaded ${tokenEntries.colors.length} color tokens and ${tokenEntries.gradients.length} gradient tokens.`;
-      } catch (error) {
-        statusEl.textContent = `Board failed: ${error instanceof Error ? error.message : String(error)}`;
       }
+
+      renderBoard().catch((error) => {
+        statusEl.textContent = `Board failed: ${error instanceof Error ? error.message : String(error)}`;
+      });
     </script>
   </body>
 </html>
