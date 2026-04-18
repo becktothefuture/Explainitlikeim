@@ -217,25 +217,25 @@ const HOW_BENEFITS = [
     title: 'You get the version your brain wanted first.',
     copy:
       'The first pass gives you the shape of the answer quickly, before the denser language turns up.',
-    art: '/assets/how/how-benefit-start.svg',
+    art: '/assets/how/how-benefit-start.png',
   },
   {
     title: 'The proper detail still shows up.',
     copy:
       'Each pass adds back the real terms, mechanism, and caveats, so the useful detail stays intact.',
-    art: '/assets/how/how-benefit-detail.svg',
+    art: '/assets/how/how-benefit-detail.png',
   },
   {
     title: 'It works on code, docs, papers, plans, and odd questions.',
     copy:
       'Anything that is correct but annoyingly dense gets easier when the answer arrives in steps instead of one long slab.',
-    art: '/assets/how/how-benefit-anywhere.svg',
+    art: '/assets/how/how-benefit-anywhere.png',
   },
   {
     title: 'It saves your next prompt for something better.',
     copy:
       'You spend less time asking for a rewrite and more time deciding what to do with the answer.',
-    art: '/assets/how/how-benefit-reprompt.svg',
+    art: '/assets/how/how-benefit-reprompt.png',
   },
 ];
 
@@ -1245,7 +1245,7 @@ function useStickyEase({
   }, [band, shellRef, trackRef, syncStickyEase]);
 }
 
-function getExampleTabVisuals(index, scrollTop) {
+function getExampleTabVisuals(index) {
   switch (index) {
     case EXAMPLE_TAB_MIN_POSITION:
       return { offsetY: -EXAMPLE_TAB_STEP, scale: 0, opacity: 0 };

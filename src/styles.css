@@ -874,12 +874,12 @@ select {
   padding: 10px 14px;
   border: 1px solid var(--prompt-border);
   border-radius: 16px;
-  background: linear-gradient(180deg, rgba(228, 219, 203, 0.98) 0%, rgba(244, 238, 228, 0.99) 100%);
+  background: linear-gradient(180deg, rgba(250, 248, 244, 0.99) 0%, rgba(255, 255, 255, 0.99) 100%);
   box-shadow:
-    inset 0 2px 4px rgba(92, 68, 33, 0.12),
-    inset 0 12px 22px rgba(255, 255, 255, 0.14),
-    inset 0 -1px 0 rgba(255, 251, 243, 0.72),
-    0 1px 0 rgba(255, 252, 245, 0.42);
+    inset 0 2px 5px rgba(95, 72, 39, 0.16),
+    inset 0 14px 22px rgba(255, 255, 255, 0.14),
+    inset 0 -1px 0 rgba(255, 251, 243, 0.76),
+    0 1px 0 rgba(255, 252, 245, 0.34);
 }
 
 .eli5-prompt-field__skill {
@@ -932,26 +932,6 @@ select {
 
 .eli5-how__prompt {
   margin-top: 26px;
-}
-
-.eli5-how__prompt .eli5-prompt-field__shell {
-  gap: 8px;
-  min-height: 58px;
-  padding: 10px 14px;
-  border-color: rgba(136, 111, 80, 0.16);
-  border-radius: 15px;
-  background: linear-gradient(180deg, rgba(255, 251, 244, 0.98) 0%, rgba(241, 232, 216, 0.98) 100%);
-  box-shadow:
-    inset 0 2px 6px rgba(128, 97, 57, 0.12),
-    inset 0 -2px 4px rgba(255, 255, 255, 0.86),
-    inset 0 10px 20px rgba(255, 255, 255, 0.12);
-}
-
-.eli5-how__prompt .eli5-prompt-field__skill {
-  padding: 0 11px;
-  border-color: rgba(111, 79, 171, 0.15);
-  background: rgba(136, 72, 255, 0.12);
-  box-shadow: none;
 }
 
 .eli5-how__benefits {
@@ -1141,7 +1121,7 @@ select {
 .eli5-playfield {
   position: relative;
   display: grid;
-  grid-template-columns: 220px minmax(0, 1fr);
+  grid-template-columns: 252px minmax(0, 1fr);
   align-items: start;
   align-content: start;
   gap: 28px;
@@ -1156,7 +1136,7 @@ select {
   display: grid;
   align-content: start;
   gap: 10px;
-  width: min(100%, 228px);
+  width: min(100%, 252px);
   padding-top: 4px;
   align-self: start;
   position: sticky;
@@ -1164,14 +1144,10 @@ select {
 }
 
 .eli5-example-tabs__viewport {
-  overflow-y: auto;
+  position: relative;
   height: var(--example-tab-viewport-height, 328px);
-  padding-block: 4px;
-  overscroll-behavior: contain;
-  scrollbar-width: none;
-  scroll-snap-type: y mandatory;
-  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 10%, #000 90%, transparent 100%);
-  mask-image: linear-gradient(180deg, transparent 0%, #000 10%, #000 90%, transparent 100%);
+  overflow: hidden;
+  padding-block: 0;
 }
 
 .eli5-example-tabs__viewport::-webkit-scrollbar {
@@ -1179,15 +1155,19 @@ select {
 }
 
 .eli5-example-tabs__list {
-  display: grid;
-  gap: var(--example-tab-gap, 12px);
-  align-content: start;
+  position: relative;
+  min-height: 100%;
 }
 
 .eli5-example-tab {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: max-content;
+  max-width: 100%;
   justify-self: start;
   height: var(--example-tab-item-height, 56px);
-  padding: 0 18px;
+  padding: 0 20px;
   border: 1px solid var(--surface-border-strong);
   border-radius: 999px;
   background: var(--tab-sheen-gradient), var(--example-tab-color, var(--magnet-blue));
@@ -1197,20 +1177,21 @@ select {
   letter-spacing: -0.02em;
   cursor: pointer;
   white-space: nowrap;
-  scroll-snap-align: start;
   transform-origin: left center;
   opacity: var(--example-tab-opacity, 1);
-  filter: blur(var(--example-tab-blur, 0));
   transform:
-    translateX(var(--example-tab-shift, 0px))
+    translate3d(var(--example-tab-offset-x, 0px), var(--example-tab-offset-y, 0px), 0)
     rotate(var(--example-tab-tilt, 0deg))
     scale(var(--example-tab-scale, 1));
   box-shadow: var(--shadow-tab);
+  transition:
+    transform calc(var(--ui-duration) * 1.8) var(--ui-ease),
+    box-shadow var(--ui-duration) var(--ui-ease);
+  will-change: transform;
 }
 
 .eli5-example-tab.is-active {
   color: var(--on-dark);
-  --example-tab-shift: 10px;
   box-shadow: var(--shadow-tab-active);
 }
 
@@ -1239,6 +1220,16 @@ select {
     opacity var(--ui-duration) var(--ui-ease),
     box-shadow var(--ui-duration) var(--ui-ease),
     background-color var(--ui-duration) var(--ui-ease);
+}
+
+.eli5-example-tabs__chevron-icon {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+
+.eli5-example-tabs__chevron--down .eli5-example-tabs__chevron-icon {
+  transform: rotate(180deg);
 }
 
 .eli5-example-tabs__chevron:disabled {
@@ -1273,17 +1264,6 @@ select {
 
 .eli5-example-thread__prompt {
   width: min(100%, 44rem);
-}
-
-.eli5-example-thread__prompt .eli5-prompt-field__shell {
-  max-width: 100%;
-  border-color: rgba(108, 84, 50, 0.22);
-  background: linear-gradient(180deg, rgba(250, 248, 244, 0.99) 0%, rgba(255, 255, 255, 0.99) 100%);
-  box-shadow:
-    inset 0 2px 5px rgba(95, 72, 39, 0.16),
-    inset 0 14px 22px rgba(255, 255, 255, 0.14),
-    inset 0 -1px 0 rgba(255, 251, 243, 0.76),
-    0 1px 0 rgba(255, 252, 245, 0.34);
 }
 
 .eli5-example-thread__prompt .eli5-prompt-field__text {
