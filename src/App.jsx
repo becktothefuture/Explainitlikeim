@@ -16,12 +16,14 @@ const SUPPORT_HREF = 'https://buymeacoffee.com/explainitlikeim';
 const HOW_GIF_VIDEO = './assets/how/michael-scott-waiting.mp4';
 const HOW_GIF_POSTER = './assets/how/michael-scott-waiting-poster.jpg';
 const HOW_GIF_STICKY_TOP_VH = 35;
-const STICKY_EASE_BAND = 88;
+const STICKY_EASE_BAND = 132;
 const EXAMPLE_SEPARATOR = '---------------';
-const EXAMPLE_TAB_VISIBLE_COUNT = 5;
+const EXAMPLE_TAB_VISIBLE_COUNT = 6;
 const EXAMPLE_TAB_HEIGHT = 56;
 const EXAMPLE_TAB_GAP = 12;
 const EXAMPLE_TAB_STEP = EXAMPLE_TAB_HEIGHT + EXAMPLE_TAB_GAP;
+const EXAMPLE_TAB_MIN_POSITION = -1;
+const EXAMPLE_TAB_MAX_POSITION = EXAMPLE_TAB_VISIBLE_COUNT;
 const EXAMPLE_TAB_VIEWPORT_HEIGHT =
   EXAMPLE_TAB_HEIGHT * EXAMPLE_TAB_VISIBLE_COUNT +
   EXAMPLE_TAB_GAP * (EXAMPLE_TAB_VISIBLE_COUNT - 1);
@@ -247,6 +249,34 @@ const HOW_USE_CASES = [
 ];
 
 const EXAMPLES = [
+  {
+    slug: 'budget-surplus',
+    category: 'Money',
+    subject: 'Why Do We Have A Surplus?',
+    prompt: 'Explain a budget surplus in simple steps from age 5 to 16.',
+    bands: [
+      {
+        age: '5',
+        copy: 'A surplus means you have money left after paying for the things you needed.',
+      },
+      {
+        age: '7',
+        copy: 'In a budget, a surplus means you planned some money for spending, but part of it did not get used.',
+      },
+      {
+        age: '9',
+        copy: 'A budget surplus happens when income is higher than spending, or when spending ends up lower than expected. The leftover amount is the surplus.',
+      },
+      {
+        age: '12',
+        copy: 'A budget surplus is the amount left when actual revenue or available funds are greater than actual spending over the same period. In a company or office budget, that usually means some planned money was not spent.',
+      },
+      {
+        age: '16',
+        copy: 'A budget surplus is the positive balance that remains when revenue or allocated funds exceed expenditures for a defined period. It can result from higher-than-expected income, lower-than-expected costs, delayed purchases, or deliberate underspending, and the next question is usually whether to save it, reallocate it, or return it.',
+      },
+    ],
+  },
   {
     slug: 'inflation',
     category: 'Economics',
@@ -1092,7 +1122,7 @@ function getMotionBehavior() {
 function getStickyEaseDistance(distance, band) {
   const normalized = clamp(distance / band, 0, 1);
 
-  return distance * (1 - normalized) * (1 - normalized);
+  return distance * normalized * (1 - normalized);
 }
 
 function useStickyEase({
@@ -1216,16 +1246,58 @@ function useStickyEase({
 }
 
 function getExampleTabVisuals(index, scrollTop) {
-  const viewportCenter = EXAMPLE_TAB_VIEWPORT_HEIGHT / 2;
-  const itemCenter = index * EXAMPLE_TAB_STEP + EXAMPLE_TAB_HEIGHT / 2 - scrollTop;
-  const distance = Math.abs(itemCenter - viewportCenter);
-  const normalized = clamp(distance / (EXAMPLE_TAB_STEP * 2.75), 0, 1.7);
+  switch (index) {
+    case EXAMPLE_TAB_MIN_POSITION:
+      return { offsetY: -EXAMPLE_TAB_STEP, scale: 0, opacity: 0 };
+    case 0:
+      return { offsetY: 0, scale: 1, opacity: 1 };
+    case 1:
+      return { offsetY: EXAMPLE_TAB_STEP, scale: 0.98, opacity: 1 };
+    case 2:
+      return { offsetY: EXAMPLE_TAB_STEP * 2, scale: 0.96, opacity: 1 };
+    case 3:
+      return { offsetY: EXAMPLE_TAB_STEP * 3, scale: 0.94, opacity: 1 };
+    case 4:
+      return { offsetY: EXAMPLE_TAB_STEP * 4, scale: 0.92, opacity: 1 };
+    case 5:
+      return { offsetY: EXAMPLE_TAB_STEP * 5, scale: 0.9, opacity: 1 };
+    case EXAMPLE_TAB_MAX_POSITION:
+      return { offsetY: EXAMPLE_TAB_STEP * EXAMPLE_TAB_MAX_POSITION, scale: 0, opacity: 0 };
+    default:
+      return {
+        offsetY: EXAMPLE_TAB_STEP * EXAMPLE_TAB_MAX_POSITION,
+        scale: 0,
+        opacity: 0,
+      };
+  }
+}
 
-  return {
-    scale: clamp(1.02 - normalized * 0.2, 0.72, 1.02),
-    opacity: clamp(1.08 - normalized * 0.48, 0, 1),
-    blur: clamp((normalized - 0.82) * 3.6, 0, 3.2),
-  };
+function wrapIndex(index, length) {
+  if (length <= 0) {
+    return 0;
+  }
+
+  return ((index % length) + length) % length;
+}
+
+function ExampleChevronIcon({ className = '' }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 16 16"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path
+        d="M4.5 10 8 6.5 11.5 10"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
 }
 
 function buildHeroTitleAuthoredMagnets(heroMagnetControls, magnetProps = {}) {
@@ -1853,12 +1925,8 @@ function ExampleTopicTabs({
 }) {
   const shellRef = useRef(null);
   const contentRef = useRef(null);
-  const viewportRef = useRef(null);
   const tabRefs = useRef([]);
-  const [scrollTop, setScrollTop] = useState(0);
-  const maxScroll = Math.max(0, (examples.length - EXAMPLE_TAB_VISIBLE_COUNT) * EXAMPLE_TAB_STEP);
-  const canScrollUp = scrollTop > 6;
-  const canScrollDown = scrollTop < maxScroll - 6;
+  const activeIndex = Math.max(0, examples.findIndex((example) => example.slug === activeSlug));
 
   useStickyEase({
     shellRef,
@@ -1866,58 +1934,25 @@ function ExampleTopicTabs({
     trackRef,
   });
 
-  const syncScrollState = useEffectEvent(() => {
-    setScrollTop(viewportRef.current?.scrollTop ?? 0);
-  });
-
-  useEffect(() => {
-    const viewportNode = viewportRef.current;
-
-    if (!viewportNode) {
-      return;
-    }
-
-    syncScrollState();
-
-    const handleScroll = () => {
-      syncScrollState();
-    };
-
-    viewportNode.addEventListener('scroll', handleScroll, { passive: true });
-
-    return () => {
-      viewportNode.removeEventListener('scroll', handleScroll);
-    };
-  }, [syncScrollState]);
-
-  const scrollByStep = (direction) => {
-    const viewportNode = viewportRef.current;
-
-    if (!viewportNode) {
-      return;
-    }
-
-    viewportNode.scrollBy({
-      top: direction * EXAMPLE_TAB_STEP,
-      behavior: getMotionBehavior(),
-    });
-  };
-
   const focusTabAtIndex = (nextIndex) => {
-    const boundedIndex = clamp(nextIndex, 0, examples.length - 1);
-    const targetExample = examples[boundedIndex];
-    const targetNode = tabRefs.current[boundedIndex];
+    const wrappedIndex = wrapIndex(nextIndex, examples.length);
+    const targetExample = examples[wrappedIndex];
 
-    if (!targetExample || !targetNode) {
+    if (!targetExample) {
       return;
     }
 
     onSelect(targetExample.slug);
-    targetNode.focus();
-    targetNode.scrollIntoView({
-      block: 'nearest',
-      behavior: getMotionBehavior(),
-    });
+
+    if (typeof window !== 'undefined') {
+      window.requestAnimationFrame(() => {
+        tabRefs.current[wrappedIndex]?.focus();
+      });
+    }
+  };
+
+  const shiftActiveBy = (direction) => {
+    focusTabAtIndex(activeIndex + direction);
   };
 
   const handleTabKeyDown = (event, index) => {
@@ -1945,6 +1980,22 @@ function ExampleTopicTabs({
     }
   };
 
+  const tabWindow = [];
+  for (let position = EXAMPLE_TAB_MIN_POSITION; position <= EXAMPLE_TAB_MAX_POSITION; position += 1) {
+    const exampleIndex = wrapIndex(activeIndex + position, examples.length);
+    const example = examples[exampleIndex];
+
+    if (!example) {
+      continue;
+    }
+
+    tabWindow.push({
+      example,
+      exampleIndex,
+      position,
+    });
+  }
+
   return (
     <div
       ref={shellRef}
@@ -1956,43 +2007,42 @@ function ExampleTopicTabs({
       }}
     >
       <div ref={contentRef} className="eli5-sticky-ease">
-        <div
-          ref={viewportRef}
-          className="eli5-example-tabs__viewport"
-        >
+        <div className="eli5-example-tabs__viewport">
           <div
             className="eli5-example-tabs__list"
             role="tablist"
             aria-label="Example topics"
             aria-orientation="vertical"
           >
-            {examples.map((example, index) => {
+            {tabWindow.map(({ example, exampleIndex, position }) => {
               const isActive = example.slug === activeSlug;
-              const tabStyle = EXAMPLE_TAB_STYLES[index % EXAMPLE_TAB_STYLES.length];
-              const visuals = getExampleTabVisuals(index, scrollTop);
+              const tabStyle = EXAMPLE_TAB_STYLES[exampleIndex % EXAMPLE_TAB_STYLES.length];
+              const visuals = getExampleTabVisuals(position);
 
               return (
                 <button
                   key={example.slug}
                   ref={(node) => {
-                    tabRefs.current[index] = node;
+                    tabRefs.current[exampleIndex] = node;
                   }}
                   id={`example-tab-${example.slug}`}
                   type="button"
                   role="tab"
                   tabIndex={isActive ? 0 : -1}
                   aria-selected={isActive}
+                  aria-hidden={visuals.opacity === 0 ? 'true' : undefined}
                   aria-controls={`example-panel-${example.slug}`}
                   className={`eli5-example-tab${isActive ? ' is-active' : ''}`}
                   style={{
                     '--example-tab-color': tabStyle.color,
                     '--example-tab-tilt': `${tabStyle.tilt}deg`,
+                    '--example-tab-offset-y': `${visuals.offsetY}px`,
+                    '--example-tab-offset-x': `${isActive ? 10 : 0}px`,
                     '--example-tab-scale': visuals.scale.toFixed(3),
                     '--example-tab-opacity': visuals.opacity.toFixed(3),
-                    '--example-tab-blur': `${visuals.blur.toFixed(2)}px`,
                   }}
-                  onClick={() => onSelect(example.slug)}
-                  onKeyDown={(event) => handleTabKeyDown(event, index)}
+                  onClick={() => focusTabAtIndex(exampleIndex)}
+                  onKeyDown={(event) => handleTabKeyDown(event, exampleIndex)}
                 >
                   {example.subject}
                 </button>
@@ -2005,21 +2055,19 @@ function ExampleTopicTabs({
           <button
             type="button"
             className="eli5-example-tabs__chevron"
-            onClick={() => scrollByStep(-1)}
-            disabled={!canScrollUp}
-            aria-label="Scroll topics up"
+            onClick={() => shiftActiveBy(-1)}
+            aria-label="Show previous topic"
           >
-            <span aria-hidden="true">⌃</span>
+            <ExampleChevronIcon className="eli5-example-tabs__chevron-icon" />
           </button>
 
           <button
             type="button"
-            className="eli5-example-tabs__chevron"
-            onClick={() => scrollByStep(1)}
-            disabled={!canScrollDown}
-            aria-label="Scroll topics down"
+            className="eli5-example-tabs__chevron eli5-example-tabs__chevron--down"
+            onClick={() => shiftActiveBy(1)}
+            aria-label="Show next topic"
           >
-            <span aria-hidden="true">⌄</span>
+            <ExampleChevronIcon className="eli5-example-tabs__chevron-icon" />
           </button>
         </div>
       </div>
@@ -2164,7 +2212,7 @@ export default function App() {
   const playfieldBoardRef = useRef(null);
   const howSectionRef = useRef(null);
   const controlPanelWindowRef = useRef(null);
-  const [activeExampleSlug, setActiveExampleSlug] = useState('photosynthesis');
+  const [activeExampleSlug, setActiveExampleSlug] = useState(EXAMPLES[0]?.slug ?? '');
   const [heroTitleSlot, setHeroTitleSlot] = useState(() =>
     buildHeroTitleSlot(buildFallbackBoardRects().hero, loadHeroMagnetControls()),
   );
