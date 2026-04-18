@@ -25,7 +25,7 @@ const EXAMPLE_TAB_STEP = EXAMPLE_TAB_HEIGHT + EXAMPLE_TAB_GAP;
 const EXAMPLE_TAB_VIEWPORT_HEIGHT =
   EXAMPLE_TAB_HEIGHT * EXAMPLE_TAB_VISIBLE_COUNT +
   EXAMPLE_TAB_GAP * (EXAMPLE_TAB_VISIBLE_COUNT - 1);
-const HERO_CONTROL_STORAGE_KEY = 'eli5-hero-magnet-controls-v8';
+const HERO_CONTROL_STORAGE_KEY = 'eli5-hero-magnet-controls-v9';
 const HERO_LAYOUT_STORAGE_KEY = 'eli5-hero-custom-layout-v2';
 const HERO_CONTROL_WINDOW_NAME = 'eli5-hero-control-panel';
 const HERO_CONTROL_WINDOW_TITLE = "Config Panel for Explain It Like I'm Five";
@@ -101,25 +101,27 @@ const HERO_MAGNET_DEFAULTS = {
   bounceTwist: 1,
   bounceSpeed: 1,
   bounceDamping: 1,
-  vibrance: 1.45,
-  innerLightOpacity: 0.38,
-  innerLightOffsetY: 2,
+  vibrance: 1.18,
+  faceContrast: 0.9,
+  innerLightOpacity: 0.58,
+  innerLightOffsetY: 1.6,
   innerLightBlur: 3,
-  innerShadeOpacity: 0.34,
-  innerShadeOffsetX: 1.5,
-  innerShadeOffsetY: 2.5,
+  innerShadeOpacity: 0.52,
+  innerShadeOffsetX: 1.8,
+  innerShadeOffsetY: 2.8,
   innerShadeBlur: 4,
-  depthOffsetX: 0.8,
-  depthOffsetY: 5.8,
+  depthContrast: 0.82,
+  depthOffsetX: 1.4,
+  depthOffsetY: 6.6,
   depthSpread: 1,
-  groundShadow1Opacity: 0.18,
+  groundShadow1Opacity: 0.24,
   groundShadow1OffsetX: 4,
-  groundShadow1OffsetY: 11,
-  groundShadow1Blur: 12,
-  groundShadow2Opacity: 0.1,
+  groundShadow1OffsetY: 13,
+  groundShadow1Blur: 14,
+  groundShadow2Opacity: 0.14,
   groundShadow2OffsetX: 7,
-  groundShadow2OffsetY: 24,
-  groundShadow2Blur: 28,
+  groundShadow2OffsetY: 26,
+  groundShadow2Blur: 30,
 };
 const HERO_CONTROL_SECTIONS = [
   {
@@ -160,6 +162,7 @@ const HERO_CONTROL_SECTIONS = [
     title: 'Face',
     fields: [
       { key: 'vibrance', label: 'Vibrance', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
+      { key: 'faceContrast', label: 'Face Contrast', min: 0, max: 2, step: 0.01, format: (value) => value.toFixed(2) },
       { key: 'innerLightOpacity', label: 'Top Light Opacity', min: 0, max: 1, step: 0.01, format: (value) => value.toFixed(2) },
       { key: 'innerLightOffsetY', label: 'Top Light Offset', min: 0, max: 12, step: 0.1, format: (value) => `${value.toFixed(1)}px` },
       { key: 'innerLightBlur', label: 'Top Light Blur', min: 0, max: 16, step: 0.1, format: (value) => `${value.toFixed(1)}px` },
@@ -172,6 +175,7 @@ const HERO_CONTROL_SECTIONS = [
   {
     title: 'Depth',
     fields: [
+      { key: 'depthContrast', label: 'Depth Contrast', min: 0, max: 2, step: 0.01, format: (value) => value.toFixed(2) },
       { key: 'depthOffsetX', label: 'Depth X', min: 0, max: 12, step: 0.1, format: (value) => `${value.toFixed(1)}px` },
       { key: 'depthOffsetY', label: 'Depth Y', min: 0, max: 20, step: 0.1, format: (value) => `${value.toFixed(1)}px` },
       { key: 'depthSpread', label: 'Depth Spread', min: 0, max: 6, step: 1, format: (value) => `${value}px` },
@@ -793,6 +797,7 @@ function sanitizeHeroMagnetControls(controls = {}) {
     bounceSpeed: clamp(getFiniteNumber(controls.bounceSpeed, HERO_MAGNET_DEFAULTS.bounceSpeed), 0, 2.4),
     bounceDamping: clamp(getFiniteNumber(controls.bounceDamping, HERO_MAGNET_DEFAULTS.bounceDamping), 0.35, 2.4),
     vibrance: clamp(getFiniteNumber(controls.vibrance, HERO_MAGNET_DEFAULTS.vibrance), 0, 2.4),
+    faceContrast: clamp(getFiniteNumber(controls.faceContrast, HERO_MAGNET_DEFAULTS.faceContrast), 0, 2),
     innerLightOpacity: clamp(getFiniteNumber(controls.innerLightOpacity, HERO_MAGNET_DEFAULTS.innerLightOpacity), 0, 1),
     innerLightOffsetY: clamp(getFiniteNumber(controls.innerLightOffsetY, HERO_MAGNET_DEFAULTS.innerLightOffsetY), 0, 12),
     innerLightBlur: clamp(getFiniteNumber(controls.innerLightBlur, HERO_MAGNET_DEFAULTS.innerLightBlur), 0, 16),
@@ -800,6 +805,7 @@ function sanitizeHeroMagnetControls(controls = {}) {
     innerShadeOffsetX: clamp(getFiniteNumber(controls.innerShadeOffsetX, HERO_MAGNET_DEFAULTS.innerShadeOffsetX), 0, 12),
     innerShadeOffsetY: clamp(getFiniteNumber(controls.innerShadeOffsetY, HERO_MAGNET_DEFAULTS.innerShadeOffsetY), 0, 12),
     innerShadeBlur: clamp(getFiniteNumber(controls.innerShadeBlur, HERO_MAGNET_DEFAULTS.innerShadeBlur), 0, 16),
+    depthContrast: clamp(getFiniteNumber(controls.depthContrast, HERO_MAGNET_DEFAULTS.depthContrast), 0, 2),
     depthOffsetX: clamp(getFiniteNumber(controls.depthOffsetX, HERO_MAGNET_DEFAULTS.depthOffsetX), 0, 12),
     depthOffsetY: clamp(getFiniteNumber(controls.depthOffsetY, HERO_MAGNET_DEFAULTS.depthOffsetY), 0, 20),
     depthSpread: Math.round(clamp(getFiniteNumber(controls.depthSpread, HERO_MAGNET_DEFAULTS.depthSpread), 0, 6)),
@@ -830,23 +836,6 @@ function loadHeroMagnetControls() {
   } catch {
     return HERO_MAGNET_DEFAULTS;
   }
-}
-
-function getHeroMotionConfig(heroMagnetControls) {
-  const heroControls = sanitizeHeroMagnetControls(heroMagnetControls);
-
-  return {
-    floatRangeX: heroControls.floatRangeX,
-    floatRangeY: heroControls.floatRangeY,
-    floatSpeed: heroControls.floatSpeed,
-    floatRotate: heroControls.floatRotate,
-    hoverSink: heroControls.hoverSink,
-    hoverLean: heroControls.hoverLean,
-    bounceLift: heroControls.bounceLift,
-    bounceTwist: heroControls.bounceTwist,
-    bounceSpeed: heroControls.bounceSpeed,
-    bounceDamping: heroControls.bounceDamping,
-  };
 }
 
 function getHeroMotionBuffer(heroMagnetControls, baseHeight) {
@@ -1421,6 +1410,7 @@ function buildAuthoredMagnets(heroMagnetControls) {
   const heroControls = sanitizeHeroMagnetControls(heroMagnetControls);
   const sharedMagnetProps = {
     vibrance: heroControls.vibrance,
+    faceContrast: heroControls.faceContrast,
     innerLightOpacity: heroControls.innerLightOpacity,
     innerLightOffsetY: heroControls.innerLightOffsetY,
     innerLightBlur: heroControls.innerLightBlur,
@@ -1428,6 +1418,7 @@ function buildAuthoredMagnets(heroMagnetControls) {
     innerShadeOffsetX: heroControls.innerShadeOffsetX,
     innerShadeOffsetY: heroControls.innerShadeOffsetY,
     innerShadeBlur: heroControls.innerShadeBlur,
+    depthContrast: heroControls.depthContrast,
     depthOffsetX: heroControls.depthOffsetX,
     depthOffsetY: heroControls.depthOffsetY,
     depthSpread: heroControls.depthSpread,
@@ -2440,7 +2431,7 @@ export default function App() {
                         <MagnetCanvas
                           className="eli5-magnet-layer"
                           magnets={magnetSeed}
-                          motionConfig={getHeroMotionConfig(heroMagnetControls)}
+                          motionConfig={heroMagnetControls}
                         />
                       ) : null}
                     </div>

@@ -221,25 +221,26 @@ export function drawMagnet(ctx, magnet, scrollPosition, viewport) {
   const shadowBlur = magnet.shadowBlur ?? magnet.shadowSoftness ?? 0.12;
   const shadowLayers = magnet.shadowLayers ?? 2;
   const highlightStrength = magnet.highlightStrength ?? 0.22;
-  const faceContrast = magnet.faceContrast ?? 1;
-  const innerLightOpacity = magnet.innerLightOpacity ?? 0.38;
-  const innerLightOffsetY = magnet.innerLightOffsetY ?? 2;
+  const faceContrast = magnet.faceContrast ?? 0.9;
+  const innerLightOpacity = magnet.innerLightOpacity ?? 0.58;
+  const innerLightOffsetY = magnet.innerLightOffsetY ?? 1.6;
   const innerLightBlur = magnet.innerLightBlur ?? 3;
-  const innerShadeOpacity = magnet.innerShadeOpacity ?? 0.34;
-  const innerShadeOffsetX = magnet.innerShadeOffsetX ?? 1.5;
-  const innerShadeOffsetY = magnet.innerShadeOffsetY ?? 2.5;
+  const innerShadeOpacity = magnet.innerShadeOpacity ?? 0.52;
+  const innerShadeOffsetX = magnet.innerShadeOffsetX ?? 1.8;
+  const innerShadeOffsetY = magnet.innerShadeOffsetY ?? 2.8;
   const innerShadeBlur = magnet.innerShadeBlur ?? 4;
-  const depthOffsetX = magnet.depthOffsetX ?? 0.8;
-  const depthOffsetY = magnet.depthOffsetY ?? 5.8;
+  const depthContrast = magnet.depthContrast ?? 0.82;
+  const depthOffsetX = magnet.depthOffsetX ?? 1.4;
+  const depthOffsetY = magnet.depthOffsetY ?? 6.6;
   const depthSpread = magnet.depthSpread ?? 1;
-  const groundShadow1Opacity = magnet.groundShadow1Opacity ?? 0.18;
+  const groundShadow1Opacity = magnet.groundShadow1Opacity ?? 0.24;
   const groundShadow1OffsetX = magnet.groundShadow1OffsetX ?? 4;
-  const groundShadow1OffsetY = magnet.groundShadow1OffsetY ?? 11;
-  const groundShadow1Blur = magnet.groundShadow1Blur ?? 12;
-  const groundShadow2Opacity = magnet.groundShadow2Opacity ?? 0.1;
+  const groundShadow1OffsetY = magnet.groundShadow1OffsetY ?? 13;
+  const groundShadow1Blur = magnet.groundShadow1Blur ?? 14;
+  const groundShadow2Opacity = magnet.groundShadow2Opacity ?? 0.14;
   const groundShadow2OffsetX = magnet.groundShadow2OffsetX ?? 7;
-  const groundShadow2OffsetY = magnet.groundShadow2OffsetY ?? 24;
-  const groundShadow2Blur = magnet.groundShadow2Blur ?? 28;
+  const groundShadow2OffsetY = magnet.groundShadow2OffsetY ?? 26;
+  const groundShadow2Blur = magnet.groundShadow2Blur ?? 30;
   const baseColor = saturateColor(magnet.color, vibrance);
   const thickness = magnet.height * depth * (0.024 + roundness * 0.022);
   const faceTop = shiftColor(baseColor, 0.05 + faceContrast * 0.095);
@@ -264,6 +265,7 @@ export function drawMagnet(ctx, magnet, scrollPosition, viewport) {
     const labelLayout = getLabelLayout(magnet);
     drawLetterSprite(ctx, magnet, labelLayout, {
       baseColor,
+      faceContrast,
       innerLightOpacity,
       innerLightOffsetY,
       innerLightBlur,
@@ -271,6 +273,7 @@ export function drawMagnet(ctx, magnet, scrollPosition, viewport) {
       innerShadeOffsetX,
       innerShadeOffsetY,
       innerShadeBlur,
+      depthContrast,
       depthOffsetX,
       depthOffsetY,
       depthSpread,
@@ -379,15 +382,26 @@ function buildLetterSprite(
     offsetY: scaledGroundShadow2OffsetY,
     blur: scaledGroundShadow2Blur,
   });
-  drawOffsetGlyphLayer(canvasCtx, maskCanvas, width, height, {
-    fill: style.baseColor,
+  drawExtrudedGlyphDepth(canvasCtx, maskCanvas, width, height, {
+    baseColor: style.baseColor,
+    depthContrast: style.depthContrast,
     offsetX: scaledDepthOffsetX,
     offsetY: scaledDepthOffsetY,
-    blur: 0,
     spread: scaledDepthSpread,
   });
 
-  const faceCanvas = buildFilledGlyphCanvas(maskCanvas, width, height, style.baseColor);
+  const faceCanvas = buildGradientGlyphCanvas(maskCanvas, width, height, {
+    fromX: textX - scaledMagnet.width * 0.18,
+    fromY: textY - scaledMagnet.height * 0.62,
+    toX: textX + scaledMagnet.width * 0.22,
+    toY: textY + scaledMagnet.height * 0.78,
+    stops: [
+      { position: 0, color: shiftColor(style.baseColor, 0.06 + style.faceContrast * 0.08) },
+      { position: 0.42, color: shiftColor(style.baseColor, 0.01 + style.faceContrast * 0.018) },
+      { position: 0.68, color: shiftColor(style.baseColor, -(style.faceContrast * 0.014)) },
+      { position: 1, color: shiftColor(style.baseColor, -(0.08 + style.faceContrast * 0.11)) },
+    ],
+  });
   const faceCtx = faceCanvas.getContext('2d');
 
   if (faceCtx) {
@@ -529,6 +543,7 @@ function getLetterSpriteCacheKey(magnet, layout, style) {
     width,
     height,
     style.baseColor,
+    getCacheKeyNumber(style.faceContrast),
     getCacheKeyNumber(style.innerLightOpacity),
     getCacheKeyNumber(style.innerLightOffsetY),
     getCacheKeyNumber(style.innerLightBlur),
@@ -536,6 +551,7 @@ function getLetterSpriteCacheKey(magnet, layout, style) {
     getCacheKeyNumber(style.innerShadeOffsetX),
     getCacheKeyNumber(style.innerShadeOffsetY),
     getCacheKeyNumber(style.innerShadeBlur),
+    getCacheKeyNumber(style.depthContrast),
     getCacheKeyNumber(style.depthOffsetX),
     getCacheKeyNumber(style.depthOffsetY),
     getCacheKeyNumber(style.depthSpread),
@@ -662,6 +678,35 @@ function createGlyphMaskCanvas(width, height, layout, textX, textY) {
   return maskCanvas;
 }
 
+function buildGradientGlyphCanvas(maskCanvas, width, height, gradient) {
+  const fillCanvas = createWorkingCanvas(width, height);
+  const fillCtx = fillCanvas.getContext('2d');
+
+  if (!fillCtx) {
+    return fillCanvas;
+  }
+
+  fillCtx.clearRect(0, 0, width, height);
+  const faceGradient = fillCtx.createLinearGradient(
+    gradient.fromX ?? 0,
+    gradient.fromY ?? 0,
+    gradient.toX ?? 0,
+    gradient.toY ?? height,
+  );
+
+  (gradient.stops ?? []).forEach((stop) => {
+    faceGradient.addColorStop(stop.position, stop.color);
+  });
+
+  fillCtx.fillStyle = faceGradient;
+  fillCtx.fillRect(0, 0, width, height);
+  fillCtx.globalCompositeOperation = 'destination-in';
+  fillCtx.drawImage(maskCanvas, 0, 0);
+  fillCtx.globalCompositeOperation = 'source-over';
+
+  return fillCanvas;
+}
+
 function buildFilledGlyphCanvas(maskCanvas, width, height, fill) {
   const fillCanvas = createWorkingCanvas(width, height);
   const fillCtx = fillCanvas.getContext('2d');
@@ -728,6 +773,35 @@ function buildBlurredCanvas(sourceCanvas, width, height, blur) {
   blurredCtx.filter = 'none';
 
   return blurredCanvas;
+}
+
+function drawExtrudedGlyphDepth(targetCtx, maskCanvas, width, height, depth) {
+  if (!targetCtx || !maskCanvas) {
+    return;
+  }
+
+  const maxTravel = Math.max(Math.abs(depth.offsetX ?? 0), Math.abs(depth.offsetY ?? 0));
+  const stepCount = Math.max(1, Math.round(maxTravel));
+  const sideColor = mixColors(
+    depth.baseColor,
+    MAGNET_RENDER_THEME.shadow,
+    clamp(0.22 + depth.depthContrast * 0.22, 0.16, 0.72),
+  );
+  const backColor = mixColors(
+    depth.baseColor,
+    MAGNET_RENDER_THEME.shadowSoft,
+    clamp(0.44 + depth.depthContrast * 0.18, 0.32, 0.8),
+  );
+
+  for (let step = 1; step <= stepCount; step += 1) {
+    const progress = step / stepCount;
+    drawOffsetGlyphLayer(targetCtx, maskCanvas, width, height, {
+      fill: mixColors(sideColor, backColor, progress * 0.78),
+      offsetX: Math.round((depth.offsetX ?? 0) * progress),
+      offsetY: Math.round((depth.offsetY ?? 0) * progress),
+      spread: depth.spread ?? 0,
+    });
+  }
 }
 
 function drawOffsetGlyphLayer(targetCtx, maskCanvas, width, height, layer) {

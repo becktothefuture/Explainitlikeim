@@ -19,12 +19,25 @@ const HIT_PADDING = 8;
 const INTRO_STAGGER_MS = 22;
 const INTRO_DURATION_MS = 420;
 const BOUNCE_DURATION_MS = 1100;
+const DEFAULT_MOTION_CONFIG = {
+  floatRangeX: 1,
+  floatRangeY: 1,
+  floatSpeed: 1,
+  floatRotate: 1,
+  hoverSink: 1,
+  hoverLean: 1,
+  bounceLift: 1,
+  bounceTwist: 1,
+  bounceSpeed: 1,
+  bounceDamping: 1,
+};
 
 export default function MagnetCanvas({
   magnets,
   initialMagnets = [],
   className,
   pixelRatioCap = 1.6,
+  motionConfig = DEFAULT_MOTION_CONFIG,
 }) {
   const canvasRef = useRef(null);
   const contextRef = useRef(null);
@@ -42,6 +55,8 @@ export default function MagnetCanvas({
   const prefersReducedMotionRef = useRef(false);
   const didHydrateInitialMagnetsRef = useRef(false);
   const sessionPhaseRef = useRef(Math.random() * Math.PI * 2);
+  const motionConfigRef = useRef(resolveMotionConfig(motionConfig));
+  const ambientMotionEnabledRef = useRef(true);
   const isControlled = magnets != null;
 
   const requestDraw = useEffectEvent(() => {
@@ -94,15 +109,24 @@ export default function MagnetCanvas({
 
   const syncFloatProfiles = useEffectEvent((nextMagnets) => {
     const nextProfiles = new Map();
+    let hasAmbientMotionValue = false;
 
     nextMagnets.forEach((magnet) => {
-      nextProfiles.set(
-        magnet.id,
-        createFloatProfile(magnet, sessionPhaseRef.current),
+      const profile = createFloatProfile(
+        magnet,
+        sessionPhaseRef.current,
+        motionConfigRef.current,
       );
+
+      if (hasAmbientMotion(profile)) {
+        hasAmbientMotionValue = true;
+      }
+
+      nextProfiles.set(magnet.id, profile);
     });
 
     floatProfilesRef.current = nextProfiles;
+    ambientMotionEnabledRef.current = hasAmbientMotionValue;
   });
 
   const pruneBounceStates = useEffectEvent((nextMagnets) => {
@@ -310,14 +334,18 @@ export default function MagnetCanvas({
     }
 
     const time = now / 1000;
-    const idleX =
-      Math.sin(time * profile.waveX + profile.phaseX) * profile.amplitudeX +
-      Math.cos(time * profile.driftX + profile.phaseDrift) * profile.amplitudeX * 0.36;
-    const idleY =
-      Math.sin(time * profile.waveY + profile.phaseY) * profile.amplitudeY +
-      Math.cos(time * profile.driftY + profile.phaseDrift) * profile.amplitudeY * 0.32;
-    const idleRotation =
-      Math.sin(time * profile.waveRotation + profile.phaseRotation) * profile.rotationAmplitude;
+    const allowAmbientMotion = hasAmbientMotion(profile);
+    const idleX = allowAmbientMotion
+      ? Math.sin(time * profile.waveX + profile.phaseX) * profile.amplitudeX +
+        Math.cos(time * profile.driftX + profile.phaseDrift) * profile.amplitudeX * 0.36
+      : 0;
+    const idleY = allowAmbientMotion
+      ? Math.sin(time * profile.waveY + profile.phaseY) * profile.amplitudeY +
+        Math.cos(time * profile.driftY + profile.phaseDrift) * profile.amplitudeY * 0.32
+      : 0;
+    const idleRotation = allowAmbientMotion
+      ? Math.sin(time * profile.waveRotation + profile.phaseRotation) * profile.rotationAmplitude
+      : 0;
     const isHovered = hoverMagnetIdRef.current === magnet.id;
     const bounce = resolveBounceOffset(magnet, now);
 
@@ -367,7 +395,11 @@ export default function MagnetCanvas({
       drawMagnet(ctx, animatedMagnet, layerOriginRef.current, viewportRef.current);
     }
 
-    if (hasActiveIntroFrame || allowFloating) {
+    if (
+      hasActiveIntroFrame ||
+      (allowFloating && ambientMotionEnabledRef.current) ||
+      bounceStatesRef.current.size > 0
+    ) {
       requestDraw();
     }
   });
@@ -376,6 +408,17 @@ export default function MagnetCanvas({
     const profile = floatProfilesRef.current.get(magnetId);
 
     if (!profile) {
+      return;
+    }
+
+    if (
+      profile.bounceSpeedScale <= 0.001 ||
+      (
+        profile.bounceAmplitudeX <= 0.001 &&
+        profile.bounceAmplitudeY <= 0.001 &&
+        profile.bounceRotation <= 0.001
+      )
+    ) {
       return;
     }
 
@@ -437,6 +480,12 @@ export default function MagnetCanvas({
       syncExternalMagnets(initialMagnets);
     }
   }, [initialMagnets, isControlled, magnets, syncExternalMagnets]);
+
+  useEffect(() => {
+    motionConfigRef.current = resolveMotionConfig(motionConfig);
+    syncFloatProfiles(magnetsRef.current);
+    requestDraw();
+  }, [motionConfig, requestDraw, syncFloatProfiles]);
 
   useEffect(() => {
     if (typeof document === 'undefined' || !document.fonts) {
@@ -554,35 +603,83 @@ function sortMagnetsForPaint(magnets) {
   });
 }
 
-function createFloatProfile(magnet, sessionPhase) {
+function createFloatProfile(
+  magnet,
+  sessionPhase,
+  motionConfig = DEFAULT_MOTION_CONFIG,
+) {
   const seed = hashString(`${magnet.id}:${sessionPhase.toFixed(6)}`);
   const height = Math.max(28, magnet.height ?? magnet.size ?? 68);
   const width = Math.max(28, magnet.width ?? height);
   const unit = (shift) => ((seed >>> shift) & 1023) / 1023;
+  const resolvedMotion = resolveMotionConfig(motionConfig);
 
   return {
-    amplitudeX: clamp(width * (0.0035 + unit(0) * 0.005), 0.35, 1.9),
-    amplitudeY: clamp(height * (0.012 + unit(3) * 0.011), 1.1, 4.4),
-    rotationAmplitude: clamp(0.18 + unit(6) * 0.92, 0.18, 1.1),
-    waveX: 0.42 + unit(9) * 0.16,
-    driftX: 0.18 + unit(12) * 0.08,
-    waveY: 0.48 + unit(15) * 0.18,
-    driftY: 0.24 + unit(18) * 0.08,
-    waveRotation: 0.34 + unit(21) * 0.12,
+    amplitudeX:
+      clamp(width * (0.0035 + unit(0) * 0.005), 0.35, 1.9) *
+      resolvedMotion.floatRangeX,
+    amplitudeY:
+      clamp(height * (0.012 + unit(3) * 0.011), 1.1, 4.4) *
+      resolvedMotion.floatRangeY,
+    rotationAmplitude:
+      clamp(0.18 + unit(6) * 0.92, 0.18, 1.1) *
+      resolvedMotion.floatRotate,
+    waveX: (0.42 + unit(9) * 0.16) * resolvedMotion.floatSpeed,
+    driftX: (0.18 + unit(12) * 0.08) * resolvedMotion.floatSpeed,
+    waveY: (0.48 + unit(15) * 0.18) * resolvedMotion.floatSpeed,
+    driftY: (0.24 + unit(18) * 0.08) * resolvedMotion.floatSpeed,
+    waveRotation: (0.34 + unit(21) * 0.12) * resolvedMotion.floatSpeed,
     phaseX: sessionPhase + unit(24) * Math.PI * 2,
     phaseY: sessionPhase * 0.6 + unit(27) * Math.PI * 2,
     phaseRotation: sessionPhase * 1.2 + unit(30) * Math.PI * 2,
     phaseDrift: sessionPhase * 0.8 + unit(5) * Math.PI * 2,
     phaseBounce: unit(11) * Math.PI,
-    hoverSink: clamp(height * 0.009, 0.8, 1.9),
-    hoverLean: clamp(0.55 + unit(14) * 0.85, 0.55, 1.4),
-    bounceAmplitudeX: clamp(width * 0.003, 0.15, 0.75),
-    bounceAmplitudeY: clamp(height * 0.036 + unit(17) * 0.8, 2.2, 6.4),
-    bounceRotation: clamp(0.24 + unit(20) * 0.9, 0.24, 1.2),
-    bounceFrequency: 13 + unit(23) * 5,
-    bounceDecay: 3.4 + unit(26) * 1.4,
+    hoverSink: clamp(height * 0.009, 0.8, 1.9) * resolvedMotion.hoverSink,
+    hoverLean:
+      clamp(0.55 + unit(14) * 0.85, 0.55, 1.4) *
+      resolvedMotion.hoverLean,
+    bounceAmplitudeX:
+      clamp(width * 0.003, 0.15, 0.75) * resolvedMotion.bounceLift,
+    bounceAmplitudeY:
+      clamp(height * 0.036 + unit(17) * 0.8, 2.2, 6.4) *
+      resolvedMotion.bounceLift,
+    bounceRotation:
+      clamp(0.24 + unit(20) * 0.9, 0.24, 1.2) *
+      resolvedMotion.bounceTwist,
+    bounceFrequency: (13 + unit(23) * 5) * resolvedMotion.bounceSpeed,
+    bounceDecay: (3.4 + unit(26) * 1.4) * resolvedMotion.bounceDamping,
+    floatSpeedScale: resolvedMotion.floatSpeed,
+    bounceSpeedScale: resolvedMotion.bounceSpeed,
     rotationDirection: unit(29) > 0.5 ? 1 : -1,
   };
+}
+
+function resolveMotionConfig(motionConfig = DEFAULT_MOTION_CONFIG) {
+  return {
+    floatRangeX: clamp(getMotionNumber(motionConfig.floatRangeX, DEFAULT_MOTION_CONFIG.floatRangeX), 0, 2.4),
+    floatRangeY: clamp(getMotionNumber(motionConfig.floatRangeY, DEFAULT_MOTION_CONFIG.floatRangeY), 0, 2.4),
+    floatSpeed: clamp(getMotionNumber(motionConfig.floatSpeed, DEFAULT_MOTION_CONFIG.floatSpeed), 0, 2.4),
+    floatRotate: clamp(getMotionNumber(motionConfig.floatRotate, DEFAULT_MOTION_CONFIG.floatRotate), 0, 2.4),
+    hoverSink: clamp(getMotionNumber(motionConfig.hoverSink, DEFAULT_MOTION_CONFIG.hoverSink), 0, 2.4),
+    hoverLean: clamp(getMotionNumber(motionConfig.hoverLean, DEFAULT_MOTION_CONFIG.hoverLean), 0, 2.4),
+    bounceLift: clamp(getMotionNumber(motionConfig.bounceLift, DEFAULT_MOTION_CONFIG.bounceLift), 0, 2.4),
+    bounceTwist: clamp(getMotionNumber(motionConfig.bounceTwist, DEFAULT_MOTION_CONFIG.bounceTwist), 0, 2.4),
+    bounceSpeed: clamp(getMotionNumber(motionConfig.bounceSpeed, DEFAULT_MOTION_CONFIG.bounceSpeed), 0, 2.4),
+    bounceDamping: clamp(getMotionNumber(motionConfig.bounceDamping, DEFAULT_MOTION_CONFIG.bounceDamping), 0.35, 2.4),
+  };
+}
+
+function getMotionNumber(value, fallback) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function hasAmbientMotion(profile) {
+  return profile.floatSpeedScale > 0.001 && (
+    profile.amplitudeX > 0.001 ||
+    profile.amplitudeY > 0.001 ||
+    profile.rotationAmplitude > 0.001
+  );
 }
 
 function lerp(start, end, progress) {

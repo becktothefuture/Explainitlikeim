@@ -130,7 +130,7 @@ const ROOT_THEME_VARS = {
   '--shadow-floating-ui': '0 12px 24px rgba(24, 35, 53, 0.08)',
   '--shadow-panel': '0 24px 60px rgba(24, 35, 53, 0.14)',
   '--shadow-surface': '0 24px 54px rgba(88, 61, 27, 0.1), inset 0 1px 0 rgba(255, 251, 243, 0.58), inset 0 -1px 0 rgba(118, 89, 52, 0.06)',
-  '--shadow-header': '0 7px 0 rgba(107, 73, 31, 0.15), 0 18px 18px rgba(73, 53, 28, 0.09), inset 0 1.5px 0 rgba(255, 252, 245, 0.76), inset 0 -1.5px 0 rgba(83, 60, 28, 0.1)',
+  '--shadow-header': '0 2px 0 rgba(255, 251, 243, 0.72), 0 8px 0 rgba(107, 73, 31, 0.12), 0 14px 18px rgba(88, 63, 33, 0.08), 0 28px 34px rgba(73, 53, 28, 0.08), 0 44px 58px rgba(73, 53, 28, 0.05), inset 0 1.5px 0 rgba(255, 252, 245, 0.82), inset 0 -1.5px 0 rgba(83, 60, 28, 0.08)',
   '--shadow-button': '0 6px 0 rgba(100, 69, 30, 0.18), 0 18px 20px rgba(73, 53, 28, 0.09), inset 0 1px 0 rgba(255, 255, 255, 0.18), inset 0 -2px 0 rgba(7, 10, 14, 0.18)',
   '--shadow-button-soft': '0 6px 0 rgba(100, 69, 30, 0.12), 0 18px 20px rgba(73, 53, 28, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.72), inset 0 -1px 0 rgba(84, 61, 32, 0.16)',
   '--shadow-divider': '0 6px 0 rgba(107, 73, 31, 0.14), 0 14px 14px rgba(73, 53, 28, 0.08), inset 0 2px 0 rgba(255, 255, 255, 0.34), inset 0 -2px 0 rgba(34, 26, 12, 0.08)',

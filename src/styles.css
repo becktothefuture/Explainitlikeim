@@ -1278,7 +1278,7 @@ select {
 .eli5-example-thread__prompt .eli5-prompt-field__shell {
   max-width: 100%;
   border-color: rgba(108, 84, 50, 0.22);
-  background: linear-gradient(180deg, rgba(228, 218, 203, 0.98) 0%, rgba(244, 238, 228, 0.99) 100%);
+  background: linear-gradient(180deg, rgba(250, 248, 244, 0.99) 0%, rgba(255, 255, 255, 0.99) 100%);
   box-shadow:
     inset 0 2px 5px rgba(95, 72, 39, 0.16),
     inset 0 14px 22px rgba(255, 255, 255, 0.14),
