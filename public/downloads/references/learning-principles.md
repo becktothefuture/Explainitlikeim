@@ -13,7 +13,7 @@ Recent studies found that clearer wording and simpler syntax improve understandi
 
 What this means for the skill:
 
-- `5:` should be short, plain, and literal
+- `🧸:` should be short, plain, and literal
 - prefer everyday words over technical ones
 - if a technical word matters, save it for a later band
 
@@ -62,7 +62,7 @@ But extra jokes do not reliably improve retention.
 
 What this means for the skill:
 
-- the `5:` band may be warm or slightly funny
+- the `🧸:` band may be warm or slightly funny
 - humor must stay close to the concept
 - one small smile is enough
 - never let the joke replace the meaning

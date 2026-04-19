@@ -84,7 +84,7 @@ Most lines should do one of these jobs:
   Example: `This is a skill for AI agents that rewrites one answer in five levels.`
 
 - Explain the output
-  Example: `The skill writes five versions of the same explanation: ages 5, 7, 9, 12, and 16.`
+  Example: `The skill writes five versions of the same explanation with the emoji ladder: 🧸, ✏️, 🎒, 📚, and 🎓.`
 
 - Explain the benefit
   Example: `People get the simple version first, then the more precise one.`
@@ -172,7 +172,7 @@ The examples section must show output, not talk about output.
 
 Always:
 - use a real question or topic
-- show the five age levels
+- show the five explanation levels using the emoji ladder
 - make each step meaningfully better
 - keep labels obvious
 
@@ -209,7 +209,7 @@ Weak: `Complex ideas, made clear fast.`
 Better: `Explain hard things in a way people actually understand.`
 
 Weak: `One idea. Five passes. Zero wall of text.`
-Better: `You get five versions of the same answer: 5, 7, 9, 12, and 16.`
+Better: `You get five versions of the same answer: 🧸, ✏️, 🎒, 📚, and 🎓.`
 
 Weak: `For when you're not getting it.`
 Better: `A skill for AI agents that rewrites one answer in five levels, from simple to precise.`
