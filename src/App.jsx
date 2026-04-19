@@ -386,8 +386,12 @@ const HOW_EXAMPLE = {
   prompt: 'why do we have a surplus?',
 };
 
-function readAppView() {
+function readAppView(isDebugUIEnabled = true) {
   if (typeof window === 'undefined') {
+    return APP_VIEWS.home;
+  }
+
+  if (!isDebugUIEnabled) {
     return APP_VIEWS.home;
   }
 
@@ -2788,13 +2792,15 @@ function DepthLabView({
                 {isControlPanelVisible ? 'Hide config panel' : 'Show config panel'}
               </button>
 
-              <button
-                type="button"
-                className="eli5-button eli5-button--secondary eli5-depth--1"
-                onClick={onOpenTypographyLab}
-              >
-                Open Typography Lab
-              </button>
+              {onOpenTypographyLab ? (
+                <button
+                  type="button"
+                  className="eli5-button eli5-button--secondary eli5-depth--1"
+                  onClick={onOpenTypographyLab}
+                >
+                  Open Typography Lab
+                </button>
+              ) : null}
 
               <button
                 type="button"
@@ -3002,13 +3008,15 @@ function TypographyLabView({
             </div>
 
             <div className="eli5-depth-lab__topbar-actions">
-              <button
-                type="button"
-                className="eli5-button eli5-button--secondary eli5-depth--1"
-                onClick={onOpenDepthLab}
-              >
-                Open Depth Lab
-              </button>
+              {onOpenDepthLab ? (
+                <button
+                  type="button"
+                  className="eli5-button eli5-button--secondary eli5-depth--1"
+                  onClick={onOpenDepthLab}
+                >
+                  Open Depth Lab
+                </button>
+              ) : null}
 
               <button
                 type="button"
@@ -4069,11 +4077,12 @@ function ScrollScrubMedia({
 }
 
 export default function App() {
+  const isDebugUIEnabled = import.meta.env.DEV || import.meta.env.VITE_ENABLE_DEBUG_UI === 'true';
   const heroStageRef = useRef(null);
   const playfieldBoardRef = useRef(null);
   const howSectionRef = useRef(null);
   const controlPanelWindowRef = useRef(null);
-  const [appView, setAppView] = useState(() => readAppView());
+  const [appView, setAppView] = useState(() => readAppView(isDebugUIEnabled));
   const [activeExampleSlug, setActiveExampleSlug] = useState(EXAMPLES[0]?.slug ?? '');
   const [heroTitleSlot, setHeroTitleSlot] = useState(() =>
     buildHeroTitleSlot(buildFallbackBoardRects().hero),
@@ -4306,8 +4315,25 @@ export default function App() {
   }, [heroSavedLayout]);
 
   useEffect(() => {
+    if (typeof document === 'undefined') {
+      return;
+    }
+
+    document.documentElement.dataset.debugUi = isDebugUIEnabled ? 'true' : 'false';
+  }, [isDebugUIEnabled]);
+
+  useEffect(() => {
+    if (isDebugUIEnabled || appView === APP_VIEWS.home) {
+      return;
+    }
+
+    writeAppView(APP_VIEWS.home);
+    setAppView(APP_VIEWS.home);
+  }, [appView, isDebugUIEnabled]);
+
+  useEffect(() => {
     const handlePopState = () => {
-      setAppView(readAppView());
+      setAppView(readAppView(isDebugUIEnabled));
     };
 
     window.addEventListener('popstate', handlePopState);
@@ -4315,7 +4341,7 @@ export default function App() {
     return () => {
       window.removeEventListener('popstate', handlePopState);
     };
-  }, []);
+  }, [isDebugUIEnabled]);
 
   useEffect(() => {
     if (appView === APP_VIEWS.home) {
@@ -4419,6 +4445,10 @@ export default function App() {
   });
 
   const openExternalControlPanel = useEffectEvent(() => {
+    if (!isDebugUIEnabled) {
+      return;
+    }
+
     if (appView === APP_VIEWS.depthLab) {
       setIsInlineFallbackOpen(true);
       return;
@@ -4456,6 +4486,10 @@ export default function App() {
   });
 
   const toggleControlPanelVisibility = useEffectEvent(() => {
+    if (!isDebugUIEnabled) {
+      return;
+    }
+
     if (appView === APP_VIEWS.depthLab) {
       setIsInlineFallbackOpen((current) => !current);
       return;
@@ -4501,6 +4535,10 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    if (!isDebugUIEnabled) {
+      return undefined;
+    }
+
     const handleKeyDown = (event) => {
       if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) {
         return;
@@ -4523,7 +4561,7 @@ export default function App() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [appView, toggleControlPanelVisibility]);
+  }, [appView, isDebugUIEnabled, toggleControlPanelVisibility]);
 
   const activeExample =
     EXAMPLES.find((example) => example.slug === activeExampleSlug) ?? EXAMPLES[0];
@@ -4558,7 +4596,7 @@ export default function App() {
       <DepthLabView
         isControlPanelVisible={isInlineFallbackOpen}
         onToggleControlPanel={toggleControlPanelVisibility}
-        onOpenTypographyLab={() => handleSetAppView(APP_VIEWS.typographyLab)}
+        onOpenTypographyLab={isDebugUIEnabled ? () => handleSetAppView(APP_VIEWS.typographyLab) : undefined}
         panelSurface={<ControlPanelSurface {...sharedPanelProps} />}
         onReturnHome={() => handleSetAppView(APP_VIEWS.home)}
       />
@@ -4568,7 +4606,7 @@ export default function App() {
   if (isTypographyLabView) {
     return (
       <TypographyLabView
-        onOpenDepthLab={() => handleSetAppView(APP_VIEWS.depthLab)}
+        onOpenDepthLab={isDebugUIEnabled ? () => handleSetAppView(APP_VIEWS.depthLab) : undefined}
         onReturnHome={() => handleSetAppView(APP_VIEWS.home)}
       />
     );
@@ -5143,39 +5181,41 @@ export default function App() {
           </div>
         </div>
       </main>
-      <div
-        className={getLoadItemClass(
-          'eli5-control-launcher',
-          hasEnteredLoadCue(LOAD_CUES.controls),
-          'eli5-load-item--floating-ui',
-        )}
-      >
-        <button
-          type="button"
-          className="eli5-control-launcher__button eli5-depth--2"
-          onClick={toggleControlPanelVisibility}
+      {isDebugUIEnabled ? (
+        <div
+          className={getLoadItemClass(
+            'eli5-control-launcher',
+            hasEnteredLoadCue(LOAD_CUES.controls),
+            'eli5-load-item--floating-ui',
+          )}
         >
-          {isControlPanelVisible ? 'Hide Control Panel (/)' : 'Show Control Panel (/)'}
-        </button>
+          <button
+            type="button"
+            className="eli5-control-launcher__button eli5-depth--2"
+            onClick={toggleControlPanelVisibility}
+          >
+            {isControlPanelVisible ? 'Hide Control Panel (/)' : 'Show Control Panel (/)'}
+          </button>
 
-        <button
-          type="button"
-          className="eli5-control-launcher__button eli5-depth--2 eli5-control-launcher__button--secondary"
-          onClick={() => handleSetAppView(APP_VIEWS.depthLab)}
-        >
-          Open Depth Lab
-        </button>
+          <button
+            type="button"
+            className="eli5-control-launcher__button eli5-depth--2 eli5-control-launcher__button--secondary"
+            onClick={() => handleSetAppView(APP_VIEWS.depthLab)}
+          >
+            Open Depth Lab
+          </button>
 
-        <button
-          type="button"
-          className="eli5-control-launcher__button eli5-depth--2 eli5-control-launcher__button--secondary"
-          onClick={() => handleSetAppView(APP_VIEWS.typographyLab)}
-        >
-          Open Typography Lab
-        </button>
-      </div>
+          <button
+            type="button"
+            className="eli5-control-launcher__button eli5-depth--2 eli5-control-launcher__button--secondary"
+            onClick={() => handleSetAppView(APP_VIEWS.typographyLab)}
+          >
+            Open Typography Lab
+          </button>
+        </div>
+      ) : null}
 
-      {isInlineFallbackOpen ? (
+      {isDebugUIEnabled && isInlineFallbackOpen ? (
         <div
           className={getLoadItemClass(
             'eli5-control-dock',
@@ -5194,7 +5234,7 @@ export default function App() {
         </div>
       ) : null}
 
-      {controlPanelHost
+      {isDebugUIEnabled && controlPanelHost
         ? createPortal(
             <ControlPanelSurface
               {...sharedPanelProps}
