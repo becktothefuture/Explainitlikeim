@@ -19,7 +19,6 @@ import {
 const DOWNLOAD_HREF = './downloads/explain-it-like-im-5.md';
 const DOWNLOAD_FILENAME = 'explain-it-like-im-5.md';
 const SUPPORT_HREF = 'https://buymeacoffee.com/explainitlikeim';
-const BASE_ASSET_URL = import.meta.env.BASE_URL ?? '/';
 const HOW_GIF_VIDEO = './assets/how/michael-scott-waiting.mp4';
 const HOW_GIF_POSTER = './assets/how/michael-scott-waiting-poster.jpg';
 const HOW_GIF_STICKY_TOP_VH = 35;
@@ -53,13 +52,31 @@ const HERO_LAYOUT_STORAGE_DEPRECATED_KEYS = [
   'eli5-hero-custom-layout-v4',
   'eli5-hero-custom-layout-v3',
 ];
-const FLOATING_LETTERS_LAYOUT_STORAGE_KEY = 'eli5-floating-letters-layouts-v4';
+const FLOATING_LETTERS_LAYOUT_STORAGE_KEY = 'eli5-floating-letters-layouts-v5';
 const FLOATING_LETTER_STYLE_STORAGE_KEY = 'eli5-floating-letter-style-controls-v1';
-const FLOATING_LETTERS_LAYOUT_STORAGE_DEPRECATED_KEYS = [];
+const FLOATING_LETTERS_LAYOUT_STORAGE_DEPRECATED_KEYS = [
+  'eli5-floating-letters-layouts-v4',
+];
 const FLOATING_LETTERS_LAYOUT_VARIANTS = {
   desktop: 'desktop',
   mobile: 'mobile',
 };
+const FLOATING_LETTERS_LINE_KEYS = Object.freeze({
+  0: 'explain-it',
+  1: 'like-im',
+  2: 'five',
+});
+const FLOATING_LETTERS_LINE_ORDER = Object.freeze([
+  FLOATING_LETTERS_LINE_KEYS[0],
+  FLOATING_LETTERS_LINE_KEYS[1],
+  FLOATING_LETTERS_LINE_KEYS[2],
+]);
+const FLOATING_LETTERS_FRAME_PADDING = Object.freeze({
+  top: 0,
+  right: 0,
+  bottom: 0,
+  left: 0,
+});
 const FLOATING_LETTERS_DESKTOP_ASPECT_RATIO = 16 / 9;
 const FLOATING_LETTERS_MOBILE_ASPECT_RATIO = 4 / 3;
 const FLOATING_LETTERS_MOBILE_BREAKPOINT = 720;
@@ -127,14 +144,6 @@ const HERO_LAYOUT_MIGRATION_EXPANSION = 1.35;
 const HERO_AUTHORED_LETTER_GAP = -48;
 const HERO_AUTHORED_WORD_GAP = 0.07;
 const HERO_AUTHORED_LINE_GAP = 48;
-
-function resolveAssetUrl(path) {
-  const normalizedBaseUrl = BASE_ASSET_URL.endsWith('/') ? BASE_ASSET_URL : `${BASE_ASSET_URL}/`;
-  const normalizedPath = path.replace(/^\/+/, '');
-  return `${normalizedBaseUrl}${normalizedPath}`;
-}
-
-const CURSOR_POINTER_SRC = resolveAssetUrl('assets/cursors/pointer.png');
 
 const HERO_REFERENCE_LAYOUT = {
   'hero-0-0-E': { cx: 0.109, cy: 0.207, rotation: -4.4 },
@@ -1431,20 +1440,232 @@ function getReferenceFloatingLettersMobileLayout() {
   return sanitizeHeroLayout(FLOATING_LETTERS_MOBILE_REFERENCE_LAYOUT);
 }
 
-function getReferenceFloatingLettersLayouts() {
-  const desktopLayout = getReferenceHeroLayout();
+function getFloatingLettersLineKey(lineIndex = 0) {
+  return FLOATING_LETTERS_LINE_KEYS[lineIndex] ?? FLOATING_LETTERS_LINE_KEYS[0];
+}
+
+function getFloatingLettersFrameLayout(
+  layoutVariant = FLOATING_LETTERS_LAYOUT_VARIANTS.desktop,
+) {
+  const preset = getFloatingLettersCanvasPreset(layoutVariant);
 
   return {
-    [FLOATING_LETTERS_LAYOUT_VARIANTS.desktop]: desktopLayout,
-    [FLOATING_LETTERS_LAYOUT_VARIANTS.mobile]: getReferenceFloatingLettersMobileLayout(),
+    width: preset.width,
+    height: preset.height,
+    padding: { ...FLOATING_LETTERS_FRAME_PADDING },
   };
 }
 
-function resolveHeroLayoutWithFallback(layout, fallback) {
-  const sanitizedLayout = sanitizeHeroLayout(layout);
-  return Object.keys(sanitizedLayout).length > 0
+function sortFloatingLettersMagnets(left, right) {
+  if (left.lineIndex !== right.lineIndex) {
+    return left.lineIndex - right.lineIndex;
+  }
+
+  if (left.charIndex !== right.charIndex) {
+    return left.charIndex - right.charIndex;
+  }
+
+  return `${left.id}`.localeCompare(`${right.id}`);
+}
+
+function getFloatingLettersReferenceMagnets(
+  layoutVariant = FLOATING_LETTERS_LAYOUT_VARIANTS.desktop,
+) {
+  const preset = getFloatingLettersCanvasPreset(layoutVariant);
+
+  return buildHeroTitleAuthoredMagnets({ size: preset.letterSize })
+    .slice()
+    .sort(sortFloatingLettersMagnets);
+}
+
+function isFloatingLettersStableVariantLayout(layout) {
+  return Boolean(
+    layout &&
+    typeof layout === 'object' &&
+    layout.frame &&
+    layout.lines &&
+    layout.letters,
+  );
+}
+
+function resolveFlatFloatingLettersLayoutPosition(layoutValue, magnet, frameLayout) {
+  const baseHeight = Math.max(28, magnet.height ?? magnet.size ?? 68);
+  const baseWidth = magnet.width ?? getMagnetWidthForLabel(magnet.label, baseHeight);
+  const position = resolveFloatingLettersLayoutPosition(
+    layoutValue,
+    {
+      left: 0,
+      top: 0,
+      width: frameLayout.width,
+      height: frameLayout.height,
+    },
+    baseWidth,
+    baseHeight,
+  );
+
+  return {
+    centerX: position.x + baseWidth / 2,
+    centerY: position.y + baseHeight / 2,
+    rotation: clamp(getFiniteNumber(layoutValue?.rotation, magnet.rotation ?? 0), -45, 45),
+  };
+}
+
+function convertFlatFloatingLettersLayoutToStableLayout(
+  layout,
+  layoutVariant = FLOATING_LETTERS_LAYOUT_VARIANTS.desktop,
+) {
+  const flatLayout = sanitizeHeroLayout(layout);
+  const frameLayout = getFloatingLettersFrameLayout(layoutVariant);
+  const authoredMagnets = getFloatingLettersReferenceMagnets(layoutVariant);
+  const lines = {};
+  const letters = {};
+
+  FLOATING_LETTERS_LINE_ORDER.forEach((lineKey, lineIndex) => {
+    const lineMagnets = authoredMagnets.filter((magnet) => magnet.lineIndex === lineIndex);
+    const anchorMagnet = lineMagnets.find((magnet) => flatLayout[magnet.id]);
+
+    if (!anchorMagnet) {
+      return;
+    }
+
+    const anchorPosition = resolveFlatFloatingLettersLayoutPosition(
+      flatLayout[anchorMagnet.id],
+      anchorMagnet,
+      frameLayout,
+    );
+
+    lines[lineKey] = {
+      anchorX: clamp(anchorPosition.centerX / Math.max(frameLayout.width, 1), 0, 1),
+      anchorY: clamp(anchorPosition.centerY / Math.max(frameLayout.height, 1), 0, 1),
+      scale: 1,
+    };
+
+    lineMagnets.forEach((magnet) => {
+      const layoutValue = flatLayout[magnet.id];
+
+      if (!layoutValue) {
+        return;
+      }
+
+      const nextPosition = resolveFlatFloatingLettersLayoutPosition(
+        layoutValue,
+        magnet,
+        frameLayout,
+      );
+
+      letters[magnet.id] = {
+        line: lineKey,
+        offsetX: nextPosition.centerX - anchorPosition.centerX,
+        offsetY: nextPosition.centerY - anchorPosition.centerY,
+        rotation: nextPosition.rotation,
+      };
+    });
+  });
+
+  return {
+    frame: frameLayout,
+    lines,
+    letters,
+  };
+}
+
+function getReferenceFloatingLettersLayouts() {
+  const desktopLayout = convertFlatFloatingLettersLayoutToStableLayout(
+    getReferenceHeroLayout(),
+    FLOATING_LETTERS_LAYOUT_VARIANTS.desktop,
+  );
+
+  return {
+    [FLOATING_LETTERS_LAYOUT_VARIANTS.desktop]: desktopLayout,
+    [FLOATING_LETTERS_LAYOUT_VARIANTS.mobile]: convertFlatFloatingLettersLayoutToStableLayout(
+      getReferenceFloatingLettersMobileLayout(),
+      FLOATING_LETTERS_LAYOUT_VARIANTS.mobile,
+    ),
+  };
+}
+
+function sanitizeFloatingLettersFrameLayout(
+  frameLayout = {},
+  layoutVariant = FLOATING_LETTERS_LAYOUT_VARIANTS.desktop,
+) {
+  const referenceFrame = getFloatingLettersFrameLayout(layoutVariant);
+
+  return {
+    width: referenceFrame.width,
+    height: referenceFrame.height,
+    padding: {
+      top: clamp(getFiniteNumber(frameLayout?.padding?.top, referenceFrame.padding.top), 0, 1),
+      right: clamp(getFiniteNumber(frameLayout?.padding?.right, referenceFrame.padding.right), 0, 1),
+      bottom: clamp(getFiniteNumber(frameLayout?.padding?.bottom, referenceFrame.padding.bottom), 0, 1),
+      left: clamp(getFiniteNumber(frameLayout?.padding?.left, referenceFrame.padding.left), 0, 1),
+    },
+  };
+}
+
+function sanitizeFloatingLettersVariantLayout(
+  layout,
+  layoutVariant = FLOATING_LETTERS_LAYOUT_VARIANTS.desktop,
+  fallbackLayout = null,
+) {
+  const referenceLayout = fallbackLayout ?? getReferenceFloatingLettersLayouts()[layoutVariant];
+  const candidateLayout = isFloatingLettersStableVariantLayout(layout)
+    ? layout
+    : convertFlatFloatingLettersLayoutToStableLayout(layout, layoutVariant);
+  const frame = sanitizeFloatingLettersFrameLayout(candidateLayout?.frame, layoutVariant);
+  const lines = Object.fromEntries(FLOATING_LETTERS_LINE_ORDER.map((lineKey) => {
+    const sourceLine = candidateLayout?.lines?.[lineKey] ?? referenceLayout.lines[lineKey];
+
+    return [
+      lineKey,
+      {
+        anchorX: clamp(getFiniteNumber(sourceLine?.anchorX, referenceLayout.lines[lineKey].anchorX), 0, 1),
+        anchorY: clamp(getFiniteNumber(sourceLine?.anchorY, referenceLayout.lines[lineKey].anchorY), 0, 1),
+        scale: clamp(getFiniteNumber(sourceLine?.scale, referenceLayout.lines[lineKey].scale), 0.4, 2.4),
+      },
+    ];
+  }));
+  const letters = Object.fromEntries(getFloatingLettersReferenceMagnets(layoutVariant).map((magnet) => {
+    const referenceLetter = referenceLayout.letters[magnet.id];
+    const sourceLetter = candidateLayout?.letters?.[magnet.id] ?? referenceLetter;
+    const nextLineKey = FLOATING_LETTERS_LINE_ORDER.includes(sourceLetter?.line)
+      ? sourceLetter.line
+      : referenceLetter.line;
+
+    return [
+      magnet.id,
+      {
+        line: nextLineKey,
+        offsetX: getFiniteNumber(sourceLetter?.offsetX, referenceLetter.offsetX),
+        offsetY: getFiniteNumber(sourceLetter?.offsetY, referenceLetter.offsetY),
+        rotation: clamp(getFiniteNumber(sourceLetter?.rotation, referenceLetter.rotation), -45, 45),
+      },
+    ];
+  }));
+
+  return {
+    frame,
+    lines,
+    letters,
+  };
+}
+
+function resolveFloatingLettersLayoutWithFallback(
+  layout,
+  fallbackLayout,
+  layoutVariant = FLOATING_LETTERS_LAYOUT_VARIANTS.desktop,
+) {
+  const sanitizedLayout = sanitizeFloatingLettersVariantLayout(
+    layout,
+    layoutVariant,
+    fallbackLayout,
+  );
+  return Object.keys(sanitizedLayout.letters).length > 0
     ? sanitizedLayout
-    : sanitizeHeroLayout(fallback);
+    : sanitizeFloatingLettersVariantLayout(
+      fallbackLayout,
+      layoutVariant,
+      fallbackLayout,
+    );
 }
 
 function sanitizeFloatingLettersLayouts(layouts = {}) {
@@ -1459,22 +1680,78 @@ function sanitizeFloatingLettersLayouts(layouts = {}) {
   const desktopSource = hasVariantKeys
     ? layouts[FLOATING_LETTERS_LAYOUT_VARIANTS.desktop]
     : layouts;
-  const desktopLayout = resolveHeroLayoutWithFallback(
-    desktopSource,
-    referenceLayouts[FLOATING_LETTERS_LAYOUT_VARIANTS.desktop],
-  );
-  const mobileSource = hasVariantKeys
+  const mobileSourceRaw = hasVariantKeys
     ? layouts[FLOATING_LETTERS_LAYOUT_VARIANTS.mobile]
     : null;
-  const mobileLayout = resolveHeroLayoutWithFallback(
+  const mobileSource = !isFloatingLettersStableVariantLayout(mobileSourceRaw) &&
+    areHeroLayoutsEquivalent(mobileSourceRaw, LEGACY_FLOATING_LETTERS_MOBILE_REFERENCE_LAYOUT)
+    ? FLOATING_LETTERS_MOBILE_REFERENCE_LAYOUT
+    : mobileSourceRaw;
+  const desktopLayout = resolveFloatingLettersLayoutWithFallback(
+    desktopSource,
+    referenceLayouts[FLOATING_LETTERS_LAYOUT_VARIANTS.desktop],
+    FLOATING_LETTERS_LAYOUT_VARIANTS.desktop,
+  );
+  const mobileLayout = resolveFloatingLettersLayoutWithFallback(
     mobileSource,
     referenceLayouts[FLOATING_LETTERS_LAYOUT_VARIANTS.mobile],
+    FLOATING_LETTERS_LAYOUT_VARIANTS.mobile,
   );
 
   return {
     [FLOATING_LETTERS_LAYOUT_VARIANTS.desktop]: desktopLayout,
     [FLOATING_LETTERS_LAYOUT_VARIANTS.mobile]: mobileLayout,
   };
+}
+
+function applyFloatingLettersLayoutPatch(
+  layout,
+  layoutPatch = {},
+  layoutVariant = FLOATING_LETTERS_LAYOUT_VARIANTS.desktop,
+) {
+  const currentLayout = sanitizeFloatingLettersVariantLayout(layout, layoutVariant);
+  const frameWidth = Math.max(currentLayout.frame.width, 1);
+  const frameHeight = Math.max(currentLayout.frame.height, 1);
+  const nextLetters = { ...currentLayout.letters };
+
+  Object.entries(layoutPatch).forEach(([magnetId, value]) => {
+    const currentLetter = currentLayout.letters[magnetId];
+
+    if (!currentLetter) {
+      return;
+    }
+
+    const lineLayout = currentLayout.lines[currentLetter.line];
+
+    if (!lineLayout) {
+      return;
+    }
+
+    const lineScale = clamp(getFiniteNumber(lineLayout.scale, 1), 0.4, 2.4);
+    const anchorX = lineLayout.anchorX * frameWidth;
+    const anchorY = lineLayout.anchorY * frameHeight;
+    const nextCenterX = Number.isFinite(value?.cx)
+      ? clamp(value.cx, 0, 1) * frameWidth
+      : anchorX + currentLetter.offsetX * lineScale;
+    const nextCenterY = Number.isFinite(value?.cy)
+      ? clamp(value.cy, 0, 1) * frameHeight
+      : anchorY + currentLetter.offsetY * lineScale;
+
+    nextLetters[magnetId] = {
+      ...currentLetter,
+      offsetX: (nextCenterX - anchorX) / lineScale,
+      offsetY: (nextCenterY - anchorY) / lineScale,
+      rotation: clamp(getFiniteNumber(value?.rotation, currentLetter.rotation), -45, 45),
+    };
+  });
+
+  return sanitizeFloatingLettersVariantLayout(
+    {
+      ...currentLayout,
+      letters: nextLetters,
+    },
+    layoutVariant,
+  );
 }
 
 function getHeroLayoutRenderExpansion(heroMagnetControls = HERO_MAGNET_DEFAULTS) {
@@ -1502,6 +1779,16 @@ function loadFloatingLettersLayouts() {
 
     if (raw) {
       return sanitizeFloatingLettersLayouts(JSON.parse(raw));
+    }
+
+    for (const storageKey of FLOATING_LETTERS_LAYOUT_STORAGE_DEPRECATED_KEYS) {
+      const legacyRaw = window.localStorage.getItem(storageKey);
+
+      if (!legacyRaw) {
+        continue;
+      }
+
+      return sanitizeFloatingLettersLayouts(JSON.parse(legacyRaw));
     }
   } catch {
     return getReferenceFloatingLettersLayouts();
@@ -2660,19 +2947,21 @@ function buildFloatingLettersMagnets(
 
   const preset = getFloatingLettersCanvasPreset(layoutVariant);
   const referenceLayouts = getReferenceFloatingLettersLayouts();
-  const resolvedLayout = resolveHeroLayoutWithFallback(
+  const resolvedLayout = resolveFloatingLettersLayoutWithFallback(
     heroLayout,
     referenceLayouts[layoutVariant],
+    layoutVariant,
   );
+  const frameLayout = resolvedLayout.frame;
   const authoredMagnets = buildHeroTitleAuthoredMagnets(
     { size: preset.letterSize },
   );
   const scale = Math.min(
-    boardRect.width / Math.max(preset.width, 1),
-    boardRect.height / Math.max(preset.height, 1),
+    boardRect.width / Math.max(frameLayout.width, 1),
+    boardRect.height / Math.max(frameLayout.height, 1),
   );
-  const renderedWidth = preset.width * scale;
-  const renderedHeight = preset.height * scale;
+  const renderedWidth = frameLayout.width * scale;
+  const renderedHeight = frameLayout.height * scale;
   const canvasRect = {
     left: boardRect.left + Math.max((boardRect.width - renderedWidth) / 2, 0),
     top: boardRect.top + Math.max((boardRect.height - renderedHeight) / 2, 0),
@@ -2687,31 +2976,41 @@ function buildFloatingLettersMagnets(
   };
 
   return authoredMagnets.map((magnet) => {
-    const baseHeight = Math.max(28, magnet.height ?? magnet.size ?? 68);
-    const baseWidth = magnet.width ?? getMagnetWidthForLabel(magnet.label, baseHeight);
-    const width = baseWidth * scale;
-    const height = baseHeight * scale;
-    const layoutValue = resolvedLayout[magnet.id];
+    const letterLayout = resolvedLayout.letters[magnet.id];
 
-    if (!layoutValue) {
+    if (!letterLayout) {
       return null;
     }
 
-    const nextPosition = resolveFloatingLettersLayoutPosition(
-      layoutValue,
-      canvasRect,
-      width,
-      height,
-    );
+    const lineLayout = resolvedLayout.lines[letterLayout.line];
+
+    if (!lineLayout) {
+      return null;
+    }
+
+    const baseHeight = Math.max(28, magnet.height ?? magnet.size ?? 68);
+    const baseWidth = magnet.width ?? getMagnetWidthForLabel(magnet.label, baseHeight);
+    const lineScale = clamp(getFiniteNumber(lineLayout.scale, 1), 0.4, 2.4);
+    const width = baseWidth * scale * lineScale;
+    const height = baseHeight * scale * lineScale;
+    const lineAnchorX = canvasRect.left + lineLayout.anchorX * renderedWidth;
+    const lineAnchorY = canvasRect.top + lineLayout.anchorY * renderedHeight;
+    const centerX = lineAnchorX + letterLayout.offsetX * scale * lineScale;
+    const centerY = lineAnchorY + letterLayout.offsetY * scale * lineScale;
+    const nextPosition = {
+      x: centerX - width / 2,
+      y: centerY - height / 2,
+    };
 
     return {
       ...magnet,
       x: clamp(nextPosition.x, canvasBounds.left, canvasBounds.right - width),
       y: clamp(nextPosition.y, canvasBounds.top, canvasBounds.bottom - height),
-      size: magnet.size ? magnet.size * scale : magnet.size,
+      size: magnet.size ? magnet.size * scale * lineScale : magnet.size,
       width,
       height,
-      rotation: clamp(getFiniteNumber(layoutValue.rotation, magnet.rotation ?? 0), -45, 45),
+      rotation: clamp(getFiniteNumber(letterLayout.rotation, magnet.rotation ?? 0), -45, 45),
+      lineKey: letterLayout.line,
       bounds: canvasBounds,
       userPlaced: true,
     };
@@ -3282,192 +3581,57 @@ function FloatingLettersCanvas({
   );
 }
 
-function LabCard({
-  level,
-  title,
-  detail,
-  tone = 'default',
-  children,
-}) {
-  return (
-    <article className={`eli5-depth-lab__card eli5-depth--0 eli5-depth-lab__card--${tone}`}>
-      <div className="eli5-depth-lab__card-copy">
-        <p className="eli5-depth-lab__card-level">{level}</p>
-        <h2>{title}</h2>
-        <p>{detail}</p>
-      </div>
-
-      <div className="eli5-depth-lab__card-demo">
-        {children}
-      </div>
-    </article>
-  );
-}
-
 function DepthLabView({
   isControlPanelVisible,
   onToggleControlPanel,
-  onOpenTypographyLab,
   panelSurface,
-  onReturnHome,
 }) {
   return (
     <div className="eli5-page eli5-page--depth-lab">
-      <CustomCursor />
-
       <main className="eli5-main eli5-main--depth-lab">
-        <div className="eli5-depth-lab">
-          <div className="eli5-depth-lab__topbar">
-            <div className="eli5-depth-lab__intro">
-              <p className="eli5-depth-lab__eyebrow">Depth Lab</p>
-              <h1>Test the page depth stack without poking the whole landing page.</h1>
+        <div className="eli5-depth-lab eli5-depth-lab--minimal">
+          <section className="eli5-depth-lab__minimal-demo" aria-label="Depth preview">
+            <button
+              type="button"
+              className="eli5-button eli5-button--primary eli5-depth--1 eli5-depth-lab__button-sample"
+            >
+              Button
+            </button>
+
+            <div className="eli5-depth-lab__page-demo eli5-depth--0">
+              <p className="eli5-depth-lab__page-kicker">Printed on the page</p>
+              <h3>Explain It Like I&apos;m Five is a skill for AI agents.</h3>
               <p>
-                The grid shows the inset field, the page plane, buttons and pills, floating chrome, and the cursor. The controls on the right edit the actual tokens for each depth class.
+                Use it in Codex, Claude Code, Cursor, and similar agents when you want one answer rewritten in five levels.
               </p>
             </div>
 
-            <div className="eli5-depth-lab__topbar-actions">
-              <button
-                type="button"
-                className="eli5-button eli5-button--secondary eli5-depth--1"
-                onClick={onToggleControlPanel}
-              >
-                {isControlPanelVisible ? 'Hide config panel' : 'Show config panel'}
-              </button>
+            <div className="eli5-prompt-field__shell eli5-depth-lab__field-demo eli5-depth--inset">
+              <span className="eli5-prompt-field__skill eli5-prompt-field__skill--printed">Inset</span>
+              <span className="eli5-depth-lab__field-copy">Something pushed into the page.</span>
+            </div>
+          </section>
 
-              {onOpenTypographyLab ? (
+          <div className="eli5-depth-lab__panel eli5-depth-lab__panel--bottom">
+            {isControlPanelVisible ? (
+              panelSurface
+            ) : (
+              <aside className="eli5-depth-lab__panel-placeholder eli5-depth--0" aria-label="Config panel placeholder">
+                <p className="eli5-depth-lab__eyebrow">Panel</p>
+                <h2>Put the shared control panel here.</h2>
+                <p>
+                  This demo now shows just the button, the printed surface, the inset field, and the panel.
+                </p>
+
                 <button
                   type="button"
                   className="eli5-button eli5-button--secondary eli5-depth--1"
-                  onClick={onOpenTypographyLab}
+                  onClick={onToggleControlPanel}
                 >
-                  Open Typography Lab
+                  {isControlPanelVisible ? 'Hide panel' : 'Show panel'}
                 </button>
-              ) : null}
-
-              <button
-                type="button"
-                className="eli5-button eli5-button--secondary eli5-depth--1"
-                onClick={onReturnHome}
-              >
-                Back to landing page
-              </button>
-            </div>
-          </div>
-
-          <div className="eli5-depth-lab__layout">
-            <section className="eli5-depth-lab__stage" aria-label="Depth preview grid">
-              <div className="eli5-depth-lab__grid">
-                <LabCard
-                  level="Level -1"
-                  title="Intrusion"
-                  detail="This should read as pushed into the page. Shadow above. Light below."
-                  tone="inset"
-                >
-                  <div className="eli5-prompt-field__shell eli5-depth-lab__field-demo eli5-depth--inset">
-                    <span className="eli5-prompt-field__skill eli5-prompt-field__skill--printed">Skills for AI agents</span>
-                    <span className="eli5-depth-lab__field-copy">Inset form field</span>
-                  </div>
-                </LabCard>
-
-                <LabCard
-                  level="Level 0"
-                  title="Printed on the page"
-                  detail="No lift. No recess. Just content sitting on the paper."
-                  tone="page"
-                >
-                  <div className="eli5-depth-lab__page-demo eli5-depth--0">
-                    <p className="eli5-depth-lab__page-kicker">Level 0 copy</p>
-                    <h3>Printed surface</h3>
-                    <p>
-                      This is the page plane. It should feel calm and almost shadowless.
-                    </p>
-                  </div>
-                </LabCard>
-
-                <LabCard
-                  level="Level 1"
-                  title="Buttons"
-                  detail="Closer to the page, so the contact shadow should be sharper and more anchored."
-                  tone="button"
-                >
-                  <div className="eli5-depth-lab__button-row">
-                    <button type="button" className="eli5-button eli5-button--primary eli5-depth--1">
-                      Primary
-                    </button>
-                    <button type="button" className="eli5-button eli5-button--secondary eli5-depth--1">
-                      Secondary
-                    </button>
-                  </div>
-                </LabCard>
-
-                <LabCard
-                  level="Level 1"
-                  title="Pill / Tab"
-                  detail="Same level as the buttons, but on a smaller footprint so it is easier to judge the edge."
-                  tone="pill"
-                >
-                  <div className="eli5-depth-lab__pill-row">
-                    <span className="eli5-depth-lab__pill-sample eli5-depth--1">What it does</span>
-                    <span className="eli5-depth-lab__pill-sample eli5-depth-lab__pill-sample--active eli5-depth--2">See output</span>
-                  </div>
-                </LabCard>
-
-                <LabCard
-                  level="Level 2"
-                  title="Floating menu"
-                  detail="This sits furthest from the page, so the shadow can travel more and blur more."
-                  tone="menu"
-                >
-                  <div className="eli5-depth-lab__menu-demo eli5-depth--2">
-                    <div className="eli5-depth-lab__menu-links" aria-hidden="true">
-                      <span>What it does</span>
-                      <span>See output</span>
-                      <span>Install</span>
-                    </div>
-                    <button type="button" className="eli5-button eli5-button--primary eli5-button--header eli5-depth--1">
-                      Download
-                    </button>
-                  </div>
-                </LabCard>
-
-                <LabCard
-                  level="Level 3"
-                  title="Cursor reference"
-                  detail="Use this as the level-3 reference for now. The swatch sits on the top layer so you can judge the strongest lift next to the cursor art."
-                  tone="reference"
-                >
-                  <div className="eli5-depth-lab__reference-row">
-                    <div className="eli5-depth-lab__cursor-swatch eli5-depth--3" aria-hidden="true">
-                      <span className="eli5-depth-lab__cursor-glow" />
-                      <img src={CURSOR_POINTER_SRC} alt="" draggable="false" />
-                    </div>
-                  </div>
-                </LabCard>
-              </div>
-            </section>
-
-            <div className="eli5-depth-lab__panel">
-              {isControlPanelVisible ? (
-                panelSurface
-              ) : (
-                <aside className="eli5-depth-lab__panel-placeholder eli5-depth--0" aria-label="Config panel placeholder">
-                  <p className="eli5-depth-lab__eyebrow">Main config panel</p>
-                  <h2>Use the same panel here.</h2>
-                  <p>
-                    Open the shared config panel in this rail, then edit the drop shadow, light edge, shadow edge, and light gradient for each depth class directly.
-                  </p>
-
-                  <button
-                    type="button"
-                    className="eli5-button eli5-button--secondary eli5-depth--1"
-                    onClick={onToggleControlPanel}
-                  >
-                    Open config panel
-                  </button>
-                </aside>
-              )}
-            </div>
+              </aside>
+            )}
           </div>
         </div>
       </main>
@@ -4283,6 +4447,7 @@ function FloatingLettersView({
   boardRef,
   magnets,
   previewVariant,
+  isControlPanelVisible = false,
   isLayoutEditing = false,
   onSelectPreviewVariant,
   onStartLayoutEdit,
@@ -4292,7 +4457,6 @@ function FloatingLettersView({
   motionControls = HERO_MAGNET_DEFAULTS,
   onLayoutCommit,
   onReturnHome,
-  panelSurface,
 }) {
   const previewLabel = previewVariant === FLOATING_LETTERS_LAYOUT_VARIANTS.mobile
     ? 'Mobile preview uses the saved mobile canvas and saves only the mobile layout.'
@@ -4302,7 +4466,7 @@ function FloatingLettersView({
     <div className="eli5-page eli5-page--floating-letters">
       <CustomCursor />
       <main className="eli5-main">
-        <div className="eli5-floating-letters-view">
+        <div className={`eli5-floating-letters-view${isControlPanelVisible ? ' eli5-floating-letters-view--with-panel' : ''}`}>
           <div className="eli5-floating-letters-view__shell">
             <div className="eli5-floating-letters-view__intro">
               <button
@@ -4420,12 +4584,6 @@ function FloatingLettersView({
                   ))}
                 </div>
               </section>
-
-              {panelSurface ? (
-                <div className="eli5-floating-letters-view__panel">
-                  {panelSurface}
-                </div>
-              ) : null}
             </div>
           </div>
         </div>
@@ -4472,35 +4630,6 @@ export default function App() {
   const [isInlineFallbackOpen, setIsInlineFallbackOpen] = useState(false);
   const [loadStage, setLoadStage] = useState(() => getInitialLoadStage());
   const [magnetSeed, setMagnetSeed] = useState([]);
-
-  useEffect(() => {
-    const legacyMobileLayout = sanitizeHeroLayout(
-      LEGACY_FLOATING_LETTERS_MOBILE_REFERENCE_LAYOUT,
-    );
-    const nextMobileLayout = getReferenceFloatingLettersMobileLayout();
-
-    setHeroSavedLayouts((current) => {
-      if (!areHeroLayoutsEquivalent(current[FLOATING_LETTERS_LAYOUT_VARIANTS.mobile], legacyMobileLayout)) {
-        return current;
-      }
-
-      return sanitizeFloatingLettersLayouts({
-        ...current,
-        [FLOATING_LETTERS_LAYOUT_VARIANTS.mobile]: nextMobileLayout,
-      });
-    });
-
-    setHeroDraftLayouts((current) => {
-      if (!areHeroLayoutsEquivalent(current[FLOATING_LETTERS_LAYOUT_VARIANTS.mobile], legacyMobileLayout)) {
-        return current;
-      }
-
-      return sanitizeFloatingLettersLayouts({
-        ...current,
-        [FLOATING_LETTERS_LAYOUT_VARIANTS.mobile]: nextMobileLayout,
-      });
-    });
-  }, []);
 
   const levelControls = LEVEL_CONTROL_DEFAULTS;
   const isFloatingLettersView = appView === APP_VIEWS.floatingLetters;
@@ -4723,6 +4852,10 @@ export default function App() {
       JSON.stringify(heroSavedLayouts),
     );
 
+    FLOATING_LETTERS_LAYOUT_STORAGE_DEPRECATED_KEYS.forEach((storageKey) => {
+      window.localStorage.removeItem(storageKey);
+    });
+
     window.localStorage.removeItem(HERO_LAYOUT_STORAGE_KEY);
 
     HERO_LAYOUT_STORAGE_DEPRECATED_KEYS.forEach((storageKey) => {
@@ -4772,8 +4905,32 @@ export default function App() {
 
     controlPanelWindowRef.current = null;
     setControlPanelHost(null);
-    setIsInlineFallbackOpen(appView === APP_VIEWS.depthLab ? shouldKeepPanelOpen : false);
+    setIsInlineFallbackOpen(
+      appView === APP_VIEWS.depthLab || appView === APP_VIEWS.floatingLetters
+        ? shouldKeepPanelOpen
+        : false,
+    );
   }, [appView, controlPanelHost, isInlineFallbackOpen]);
+
+  useEffect(() => {
+    if (appView !== APP_VIEWS.floatingLetters) {
+      return;
+    }
+
+    setIsInlineFallbackOpen(true);
+    setCollapsedControlSections((current) => {
+      const nextState = sanitizeControlPanelSectionState({
+        ...current,
+        'floating-style-face': false,
+        'floating-style-depth': false,
+      });
+
+      return current['floating-style-face'] === nextState['floating-style-face'] &&
+        current['floating-style-depth'] === nextState['floating-style-depth']
+        ? current
+        : nextState;
+    });
+  }, [appView]);
 
   const handlePanelControlChange = useEffectEvent((key, value) => {
     if (DEPTH_CONTROL_KEYS.has(key)) {
@@ -4835,7 +4992,7 @@ export default function App() {
   const handleStartHeroLayoutEdit = useEffectEvent(() => {
     setHeroDraftLayouts(sanitizeFloatingLettersLayouts(heroSavedLayouts));
     setHeroLayoutEditingVariant(liveHeroLayoutVariant);
-    setIsInlineFallbackOpen(!isFloatingLettersView);
+    setIsInlineFallbackOpen((current) => (isFloatingLettersView ? current : true));
 
     if (controlPanelWindowRef.current && !controlPanelWindowRef.current.closed) {
       controlPanelWindowRef.current.close();
@@ -4854,7 +5011,10 @@ export default function App() {
 
   const handleSaveHeroLayoutEdit = useEffectEvent(() => {
     const layoutVariant = heroLayoutEditingVariant ?? liveHeroLayoutVariant;
-    const nextLayout = sanitizeHeroLayout(heroDraftLayouts[layoutVariant]);
+    const nextLayout = sanitizeFloatingLettersVariantLayout(
+      heroDraftLayouts[layoutVariant],
+      layoutVariant,
+    );
     const nextLayouts = sanitizeFloatingLettersLayouts({
       ...heroSavedLayouts,
       [layoutVariant]: nextLayout,
@@ -4886,10 +5046,11 @@ export default function App() {
     setHeroDraftLayouts((current) =>
       sanitizeFloatingLettersLayouts({
         ...current,
-        [layoutVariant]: {
-          ...current[layoutVariant],
-          ...layoutPatch,
-        },
+        [layoutVariant]: applyFloatingLettersLayoutPatch(
+          current[layoutVariant],
+          layoutPatch,
+          layoutVariant,
+        ),
       }),
     );
   });
@@ -4951,16 +5112,12 @@ export default function App() {
       return;
     }
 
-    if (appView === APP_VIEWS.depthLab) {
+    if (appView === APP_VIEWS.depthLab || appView === APP_VIEWS.floatingLetters) {
       setIsInlineFallbackOpen((current) => !current);
       return;
     }
 
     if (appView === APP_VIEWS.typographyLab) {
-      return;
-    }
-
-    if (appView === APP_VIEWS.floatingLetters) {
       return;
     }
 
@@ -5081,6 +5238,16 @@ export default function App() {
     onReset: handleFloatingLetterControlReset,
     onToggleSection: handleToggleControlSection,
   };
+  const floatingLettersPanelSurface = (
+    <ControlPanelSurface
+      {...floatingLettersPanelProps}
+      isLayoutEditing={isHeroLayoutEditing}
+      onStartLayoutEdit={handleStartHeroLayoutEdit}
+      onSaveLayoutEdit={handleSaveHeroLayoutEdit}
+      onCancelLayoutEdit={handleCancelHeroLayoutEdit}
+      onResetLayout={handleResetHeroLayout}
+    />
+  );
 
   if (isDepthLabView) {
     return (
@@ -5105,21 +5272,29 @@ export default function App() {
 
   if (isFloatingLettersLabView) {
     return (
-      <FloatingLettersView
-        boardRef={floatingLettersBoardRef}
-        magnets={floatingLetterRenderMagnets}
-        previewVariant={activeHeroLayoutVariant}
-        isLayoutEditing={isHeroLayoutEditing}
-        onSelectPreviewVariant={setFloatingLettersPreviewVariant}
-        onStartLayoutEdit={handleStartHeroLayoutEdit}
-        onSaveLayoutEdit={handleSaveHeroLayoutEdit}
-        onCancelLayoutEdit={handleCancelHeroLayoutEdit}
-        onResetLayout={handleResetHeroLayout}
-        motionControls={heroMagnetControls}
-        onLayoutCommit={handleHeroLayoutDraftCommit}
-        onReturnHome={() => handleSetAppView(APP_VIEWS.home)}
-        panelSurface={<ControlPanelSurface {...floatingLettersPanelProps} />}
-      />
+      <>
+        <FloatingLettersView
+          boardRef={floatingLettersBoardRef}
+          magnets={floatingLetterRenderMagnets}
+          previewVariant={activeHeroLayoutVariant}
+          isControlPanelVisible={isInlineFallbackOpen}
+          isLayoutEditing={isHeroLayoutEditing}
+          onSelectPreviewVariant={setFloatingLettersPreviewVariant}
+          onStartLayoutEdit={handleStartHeroLayoutEdit}
+          onSaveLayoutEdit={handleSaveHeroLayoutEdit}
+          onCancelLayoutEdit={handleCancelHeroLayoutEdit}
+          onResetLayout={handleResetHeroLayout}
+          motionControls={heroMagnetControls}
+          onLayoutCommit={handleHeroLayoutDraftCommit}
+          onReturnHome={() => handleSetAppView(APP_VIEWS.home)}
+        />
+
+        {isInlineFallbackOpen ? (
+          <div className="eli5-control-dock">
+            {floatingLettersPanelSurface}
+          </div>
+        ) : null}
+      </>
     );
   }
 
