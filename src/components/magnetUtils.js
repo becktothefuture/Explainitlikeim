@@ -10,9 +10,14 @@ const LETTER_LAYOUT_CACHE_LIMIT = 160;
 const LETTER_SPRITE_CACHE = new Map();
 const LETTER_SPRITE_CACHE_LIMIT = 140;
 const LETTER_SPRITE_CACHE_VERSION = 'v2';
+const MAGNET_HIT_MASK_CACHE = new Map();
+const MAGNET_HIT_MASK_CACHE_LIMIT = 160;
+const MAGNET_HIT_MASK_CACHE_VERSION = 'v1';
 const SHAPE_SPRITE_CACHE = new Map();
 const SHAPE_SPRITE_CACHE_LIMIT = 80;
 const SHAPE_SPRITE_CACHE_VERSION = 'v1';
+const HIT_MASK_SCALE = 2;
+const HIT_ALPHA_THRESHOLD = 16;
 let measureCanvas = null;
 
 const SINGLE_LETTER_WIDTH_SCALE = {
@@ -115,6 +120,7 @@ export function cloneMagnetList(magnets = []) {
 export function invalidateMagnetRenderCaches() {
   LETTER_LAYOUT_CACHE.clear();
   LETTER_SPRITE_CACHE.clear();
+  MAGNET_HIT_MASK_CACHE.clear();
   SHAPE_SPRITE_CACHE.clear();
 }
 
@@ -213,8 +219,41 @@ export function pointHitsMagnet(point, magnet, hitPadding = 0) {
     localX >= -padding &&
     localY >= -padding &&
     localX <= magnet.width + padding &&
-    localY <= magnet.height + padding
+    localY <= magnet.height + padding &&
+    pointHitsMagnetFace(localX, localY, magnet)
   );
+}
+
+function pointHitsMagnetFace(localX, localY, magnet) {
+  if (
+    localX < 0 ||
+    localY < 0 ||
+    localX > magnet.width ||
+    localY > magnet.height
+  ) {
+    return false;
+  }
+
+  const hitMask = getMagnetHitMask(magnet);
+  const hitCtx = hitMask.context;
+
+  if (!hitCtx) {
+    return true;
+  }
+
+  const sampleX = clamp(
+    Math.floor(localX * HIT_MASK_SCALE),
+    0,
+    hitMask.canvas.width - 1,
+  );
+  const sampleY = clamp(
+    Math.floor(localY * HIT_MASK_SCALE),
+    0,
+    hitMask.canvas.height - 1,
+  );
+  const alpha = hitCtx.getImageData(sampleX, sampleY, 1, 1).data[3];
+
+  return alpha >= HIT_ALPHA_THRESHOLD;
 }
 
 export function drawMagnet(ctx, magnet, scrollPosition, viewport) {
@@ -759,6 +798,74 @@ function getShapeSpriteCacheKey(magnet, style) {
     getCacheKeyNumber(style.groundShadow2OffsetY),
     getCacheKeyNumber(style.groundShadow2Blur),
   ].join('|');
+}
+
+function getMagnetHitMaskKey(magnet) {
+  const width = Math.round(magnet.width);
+  const height = Math.round(magnet.height);
+
+  if (magnet.shapeType) {
+    return [
+      MAGNET_HIT_MASK_CACHE_VERSION,
+      'shape',
+      magnet.shapeType,
+      width,
+      height,
+    ].join('|');
+  }
+
+  const layout = getLabelLayout(magnet);
+
+  return [
+    MAGNET_HIT_MASK_CACHE_VERSION,
+    'letter',
+    layout.label,
+    layout.font,
+    width,
+    height,
+  ].join('|');
+}
+
+function getMagnetHitMask(magnet) {
+  const cacheKey = getMagnetHitMaskKey(magnet);
+  const cached = MAGNET_HIT_MASK_CACHE.get(cacheKey);
+
+  if (cached) {
+    return cached;
+  }
+
+  const scaledWidth = Math.max(1, Math.round(magnet.width * HIT_MASK_SCALE));
+  const scaledHeight = Math.max(1, Math.round(magnet.height * HIT_MASK_SCALE));
+  let canvas;
+
+  if (magnet.shapeType) {
+    canvas = createShapeMaskCanvas(
+      scaledWidth,
+      scaledHeight,
+      {
+        ...magnet,
+        width: scaledWidth,
+        height: scaledHeight,
+      },
+      0,
+    );
+  } else {
+    const layout = scaleLetterLayout(getLabelLayout(magnet), HIT_MASK_SCALE);
+    canvas = createGlyphMaskCanvas(
+      scaledWidth,
+      scaledHeight,
+      layout,
+      layout.x,
+      layout.y,
+    );
+  }
+
+  return cacheSetWithLimit(
+    MAGNET_HIT_MASK_CACHE,
+    cacheKey,
+    { canvas, context: canvas.getContext('2d') },
+    MAGNET_HIT_MASK_CACHE_LIMIT,
+  );
 }
 
 function getLabelLayout(magnet) {

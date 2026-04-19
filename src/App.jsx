@@ -53,7 +53,10 @@ const HERO_LAYOUT_STORAGE_DEPRECATED_KEYS = [
   'eli5-hero-custom-layout-v3',
 ];
 const FLOATING_LETTERS_LAYOUT_STORAGE_KEY = 'eli5-floating-letters-layouts-v5';
-const FLOATING_LETTER_STYLE_STORAGE_KEY = 'eli5-floating-letter-style-controls-v1';
+const FLOATING_LETTER_STYLE_STORAGE_KEY = 'eli5-floating-letter-style-controls-v2';
+const FLOATING_LETTER_STYLE_STORAGE_DEPRECATED_KEYS = [
+  'eli5-floating-letter-style-controls-v1',
+];
 const FLOATING_LETTERS_LAYOUT_STORAGE_DEPRECATED_KEYS = [
   'eli5-floating-letters-layouts-v4',
 ];
@@ -320,12 +323,15 @@ const HERO_MAGNET_DEFAULTS = {
 };
 
 const FLOATING_LETTER_STYLE_DEFAULTS = Object.freeze({
-  styleReferenceScale: 1,
-  innerLight: 1,
-  innerShade: 1,
-  depthOffsetX: HERO_MAGNET_DEFAULTS.depthOffsetX,
-  depthOffsetY: HERO_MAGNET_DEFAULTS.depthOffsetY,
-  groundShadow: 1,
+  styleReferenceScale: 1.07,
+  innerLight: 1.4,
+  innerLightSize: 1.68,
+  innerShade: 1.33,
+  innerShadeSize: 1.03,
+  depthOffsetX: 6,
+  depthOffsetY: 6.6,
+  groundShadow1: 0.95,
+  groundShadow2: 1.04,
 });
 
 const HERO_CONTROL_SECTIONS = [
@@ -370,23 +376,26 @@ const FLOATING_LETTER_STYLE_SECTIONS = [
   {
     id: 'floating-style-face',
     title: 'Surface',
-    detail: 'Keep the body controls tight: reference height, inner light, and inner shade only.',
+    detail: 'Keep the body controls tight: reference height, plus amount and reach for the inner light and shade.',
     defaultCollapsed: false,
     fields: [
-      { key: 'styleReferenceScale', label: 'Reference Height', min: 0.7, max: 1.35, step: 0.01, format: (value) => `${Math.round(value * 100)}%` },
-      { key: 'innerLight', label: 'Inner Light', min: 0, max: 1.4, step: 0.01, format: (value) => value.toFixed(2) },
-      { key: 'innerShade', label: 'Inner Shade', min: 0, max: 1.4, step: 0.01, format: (value) => value.toFixed(2) },
+      { key: 'styleReferenceScale', label: 'Reference Height', min: 0, max: 2, step: 0.01, format: (value) => `${Math.round(value * 100)}%` },
+      { key: 'innerLight', label: 'Inner Light', min: 0, max: 2.5, step: 0.01, format: (value) => value.toFixed(2) },
+      { key: 'innerLightSize', label: 'Inner Light Reach', min: 0, max: 3, step: 0.01, format: (value) => value.toFixed(2) },
+      { key: 'innerShade', label: 'Inner Shade', min: 0, max: 2.5, step: 0.01, format: (value) => value.toFixed(2) },
+      { key: 'innerShadeSize', label: 'Inner Shade Reach', min: 0, max: 3, step: 0.01, format: (value) => value.toFixed(2) },
     ],
   },
   {
     id: 'floating-style-depth',
     title: 'Depth',
-    detail: 'Depth stays practical: X, Y, and one ground-shadow strength control.',
+    detail: 'Depth stays practical: X, Y, and two ground-shadow layers.',
     defaultCollapsed: false,
     fields: [
-      { key: 'depthOffsetX', label: 'Depth X', min: -6, max: 8, step: 0.1, format: (value) => value.toFixed(1) },
-      { key: 'depthOffsetY', label: 'Depth Y', min: 0, max: 12, step: 0.1, format: (value) => value.toFixed(1) },
-      { key: 'groundShadow', label: 'Ground Shadow', min: 0, max: 1.6, step: 0.01, format: (value) => value.toFixed(2) },
+      { key: 'depthOffsetX', label: 'Depth X', min: 0, max: 16, step: 0.1, format: (value) => value.toFixed(1) },
+      { key: 'depthOffsetY', label: 'Depth Y', min: 0, max: 16, step: 0.1, format: (value) => value.toFixed(1) },
+      { key: 'groundShadow1', label: 'Shadow 1', min: 0, max: 2.5, step: 0.01, format: (value) => value.toFixed(2) },
+      { key: 'groundShadow2', label: 'Shadow 2', min: 0, max: 2.5, step: 0.01, format: (value) => value.toFixed(2) },
     ],
   },
 ];
@@ -1259,36 +1268,57 @@ function loadHeroMagnetControls() {
 }
 
 function sanitizeFloatingLetterStyleControls(controls = {}) {
+  const legacyGroundShadow = clamp(
+    getFiniteNumber(controls.groundShadow, FLOATING_LETTER_STYLE_DEFAULTS.groundShadow1),
+    0,
+    2.5,
+  );
+
   return {
     styleReferenceScale: clamp(
       getFiniteNumber(controls.styleReferenceScale, FLOATING_LETTER_STYLE_DEFAULTS.styleReferenceScale),
-      0.7,
-      1.35,
+      0,
+      2,
     ),
     innerLight: clamp(
       getFiniteNumber(controls.innerLight, FLOATING_LETTER_STYLE_DEFAULTS.innerLight),
       0,
-      1.4,
+      2.5,
+    ),
+    innerLightSize: clamp(
+      getFiniteNumber(controls.innerLightSize, FLOATING_LETTER_STYLE_DEFAULTS.innerLightSize),
+      0,
+      3,
     ),
     innerShade: clamp(
       getFiniteNumber(controls.innerShade, FLOATING_LETTER_STYLE_DEFAULTS.innerShade),
       0,
-      1.4,
+      2.5,
+    ),
+    innerShadeSize: clamp(
+      getFiniteNumber(controls.innerShadeSize, FLOATING_LETTER_STYLE_DEFAULTS.innerShadeSize),
+      0,
+      3,
     ),
     depthOffsetX: clamp(
       getFiniteNumber(controls.depthOffsetX, FLOATING_LETTER_STYLE_DEFAULTS.depthOffsetX),
-      -6,
-      8,
+      0,
+      16,
     ),
     depthOffsetY: clamp(
       getFiniteNumber(controls.depthOffsetY, FLOATING_LETTER_STYLE_DEFAULTS.depthOffsetY),
       0,
-      12,
+      16,
     ),
-    groundShadow: clamp(
-      getFiniteNumber(controls.groundShadow, FLOATING_LETTER_STYLE_DEFAULTS.groundShadow),
+    groundShadow1: clamp(
+      getFiniteNumber(controls.groundShadow1, legacyGroundShadow),
       0,
-      1.6,
+      2.5,
+    ),
+    groundShadow2: clamp(
+      getFiniteNumber(controls.groundShadow2, legacyGroundShadow * 0.92),
+      0,
+      2.5,
     ),
   };
 }
@@ -2871,23 +2901,38 @@ function buildFloatingLettersVisualProps(
 ) {
   const controls = sanitizeFloatingLetterStyleControls(styleControls);
   const lightAmount = controls.innerLight;
+  const lightReach = controls.innerLightSize;
   const shadeAmount = controls.innerShade;
-  const shadowAmount = controls.groundShadow;
+  const shadeReach = controls.innerShadeSize;
+  const shadow1Amount = controls.groundShadow1;
+  const shadow2Amount = controls.groundShadow2;
 
   return {
     styleReferenceHeight: referenceHeight * controls.styleReferenceScale,
     innerLightOpacity: clamp(HERO_MAGNET_DEFAULTS.innerLightOpacity * lightAmount, 0, 1),
-    innerLightOffsetY: HERO_MAGNET_DEFAULTS.innerLightOffsetY,
+    innerLightOffsetY: clamp(
+      HERO_MAGNET_DEFAULTS.innerLightOffsetY * lightReach * 0.9,
+      0,
+      24,
+    ),
     innerLightBlur: clamp(
-      HERO_MAGNET_DEFAULTS.innerLightBlur * (0.82 + lightAmount * 0.36),
+      HERO_MAGNET_DEFAULTS.innerLightBlur * (0.28 + lightReach * 0.36 + lightAmount * 0.14),
       0,
       16,
     ),
     innerShadeOpacity: clamp(HERO_MAGNET_DEFAULTS.innerShadeOpacity * shadeAmount, 0, 1),
-    innerShadeOffsetX: HERO_MAGNET_DEFAULTS.innerShadeOffsetX,
-    innerShadeOffsetY: HERO_MAGNET_DEFAULTS.innerShadeOffsetY,
+    innerShadeOffsetX: clamp(
+      HERO_MAGNET_DEFAULTS.innerShadeOffsetX * shadeReach * 1.1,
+      0,
+      18,
+    ),
+    innerShadeOffsetY: clamp(
+      HERO_MAGNET_DEFAULTS.innerShadeOffsetY * shadeReach * 1.1,
+      0,
+      20,
+    ),
     innerShadeBlur: clamp(
-      HERO_MAGNET_DEFAULTS.innerShadeBlur * (0.82 + shadeAmount * 0.28),
+      HERO_MAGNET_DEFAULTS.innerShadeBlur * (0.3 + shadeReach * 0.22 + shadeAmount * 0.12),
       0,
       16,
     ),
@@ -2896,26 +2941,26 @@ function buildFloatingLettersVisualProps(
     depthOffsetY: controls.depthOffsetY,
     depthSpread: HERO_MAGNET_DEFAULTS.depthSpread,
     groundShadow1Opacity: clamp(
-      HERO_MAGNET_DEFAULTS.groundShadow1Opacity * shadowAmount,
+      0.22 * shadow1Amount,
       0,
       1,
     ),
-    groundShadow1OffsetX: HERO_MAGNET_DEFAULTS.groundShadow1OffsetX,
-    groundShadow1OffsetY: HERO_MAGNET_DEFAULTS.groundShadow1OffsetY,
+    groundShadow1OffsetX: 1.8,
+    groundShadow1OffsetY: 8.6,
     groundShadow1Blur: clamp(
-      HERO_MAGNET_DEFAULTS.groundShadow1Blur * (0.88 + shadowAmount * 0.24),
+      2.8 * (0.86 + shadow1Amount * 0.24),
       0,
       40,
     ),
     groundShadow2Opacity: clamp(
-      HERO_MAGNET_DEFAULTS.groundShadow2Opacity * shadowAmount,
+      0.18 * shadow2Amount,
       0,
       1,
     ),
-    groundShadow2OffsetX: HERO_MAGNET_DEFAULTS.groundShadow2OffsetX,
-    groundShadow2OffsetY: HERO_MAGNET_DEFAULTS.groundShadow2OffsetY,
+    groundShadow2OffsetX: 3.4,
+    groundShadow2OffsetY: 19.4,
     groundShadow2Blur: clamp(
-      HERO_MAGNET_DEFAULTS.groundShadow2Blur * (0.88 + shadowAmount * 0.24),
+      6.8 * (0.84 + shadow2Amount * 0.28),
       0,
       72,
     ),
@@ -4818,6 +4863,10 @@ export default function App() {
       FLOATING_LETTER_STYLE_STORAGE_KEY,
       JSON.stringify(floatingLetterStyleControls),
     );
+
+    FLOATING_LETTER_STYLE_STORAGE_DEPRECATED_KEYS.forEach((storageKey) => {
+      window.localStorage.removeItem(storageKey);
+    });
   }, [floatingLetterStyleControls]);
 
   useEffect(() => {
@@ -5212,7 +5261,7 @@ export default function App() {
   const sharedPanelCaption =
     'Edit each depth class directly. Every level has its own drop shadow, light edge, shadow edge, and light gradient.';
   const floatingLettersPanelCaption =
-    'Adjust motion plus the body controls that matter: reference height, inner light, inner shade, depth offset, and ground shadow.';
+    'Adjust motion plus the body controls that matter: reference height, inner light and shade amount and reach, depth offset, and a two-layer ground shadow.';
   const sharedPanelProps = {
     eyebrow: 'Linked control panel',
     title: 'Live page controls',

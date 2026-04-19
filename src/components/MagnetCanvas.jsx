@@ -20,7 +20,7 @@ const EDIT_LAYER_STYLE = {
   pointerEvents: 'auto',
   touchAction: 'none',
 };
-const HIT_PADDING = 8;
+const HIT_PADDING = 0;
 const INTRO_STAGGER_MS = 46;
 const INTRO_DURATION_MS = 780;
 const BOUNCE_DURATION_MS = 1100;
