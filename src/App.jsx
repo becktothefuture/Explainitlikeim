@@ -22,7 +22,7 @@ const SUPPORT_HREF = 'https://buymeacoffee.com/explainitlikeim';
 const HOW_GIF_VIDEO = './assets/how/michael-scott-waiting.mp4';
 const HOW_GIF_POSTER = './assets/how/michael-scott-waiting-poster.jpg';
 const HOW_GIF_STICKY_TOP_VH = 35;
-const EXAMPLE_SEPARATOR = '---------------';
+const EXAMPLE_SEPARATOR = '---';
 const EXAMPLE_TAB_VISIBLE_COUNT = 5;
 const EXAMPLE_TAB_HEIGHT = 56;
 const EXAMPLE_TAB_GAP = 12;
@@ -3362,7 +3362,7 @@ function TypographyLabView({
                           <span className="eli5-example-output__label">5:</span>{' '}
                           More came in than went out.
                         </p>
-                        <p className="eli5-example-output__separator" aria-hidden="true">---------------</p>
+                        <p className="eli5-example-output__separator" aria-hidden="true">---</p>
                         <p className="eli5-example-output__entry">
                           <span className="eli5-example-output__label">12:</span>{' '}
                           A surplus means income or supply was higher than spending or demand for that period.

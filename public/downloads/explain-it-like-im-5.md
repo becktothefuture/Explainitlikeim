@@ -1,17 +1,20 @@
 ---
 name: explain-it-like-im-5
-description: "Explain almost anything in five cumulative steps: 5, 7, 9, 12, and 16. Use when the user wants a word, concept, code snippet, file, repo, doc, article, bug, plan, or summary made easier to understand fast without follow-up questions."
+description: "Explain almost anything in five explanation levels: 5, 7, 9, 12, and 16. Use when the user wants a word, concept, code snippet, file, repo, doc, article, bug, plan, or summary made easier to understand fast without follow-up questions."
 ---
 
 # Explain It Like I'm 5
 
 ## Overview
 
-Turn one topic into one explanation that gets smarter in five clean steps:
+Turn one topic into one explanation that gets smarter in five explanation levels:
 `5`, `7`, `9`, `12`, `16`.
 
 This skill is for fast understanding.
 It should work for concepts, words, code, repos, docs, papers, summaries, bugs, workflows, and plans.
+
+Treat the labels as shorthand for simplest to most precise.
+They are explanation levels, not instructions to imitate a child's voice.
 
 Do not ask follow-up questions by default.
 Use the context you already have.
@@ -36,7 +39,7 @@ Then decide:
 - one concrete anchor for the `5:` version
 - what new layer each later band adds
 - what fact, identifier, caveat, or uncertainty must survive simplification
-- whether a tiny related playful touch would help the `5:` band or distract from it
+- whether a tiny related playful touch would help the `5:` band or just slow it down
 
 ## Output Contract
 
@@ -52,30 +55,30 @@ Default format:
 
 `5: ...`
 
-`---------------`
+`---`
 
 `7: ...`
 
-`---------------`
+`---`
 
 `9: ...`
 
-`---------------`
+`---`
 
 `12: ...`
 
-`---------------`
+`---`
 
 `16: ...`
 
 Each band should start with that exact label.
-Use one line containing exactly `---------------` between bands.
+Use one line containing exactly `---` between bands.
 Keep the label and the first sentence on the same line when possible.
 Default to plain prose, not bullets, tables, or code fences.
 
 Length guidance:
 
-- `5:` one tiny, concrete, truthful answer
+- `5:` one tiny, concrete, truthful orientation
 - `7:` one or two short sentences
 - `9:` one to three short sentences
 - `12:` two or three sentences with clearer mechanism
@@ -91,10 +94,21 @@ Keep the same cumulative progression whenever possible.
 Use one through-line from top to bottom.
 The later bands should feel like the earlier ones getting sharper, not like five separate rewrites.
 
+Default job by level:
+
+- `5:` what it is
+- `7:` what happens or why it matters
+- `9:` practical shape or how it works in use
+- `12:` mechanism and useful terms
+- `16:` precise terms, caveats, limits, or tradeoffs
+
 At `5:`:
 
 - make it instantly graspable
-- use concrete, plain language
+- define the thing first
+- use concrete nouns and direct verbs
+- sound plain, calm, and adult
+- do not use baby talk
 - allow one tiny related playful image only if it helps the idea stick
 - move from the playful hook to the literal meaning immediately
 - avoid jargon completely
@@ -103,6 +117,7 @@ At `7:`:
 
 - keep the same core picture
 - add one clear cause-and-effect step
+- say what changes or why it matters
 - introduce the most important moving part in plain language
 
 At `9:`:
@@ -141,11 +156,14 @@ When the user asks for a summary:
 ## Guardrails
 
 Do not make the `5:` version false just to make it cute.
+Do not write `5:` like a children's book if the topic does not need it.
 Do not switch metaphors every band.
 Do not merely restate the same point with harder words.
+Do not let `16:` quietly correct a misleading `5:`.
 Do not drown the `16:` version in jargon.
 Do not talk down to the user.
 Do not use unrelated jokes, sarcasm, or long comedy bits.
+Humor is optional, not required.
 If humor helps, keep it short, warm, and directly tied to the concept.
 
 If the topic is sensitive, high-stakes, or uncertain:
