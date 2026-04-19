@@ -586,7 +586,7 @@ function getLoadItemClass(baseClassName, isEntered, variantClassName = '') {
 }
 
 const HERO_COPY = {
-  helperLabel: 'How to use it?',
+  badge: 'AI agent skill',
   summary: 'An AI skill for answers you can follow.',
   detail: 'Ask one question. Get five versions of the answer, from simple to precise.',
   compatLabel: 'Use it with',
@@ -5479,48 +5479,35 @@ export default function App() {
       <main className="eli5-main">
         <div className="eli5-shell">
           <div className="eli5-surface">
-            <header
-              className={getLoadItemClass(
-                'eli5-header eli5-depth--2',
-                hasEnteredLoadCue(LOAD_CUES.header),
-                'eli5-load-item--header',
-              )}
-            >
-              <div className="eli5-header__edge eli5-header__edge--start">
-                <a
-                  href="#install"
-                  className={getLoadItemClass(
-                    'eli5-button eli5-button--secondary eli5-button--header-hint eli5-depth--1',
-                    hasEnteredLoadCue(LOAD_CUES.heroBadge),
-                    'eli5-load-item--badge',
-                  )}
-                >
-                  {HERO_COPY.helperLabel}
-                </a>
-              </div>
-
-              <div className="eli5-header__center">
+            <div className="eli5-first-fold">
+              <header
+                className={getLoadItemClass(
+                  'eli5-header eli5-depth--2',
+                  hasEnteredLoadCue(LOAD_CUES.header),
+                  'eli5-load-item--header',
+                )}
+              >
                 <nav className="eli5-nav" aria-label="Primary">
                   <a href="#how">What it does</a>
                   <a href="#examples">Examples</a>
                   <a href="#science">The science</a>
+                  <a href="#install">How to install</a>
                 </nav>
-              </div>
+              </header>
 
-              <div className="eli5-header__edge eli5-header__edge--end">
-                <div className="eli5-header__actions">
-                  <DownloadLink className="eli5-button eli5-button--header eli5-button--nav-download eli5-depth--1">
-                    Download
-                  </DownloadLink>
-                </div>
-              </div>
-            </header>
-
-            <>
                 <section id="hero" className="eli5-hero">
                   <div className="eli5-hero-stage">
                     <h1 className="eli5-sr-only">Explain It Like I&apos;m Five</h1>
                     <div className="eli5-hero__intro">
+                      <RevealOnView
+                        as="span"
+                        active={hasEnteredLoadCue(LOAD_CUES.heroBadge)}
+                        className="eli5-hero__badge"
+                        delay={0}
+                        variantClassName="eli5-reveal--pill"
+                      >
+                        {HERO_COPY.badge}
+                      </RevealOnView>
                       <RevealOnView
                         as="p"
                         active={hasEnteredLoadCue(LOAD_CUES.heroNotes)}
@@ -5576,7 +5563,7 @@ export default function App() {
                           variantClassName="eli5-reveal--soft"
                         >
                           <DownloadLink className="eli5-button eli5-button--primary eli5-button--hero-cta eli5-depth--1">
-                            Download the skill
+                            Download skill
                           </DownloadLink>
                         </RevealOnView>
                         <RevealOnView
@@ -5620,7 +5607,9 @@ export default function App() {
                     </div>
                   </div>
                 </section>
+              </div>
 
+            <>
                 <SectionBreak
                   className={getLoadItemClass(
                     'eli5-section-break',
