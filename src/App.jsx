@@ -483,6 +483,18 @@ const HOW_USE_CASES = [
   'weird finance terms',
 ];
 
+const EXPLANATION_LEVELS = [
+  { legacyAge: '5', label: '🧸', meaning: 'first concrete orientation' },
+  { legacyAge: '7', label: '✏️', meaning: 'simple explanation' },
+  { legacyAge: '9', label: '🎒', meaning: 'everyday context' },
+  { legacyAge: '12', label: '📚', meaning: 'fuller mechanism' },
+  { legacyAge: '16', label: '🎓', meaning: 'precise mature understanding' },
+];
+
+function getLevelLabel(level) {
+  return EXPLANATION_LEVELS.find((item) => item.legacyAge === level)?.label ?? level;
+}
+
 const EXAMPLES = [
   {
     slug: 'budget-surplus',
@@ -491,23 +503,23 @@ const EXAMPLES = [
     prompt: 'why do we have a surplus?',
     bands: [
       {
-        age: '5',
+        level: '5',
         copy: 'A surplus means you have money left after paying for the things you needed.',
       },
       {
-        age: '7',
+        level: '7',
         copy: 'In a budget, a surplus means you planned some money for spending, but part of it did not get used.',
       },
       {
-        age: '9',
+        level: '9',
         copy: 'A budget surplus happens when income is higher than spending, or when spending ends up lower than expected. The leftover amount is the surplus.',
       },
       {
-        age: '12',
+        level: '12',
         copy: 'A budget surplus is the amount left when actual revenue or available funds are greater than actual spending over the same period. In a company or office budget, that usually means some planned money was not spent.',
       },
       {
-        age: '16',
+        level: '16',
         copy: 'A budget surplus is the positive balance that remains when revenue or allocated funds exceed expenditures for a defined period. It can result from higher-than-expected income, lower-than-expected costs, delayed purchases, or deliberate underspending, and the next question is usually whether to save it, reallocate it, or return it.',
       },
     ],
@@ -518,21 +530,21 @@ const EXAMPLES = [
     subject: 'Inflation',
     prompt: 'Why do prices keep going up?',
     bands: [
-      { age: '5', copy: 'Prices creep up, so your coins buy a little less than before.' },
+      { level: '5', copy: 'Prices creep up, so your coins buy a little less than before.' },
       {
-        age: '7',
+        level: '7',
         copy: 'Inflation means things cost more over time. If a toy used to cost $10 and later costs $11, your money does less work.',
       },
       {
-        age: '9',
+        level: '9',
         copy: 'Inflation is when the general price of goods and services rises. It does not mean every price rises at the same speed, but over time money buys less.',
       },
       {
-        age: '12',
+        level: '12',
         copy: 'Inflation is the rate at which the overall price level rises. When inflation is positive, each dollar buys a smaller share of goods and services than it did before. Central banks try to keep it from rising too fast.',
       },
       {
-        age: '16',
+        level: '16',
         copy: 'Inflation measures how fast the average price level is increasing across an economy, not just one item. It reduces purchasing power, can affect wages, savings, interest rates, and borrowing, and is usually tracked with indexes like the CPI or PCE.',
       },
     ],
@@ -543,21 +555,21 @@ const EXAMPLES = [
     subject: 'Photosynthesis',
     prompt: 'How do plants make food?',
     bands: [
-      { age: '5', copy: 'Plants make their own food from sunlight, water, and air.' },
+      { level: '5', copy: 'Plants make their own food from sunlight, water, and air.' },
       {
-        age: '7',
+        level: '7',
         copy: 'Photosynthesis is how plants use sunlight to turn water and carbon dioxide into sugar. That sugar helps them grow.',
       },
       {
-        age: '9',
+        level: '9',
         copy: 'It happens mostly in leaves. Plants use light energy to make glucose, and they also release oxygen as a byproduct.',
       },
       {
-        age: '12',
+        level: '12',
         copy: 'Photosynthesis is the process plants use to convert light energy into chemical energy. In chloroplasts, chlorophyll captures sunlight, and the plant uses water and carbon dioxide to make glucose and oxygen.',
       },
       {
-        age: '16',
+        level: '16',
         copy: 'Photosynthesis is the biochemical process by which plants, algae, and some bacteria convert light energy into chemical energy stored in sugars. It happens in two linked stages, light reactions and the Calvin cycle, and depends on chloroplasts, chlorophyll, water, and carbon dioxide.',
       },
     ],
@@ -569,23 +581,23 @@ const EXAMPLES = [
     prompt: 'How do tax brackets work?',
     bands: [
       {
-        age: '5',
+        level: '5',
         copy: 'Tax brackets are price bands for income, so higher earners pay more on the extra money they make.',
       },
       {
-        age: '7',
+        level: '7',
         copy: 'Tax brackets split income into chunks. You may pay one rate on the first part of your income and a higher rate on the next part.',
       },
       {
-        age: '9',
+        level: '9',
         copy: 'A tax bracket is a range of income taxed at a certain rate. Your whole paycheck usually is not taxed at the highest rate; only the income inside that bracket is.',
       },
       {
-        age: '12',
+        level: '12',
         copy: 'Tax brackets are parts of a progressive tax system. As income rises, different slices of income are taxed at different rates, so the rate applies to the slice inside each bracket, not to all income at once.',
       },
       {
-        age: '16',
+        level: '16',
         copy: 'Tax brackets describe the income ranges used in progressive tax systems. Each bracket has a marginal tax rate, which applies only to income within that range. That means crossing into a higher bracket raises the tax on the next dollars earned, but it does not retroactively change the rate on earlier income.',
       },
     ],
@@ -597,23 +609,23 @@ const EXAMPLES = [
     prompt: 'Why does measles spread so fast?',
     bands: [
       {
-        age: '5',
+        level: '5',
         copy: 'A measles outbreak means lots of people in one place get a very contagious sickness.',
       },
       {
-        age: '7',
+        level: '7',
         copy: 'Measles spreads very easily from one person to another. If it starts spreading in a school or town, that is called an outbreak.',
       },
       {
-        age: '9',
+        level: '9',
         copy: 'Measles is a virus that can move fast through groups that are not well protected. Outbreaks happen when enough people catch it in the same area.',
       },
       {
-        age: '12',
+        level: '12',
         copy: 'A measles outbreak is when measles cases rise in a community, school, or region. Because measles is highly contagious and spreads through the air, public health teams try to find exposed people quickly and stop further spread.',
       },
       {
-        age: '16',
+        level: '16',
         copy: 'A measles outbreak occurs when transmission of the measles virus rises above the expected level in a place or population. Because measles is one of the most contagious human viruses, outbreaks are especially likely where vaccination coverage is low, and response typically includes case investigation, isolation, contact tracing, and vaccination campaigns.',
       },
     ],
@@ -625,23 +637,23 @@ const EXAMPLES = [
     prompt: 'Why can tariffs raise prices?',
     bands: [
       {
-        age: '5',
+        level: '5',
         copy: 'A tariff is a tax on things brought in from another country, and it can make prices go up.',
       },
       {
-        age: '7',
+        level: '7',
         copy: 'When a country adds a tariff, imported goods usually cost more. Stores may pass that extra cost to shoppers.',
       },
       {
-        age: '9',
+        level: '9',
         copy: 'Tariffs are taxes on imports. If a product becomes more expensive to bring in, businesses often raise the price people pay, though some of the cost can also be absorbed by sellers.',
       },
       {
-        age: '12',
+        level: '12',
         copy: 'Tariffs are taxes on imported goods. They can raise prices because importers pay more, and those higher costs may be passed on to retailers and customers. The final effect depends on competition, supply chains, and whether companies cut margins instead.',
       },
       {
-        age: '16',
+        level: '16',
         copy: 'Tariffs are border taxes on imports, so they change the after-tax cost of foreign goods. In practice, prices may rise for consumers, but the size of the increase depends on market structure, exchange rates, supplier responses, and how much of the tariff is absorbed by firms versus passed through to buyers.',
       },
     ],
@@ -653,23 +665,23 @@ const EXAMPLES = [
     prompt: 'Why is Git asking for help?',
     bands: [
       {
-        age: '5',
+        level: '5',
         copy: 'Two people changed the same part, so the computer needs help choosing which version to keep.',
       },
       {
-        age: '7',
+        level: '7',
         copy: 'A merge conflict happens when two edits do not fit together automatically. Git stops and asks a person to decide.',
       },
       {
-        age: '9',
+        level: '9',
         copy: 'Merge conflicts happen when different versions of a file change the same lines, or nearby lines, in incompatible ways. The version control tool cannot safely guess the right result.',
       },
       {
-        age: '12',
+        level: '12',
         copy: 'A merge conflict happens during a merge or rebase when Git finds competing changes it cannot combine automatically. You review the conflicting sections, keep the right parts, and then mark the conflict as resolved.',
       },
       {
-        age: '16',
+        level: '16',
         copy: 'A merge conflict is a version-control state where Git cannot reconcile competing edits from different branches using its normal merge algorithm. Resolving it means inspecting the affected hunks, producing a coherent final file, and then completing the merge or rebase with that chosen result.',
       },
     ],
@@ -681,23 +693,23 @@ const EXAMPLES = [
     prompt: 'Why is this API telling me to slow down?',
     bands: [
       {
-        age: '5',
+        level: '5',
         copy: 'A website says “slow down” so too many requests do not pile up at once.',
       },
       {
-        age: '7',
+        level: '7',
         copy: 'API rate limits are rules about how many requests you can send in a certain time. They stop one user from flooding the service.',
       },
       {
-        age: '9',
+        level: '9',
         copy: 'A rate limit caps request volume, such as 100 requests per minute. If you go past the limit, the API may reject requests until the time window resets.',
       },
       {
-        age: '12',
+        level: '12',
         copy: 'API rate limits control traffic so a service stays stable and fair. Providers may limit by time window, token usage, IP address, or account, and clients usually handle that with retries, backoff, or queues.',
       },
       {
-        age: '16',
+        level: '16',
         copy: 'API rate limiting is a traffic-control mechanism that caps request throughput over a defined interval. It protects capacity, discourages abuse, and supports fair multi-tenant performance, and is often implemented with fixed windows, sliding windows, token buckets, or leaky buckets.',
       },
     ],
@@ -709,23 +721,23 @@ const EXAMPLES = [
     prompt: 'Who checks research before it gets published?',
     bands: [
       {
-        age: '5',
+        level: '5',
         copy: 'Other experts read the work first to check whether it makes sense.',
       },
       {
-        age: '7',
+        level: '7',
         copy: 'Peer review means other people who know the subject read a study before it is published and point out problems or missing parts.',
       },
       {
-        age: '9',
+        level: '9',
         copy: 'In peer review, editors send research to independent experts for critique. Reviewers look at the methods, evidence, and claims before the paper is accepted, revised, or rejected.',
       },
       {
-        age: '12',
+        level: '12',
         copy: 'Peer review is a quality-control step in scholarly publishing. External specialists assess whether the study design, analysis, and conclusions are strong enough for publication, even though the process is not perfect.',
       },
       {
-        age: '16',
+        level: '16',
         copy: 'Peer review is an editorial evaluation process in which subject-matter experts assess a manuscript’s methodology, interpretation, novelty, and evidentiary support before publication. It can improve rigor and catch errors, but it does not guarantee correctness or reproducibility.',
       },
     ],
@@ -737,23 +749,23 @@ const EXAMPLES = [
     prompt: 'Why do interest rates go up or down?',
     bands: [
       {
-        age: '5',
+        level: '5',
         copy: 'Interest is extra money paid for borrowing or earned for saving.',
       },
       {
-        age: '7',
+        level: '7',
         copy: 'An interest rate says how much extra you pay to borrow money, or how much extra you get for saving it.',
       },
       {
-        age: '9',
+        level: '9',
         copy: 'Interest rates are percentages attached to loans and savings. Higher rates make borrowing more expensive and saving more rewarding.',
       },
       {
-        age: '12',
+        level: '12',
         copy: 'An interest rate is the price of borrowing money, usually shown as a yearly percentage. Central banks influence rates because they affect spending, saving, inflation, and investment.',
       },
       {
-        age: '16',
+        level: '16',
         copy: 'Interest rates express the cost of credit or the return on savings over time. They influence mortgages, business investment, bond prices, exchange rates, and inflation, and they can be quoted as nominal, real, fixed, or variable rates.',
       },
     ],
@@ -765,23 +777,23 @@ const EXAMPLES = [
     prompt: 'What is technical debt?',
     bands: [
       {
-        age: '5',
+        level: '5',
         copy: 'You take a quick shortcut now, and later the code gets harder to clean up.',
       },
       {
-        age: '7',
+        level: '7',
         copy: 'Technical debt means building something the fast way now and paying for that shortcut later with bugs or slower changes.',
       },
       {
-        age: '9',
+        level: '9',
         copy: 'Technical debt is the future cost created by rushed or temporary code choices. It can help a team move quickly in the short term, but it usually makes maintenance harder later.',
       },
       {
-        age: '12',
+        level: '12',
         copy: 'Technical debt is the accumulated cost of design or implementation shortcuts that were acceptable for speed at the time. Teams repay it by refactoring, improving tests, or simplifying the system before the debt causes larger slowdowns.',
       },
       {
-        age: '16',
+        level: '16',
         copy: 'Technical debt is a software engineering metaphor for the long-term cost imposed by expedient technical choices that defer cleaner architecture or maintenance work. In small amounts it can be strategic, but unmanaged debt compounds through fragility, duplication, slower delivery, and higher defect risk.',
       },
     ],
@@ -3367,12 +3379,12 @@ function TypographyLabView({
 
                       <div className="eli5-example-output">
                         <p className="eli5-example-output__entry">
-                          <span className="eli5-example-output__label">5:</span>{' '}
+                          <span className="eli5-example-output__label">🧸:</span>{' '}
                           More came in than went out.
                         </p>
                         <p className="eli5-example-output__separator" aria-hidden="true">---</p>
                         <p className="eli5-example-output__entry">
-                          <span className="eli5-example-output__label">12:</span>{' '}
+                          <span className="eli5-example-output__label">📚:</span>{' '}
                           A surplus means income or supply was higher than spending or demand for that period.
                         </p>
                       </div>
@@ -4879,7 +4891,7 @@ export default function App() {
                     variantClassName="eli5-reveal--soft"
                   >
                     <h2>See the output.</h2>
-                    <p>Pick a topic. The prompt stays short. The skill rewrites the answer at ages 5, 7, 9, 12, and 16.</p>
+                    <p>Pick a topic. The prompt stays short. The skill rewrites the answer in five visual levels, from simple to precise.</p>
                   </RevealOnView>
 
                   <RevealOnView
@@ -4913,9 +4925,9 @@ export default function App() {
 
                         <div className="eli5-example-output">
                           {activeExample.bands.map((band, index) => (
-                            <Fragment key={band.age}>
+                            <Fragment key={band.level}>
                               <p className="eli5-example-output__entry">
-                                <span className="eli5-example-output__label">{band.age}:</span>
+                                <span className="eli5-example-output__label">{getLevelLabel(band.level)}:</span>
                                 {' '}
                                 {band.copy}
                               </p>

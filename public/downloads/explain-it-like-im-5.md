@@ -1,24 +1,25 @@
 ---
 name: explain-it-like-im-5
-description: "Explain almost anything in five explanation levels: 5, 7, 9, 12, and 16. Use when the user wants a word, concept, code snippet, file, repo, doc, article, bug, plan, or summary made easier to understand fast without follow-up questions."
+description: "Explain almost anything in five visual explanation levels: 🧸, ✏️, 🎒, 📚, and 🎓. Use when the user wants a word, concept, code snippet, file, repo, doc, article, bug, plan, or summary made easier to understand fast without follow-up questions."
 ---
 
 # Explain It Like I'm 5
 
 ## Overview
 
-Turn one topic into one explanation that gets smarter in five explanation levels:
-`5`, `7`, `9`, `12`, `16`.
+Turn one topic into one explanation that gets clearer across five visual explanation levels:
+`🧸`, `✏️`, `🎒`, `📚`, `🎓`.
 
 This skill is for fast understanding.
 It should work for concepts, words, code, repos, docs, papers, summaries, bugs, workflows, and plans.
 
-Treat the labels as shorthand for simplest to most precise.
-They are explanation levels, not instructions to imitate a child's voice.
+Treat the labels as shorthand for increasing precision, not as a cue to sound childish.
+The same core truth must survive across all five bands.
+Simplify wording before you simplify reality.
 
 Do not ask follow-up questions by default.
 Use the context you already have.
-If something is ambiguous, pick the most likely meaning and use the `16:` section to note the alternative if it matters.
+If something is ambiguous, pick the most likely meaning and mention important uncertainty only in `🎓:` unless the user explicitly asks otherwise.
 
 ## Input Router
 
@@ -36,40 +37,44 @@ Before writing, decide what kind of thing you are explaining:
 Then decide:
 
 - the simplest truthful core idea
-- one concrete anchor for the `5:` version
+- one concrete anchor for the `🧸:` version
 - what new layer each later band adds
 - what fact, identifier, caveat, or uncertainty must survive simplification
-- whether a tiny related playful touch would help the `5:` band or just slow it down
+- whether a tiny related playful touch would help the `🧸:` band or just slow it down
 
 ## Output Contract
 
 Default to this exact sequence unless the user explicitly asks for different bands:
 
-1. `5:`
-2. `7:`
-3. `9:`
-4. `12:`
-5. `16:`
+1. `🧸:`
+2. `✏️:`
+3. `🎒:`
+4. `📚:`
+5. `🎓:`
+
+Important visible output rule:
+The generated answer must start directly with `🧸:`.
+Do not add any explanation, assumption, or preamble before it.
 
 Default format:
 
-`5: ...`
+`🧸: ...`
 
 `---`
 
-`7: ...`
+`✏️: ...`
 
 `---`
 
-`9: ...`
+`🎒: ...`
 
 `---`
 
-`12: ...`
+`📚: ...`
 
 `---`
 
-`16: ...`
+`🎓: ...`
 
 Each band should start with that exact label.
 Use one line containing exactly `---` between bands.
@@ -78,31 +83,32 @@ Default to plain prose, not bullets, tables, or code fences.
 
 Length guidance:
 
-- `5:` one tiny, concrete, truthful orientation
-- `7:` one or two short sentences
-- `9:` one to three short sentences
-- `12:` two or three sentences with clearer mechanism
-- `16:` two to four sentences with proper terms, nuance, limits, or tradeoffs
+- `🧸:` one tiny, concrete, truthful orientation
+- `✏️:` one or two short sentences
+- `🎒:` one to three short sentences
+- `📚:` two or three sentences with clearer mechanism
+- `🎓:` two to four sentences with proper terms, nuance, limits, or tradeoffs
 
 If the user asks for only one band, still think through the full ladder internally first, then output only the requested band.
 
-If the user asks for custom ages, a different format, another language, or a source-bound summary, that request overrides the default labels.
+If the user asks for custom labels, a different format, another language, or a source-bound summary, that request overrides the default labels.
 Keep the same cumulative progression whenever possible.
 
 ## Band Guidance
 
 Use one through-line from top to bottom.
 The later bands should feel like the earlier ones getting sharper, not like five separate rewrites.
+Each band should add one real layer, not repeat the previous one with harder words.
 
 Default job by level:
 
-- `5:` what it is
-- `7:` what happens or why it matters
-- `9:` practical shape or how it works in use
-- `12:` mechanism and useful terms
-- `16:` precise terms, caveats, limits, or tradeoffs
+- `🧸:` first concrete orientation / what it is
+- `✏️:` simple explanation / what happens or why it matters
+- `🎒:` everyday context / practical shape
+- `📚:` fuller mechanism / useful terms
+- `🎓:` precise mature understanding / caveats, limits, or tradeoffs
 
-At `5:`:
+At `🧸:`:
 
 - make it instantly graspable
 - define the thing first
@@ -113,37 +119,38 @@ At `5:`:
 - move from the playful hook to the literal meaning immediately
 - avoid jargon completely
 
-At `7:`:
+At `✏️:`:
 
 - keep the same core picture
 - add one clear cause-and-effect step
 - say what changes or why it matters
 - introduce the most important moving part in plain language
 
-At `9:`:
+At `🎒:`:
 
 - start replacing metaphor with reality
 - make the practical shape of the thing clearer
 - add one useful distinction if it helps
 
-At `12:`:
+At `📚:`:
 
 - explain the mechanism directly
 - introduce useful vocabulary and define it immediately
 - make structure, flow, or process legible
 
-At `16:`:
+At `🎓:`:
 
 - give the cleanest precise version
 - keep names, identifiers, APIs, claims, and caveats intact
 - add nuance, limits, edge cases, or tradeoffs when relevant
+- mention meaningful ambiguity or uncertainty if it changes interpretation
 
 ## Source Fidelity
 
 When the user gives you code, docs, text, or a repo:
 
 - explain the material you were given, not what you wish had been there
-- preserve important names, filenames, APIs, types, errors, and claims
+- preserve exact names, identifiers, APIs, filenames, errors, claims, and caveats
 - do not invent missing facts to make the ladder feel smoother
 - if the source is incomplete, say what is clear and what is inferred
 
@@ -155,12 +162,12 @@ When the user asks for a summary:
 
 ## Guardrails
 
-Do not make the `5:` version false just to make it cute.
-Do not write `5:` like a children's book if the topic does not need it.
+Do not make the `🧸:` version false just to make it cute.
+Do not write `🧸:` like a children's book if the topic does not need it.
 Do not switch metaphors every band.
 Do not merely restate the same point with harder words.
-Do not let `16:` quietly correct a misleading `5:`.
-Do not drown the `16:` version in jargon.
+Do not let `🎓:` quietly correct a misleading `🧸:`.
+Do not drown the `🎓:` version in jargon.
 Do not talk down to the user.
 Do not use unrelated jokes, sarcasm, or long comedy bits.
 Humor is optional, not required.
@@ -169,7 +176,6 @@ If humor helps, keep it short, warm, and directly tied to the concept.
 If the topic is sensitive, high-stakes, or uncertain:
 
 - stay calm and precise
-- mark uncertainty clearly
 - separate explanation from advice
 - refuse oversimplifications that would change the meaning
 
@@ -181,7 +187,8 @@ Before finishing, verify:
 
 - all required bands are present
 - separator lines appear between bands in the default format
-- the same core idea survives across all bands
+- the answer starts directly with `🧸:` and has no preamble
+- the same core truth survives across all bands
 - each band adds one real layer
 - the result works for the actual input type
 - the explanation becomes more precise as it goes
