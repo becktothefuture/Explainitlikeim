@@ -4,7 +4,6 @@ import { createPortal, flushSync } from 'react-dom';
 import CustomCursor from './components/CustomCursor.jsx';
 import MagnetCanvas from './components/MagnetCanvas.jsx';
 import { clamp, getMagnetWidthForLabel } from './components/magnetUtils.js';
-import { CURSOR_VARIANTS } from './publicAssetUrls.js';
 import {
   applyThemeTokens,
   DEPTH_CONTROL_DEFAULTS,
@@ -20,6 +19,7 @@ import {
 const DOWNLOAD_HREF = './downloads/explain-it-like-im-5.md';
 const DOWNLOAD_FILENAME = 'explain-it-like-im-5.md';
 const SUPPORT_HREF = 'https://buymeacoffee.com/explainitlikeim';
+const BASE_ASSET_URL = import.meta.env.BASE_URL ?? '/';
 const HOW_GIF_VIDEO = './assets/how/michael-scott-waiting.mp4';
 const HOW_GIF_POSTER = './assets/how/michael-scott-waiting-poster.jpg';
 const HOW_GIF_STICKY_TOP_VH = 35;
@@ -114,6 +114,14 @@ const HERO_LAYOUT_MIGRATION_EXPANSION = 1.35;
 const HERO_AUTHORED_LETTER_GAP = -48;
 const HERO_AUTHORED_WORD_GAP = 0.07;
 const HERO_AUTHORED_LINE_GAP = 48;
+
+function resolveAssetUrl(path) {
+  const normalizedBaseUrl = BASE_ASSET_URL.endsWith('/') ? BASE_ASSET_URL : `${BASE_ASSET_URL}/`;
+  const normalizedPath = path.replace(/^\/+/, '');
+  return `${normalizedBaseUrl}${normalizedPath}`;
+}
+
+const CURSOR_POINTER_SRC = resolveAssetUrl('assets/cursors/pointer.png');
 
 const HERO_REFERENCE_LAYOUT = {
   'hero-0-0-E': { cx: 0.109, cy: 0.207, rotation: -4.4 },
@@ -2898,7 +2906,7 @@ function DepthLabView({
                   <div className="eli5-depth-lab__reference-row">
                     <div className="eli5-depth-lab__cursor-swatch eli5-depth--3" aria-hidden="true">
                       <span className="eli5-depth-lab__cursor-glow" />
-                      <img src={CURSOR_VARIANTS.pointer.src} alt="" draggable="false" />
+                      <img src={CURSOR_POINTER_SRC} alt="" draggable="false" />
                     </div>
                   </div>
                 </LabCard>
