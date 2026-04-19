@@ -11,9 +11,9 @@
   --type-display-line-height: 0.94;
   --type-display-weight: 700;
   --type-display-tracking: -0.06em;
-  --type-heading-size: clamp(19.2px, calc(17.42px + 0.46vw), 24px);
+  --type-heading-size: clamp(21.12px, calc(19.16px + 0.51vw), 26.4px);
   --type-heading-line-height: 1.12;
-  --type-heading-weight: 600;
+  --type-heading-weight: 500;
   --type-heading-tracking: -0.04em;
   --type-ui-size: clamp(12.8px, calc(11.61px + 0.3vw), 16px);
   --type-ui-line-height: 1.32;
@@ -46,12 +46,13 @@
   --enter-distance: 26px;
   --enter-duration: 980ms;
   --enter-ease: cubic-bezier(0.18, 0.88, 0.24, 1);
-  --enter-blur: 10px;
   --cursor-default: default;
   --cursor-pointer: pointer;
   --cursor-text: text;
   --cursor-grab: grab;
   --cursor-grabbing: grabbing;
+  --eli5-menu-height: 52px;
+  --eli5-menu-offset: calc(var(--eli5-menu-height) + 10px);
 }
 
 .eli5-depth--inset {
@@ -121,8 +122,7 @@ body {
   cursor: var(--cursor-default);
   -webkit-user-select: none;
   user-select: none;
-  background:
-    radial-gradient(circle at 50% 28%, rgba(255, 251, 244, 0.98) 0%, rgba(251, 247, 239, 0.96) 58%, rgba(244, 239, 228, 0.92) 100%);
+  background: var(--page-bg);
 }
 
 body:not(.eli5-control-window)::before {
@@ -253,20 +253,17 @@ select {
 @keyframes eli5-stage-rise {
   from {
     opacity: 0;
-    transform: translate3d(0, var(--enter-distance), 0) scale(var(--enter-start-scale, 0.985));
-    filter: blur(var(--enter-blur));
+    transform: translate3d(0, var(--enter-distance), 0);
   }
 
-  60% {
+  68% {
     opacity: 1;
-    transform: translate3d(0, var(--enter-overshoot, -6px), 0) scale(var(--enter-peak-scale, 1.012));
-    filter: blur(0);
+    transform: translate3d(0, var(--enter-overshoot, -6px), 0);
   }
 
   to {
     opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1);
-    filter: blur(0);
+    transform: translate3d(0, 0, 0);
   }
 }
 
@@ -980,130 +977,79 @@ html[data-debug-ui='true'] .eli5-control-dock {
 
 .eli5-load-item {
   opacity: 0;
-  transform: translate3d(0, var(--enter-distance), 0) scale(var(--enter-start-scale, 0.985));
-  filter: blur(var(--enter-blur));
-  will-change: opacity, transform, filter;
+  transform: translate3d(0, var(--enter-distance), 0);
+  will-change: opacity, transform;
 }
 
 .eli5-load-item.is-entered {
-  animation: eli5-stage-rise var(--enter-duration) var(--enter-ease) forwards;
+  animation: eli5-stage-rise var(--enter-duration) var(--enter-ease) var(--enter-delay, 0ms) forwards;
 }
 
 .eli5-load-item--header {
-  --enter-distance: 16px;
-  --enter-duration: 980ms;
-  --enter-start-scale: 0.994;
-  --enter-peak-scale: 1.004;
+  --enter-distance: 18px;
+  --enter-duration: 760ms;
   --enter-overshoot: -4px;
-  --enter-blur: 7px;
 }
 
-.eli5-load-item--badge {
-  --enter-distance: 12px;
-  --enter-duration: 840ms;
-  --enter-start-scale: 0.972;
-  --enter-peak-scale: 1.018;
+.eli5-load-item--hero-badge {
+  --enter-distance: 20px;
+  --enter-duration: 700ms;
   --enter-overshoot: -5px;
-  --enter-blur: 6px;
+}
+
+.eli5-load-item--hero-summary {
+  --enter-distance: 34px;
+  --enter-duration: 940ms;
+  --enter-overshoot: -10px;
 }
 
 .eli5-load-item--hero-title {
-  --enter-distance: 26px;
-  --enter-duration: 1520ms;
-  --enter-start-scale: 0.978;
-  --enter-peak-scale: 1.012;
-  --enter-overshoot: -6px;
-  --enter-blur: 11px;
+  --enter-distance: 36px;
+  --enter-duration: 1180ms;
+  --enter-overshoot: -8px;
   transform-origin: center 58%;
 }
 
-.eli5-load-item--hero-notes {
-  --enter-distance: 20px;
-  --enter-duration: 1240ms;
-  --enter-start-scale: 0.992;
-  --enter-peak-scale: 1.006;
-  --enter-overshoot: -4px;
-  --enter-blur: 8px;
-}
-
-.eli5-load-item--section {
-  --enter-distance: 28px;
-  --enter-duration: 1240ms;
-  --enter-start-scale: 0.992;
-  --enter-peak-scale: 1.006;
+.eli5-load-item--hero-detail {
+  --enter-distance: 24px;
+  --enter-duration: 860ms;
   --enter-overshoot: -5px;
-  --enter-blur: 9px;
-  transform-origin: center top;
 }
 
-.eli5-load-item--divider {
+.eli5-load-item--hero-action {
+  --enter-distance: 26px;
+  --enter-duration: 820ms;
+  --enter-overshoot: -6px;
+}
+
+.eli5-load-item--hero-meta {
+  --enter-distance: 18px;
+  --enter-duration: 740ms;
+  --enter-overshoot: -4px;
+}
+
+.eli5-load-item--hero-pill {
   --enter-distance: 14px;
-  --enter-duration: 1040ms;
-  --enter-start-scale: 0.962;
-  --enter-peak-scale: 1.02;
+  --enter-duration: 680ms;
   --enter-overshoot: -3px;
-  --enter-blur: 6px;
 }
 
 .eli5-load-item--floating-ui {
   --enter-distance: 14px;
-  --enter-duration: 920ms;
-  --enter-start-scale: 0.982;
-  --enter-peak-scale: 1.008;
+  --enter-duration: 820ms;
   --enter-overshoot: -4px;
-  --enter-blur: 6px;
 }
 
-.eli5-reveal {
-  --reveal-delay: 0ms;
-  --reveal-distance: 18px;
-  --reveal-duration: 980ms;
-  --reveal-start-scale: 0.992;
-  --reveal-peak-scale: 1.006;
-  --reveal-overshoot: -4px;
-  --reveal-blur: 8px;
-  --enter-distance: var(--reveal-distance);
-  --enter-duration: var(--reveal-duration);
-  --enter-start-scale: var(--reveal-start-scale);
-  --enter-peak-scale: var(--reveal-peak-scale);
-  --enter-overshoot: var(--reveal-overshoot);
-  --enter-blur: var(--reveal-blur);
-  opacity: 0;
-  transform: translate3d(0, var(--reveal-distance), 0) scale(var(--reveal-start-scale));
-  filter: blur(var(--reveal-blur));
-  will-change: opacity, transform, filter;
+.eli5-scroll-intro {
+  --scroll-intro-y: 300px;
+  --scroll-intro-opacity: 0;
+  opacity: var(--scroll-intro-opacity);
+  transform: translate3d(0, var(--scroll-intro-y), 0);
+  will-change: opacity, transform;
 }
 
-.eli5-reveal.is-visible {
-  animation: eli5-stage-rise var(--reveal-duration) var(--enter-ease) var(--reveal-delay) forwards;
-}
-
-.eli5-reveal--soft {
-  --reveal-distance: 14px;
-  --reveal-duration: 920ms;
-  --reveal-start-scale: 0.994;
-  --reveal-peak-scale: 1.004;
-  --reveal-overshoot: -3px;
-  --reveal-blur: 6px;
-}
-
-.eli5-reveal--card {
-  --reveal-distance: 20px;
-  --reveal-duration: 1060ms;
-  --reveal-start-scale: 0.99;
-  --reveal-peak-scale: 1.006;
-  --reveal-overshoot: -4px;
-  --reveal-blur: 8px;
-  transform-origin: center top;
-}
-
-.eli5-reveal--pill {
-  --reveal-distance: 10px;
-  --reveal-duration: 820ms;
-  --reveal-start-scale: 0.97;
-  --reveal-peak-scale: 1.014;
-  --reveal-overshoot: -2px;
-  --reveal-blur: 5px;
+.eli5-scroll-intro.is-settled {
+  will-change: auto;
 }
 
 .eli5-magnet-layer {
@@ -1132,7 +1078,6 @@ html[data-debug-ui='true'] .eli5-control-dock {
 
 .eli5-first-fold {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
   min-height: 100vh;
   min-height: 100svh;
 }
@@ -1189,12 +1134,14 @@ html[data-debug-ui='true'] .eli5-control-dock {
 }
 
 .eli5-header {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 24;
   display: block;
-  width: min(100%, 1380px);
-  margin: 0 auto;
+  width: 100%;
+  margin: 0;
   padding: 0;
   border-top: 1px solid color-mix(in srgb, var(--slate-300) 82%, rgba(16, 18, 16, 0.05));
   border-bottom: 1px solid color-mix(in srgb, var(--slate-300) 82%, rgba(16, 18, 16, 0.05));
@@ -1262,7 +1209,7 @@ html[data-debug-ui='true'] .eli5-control-dock {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 52px;
+  min-height: var(--eli5-menu-height);
   padding: 0 16px;
   border-right: 1px solid color-mix(in srgb, var(--slate-300) 82%, rgba(16, 18, 16, 0.05));
   border-radius: 0;
@@ -1376,8 +1323,8 @@ html[data-debug-ui='true'] .eli5-control-dock {
   display: grid;
   align-items: center;
   justify-items: center;
-  min-height: 0;
-  padding: clamp(18px, 3.6vh, 32px) 0 clamp(10px, 2vh, 18px);
+  min-height: 100%;
+  padding: var(--eli5-menu-offset) 0 clamp(10px, 2vh, 18px);
 }
 
 .eli5-hero-stage {
@@ -1412,17 +1359,17 @@ html[data-debug-ui='true'] .eli5-control-dock {
 }
 
 .eli5-hero__badge {
+  --eli5-subtle-line: color-mix(in srgb, var(--slate-300) 82%, rgba(16, 18, 16, 0.05));
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-height: 34px;
   margin-bottom: 0;
   padding: 0 15px;
-  border: 1px solid var(--eli5-depth-border-color, var(--slate-300));
+  border: 1px solid var(--eli5-subtle-line);
   border-radius: 999px;
-  background-color: var(--eli5-depth-surface-bg, var(--slate-050));
-  background-image: var(--eli5-depth-light-gradient-current, none), var(--eli5-depth-surface-fill, var(--slate-gradient-100));
-  box-shadow: var(--eli5-depth-shadow-stack, var(--shadow-hero-badge));
+  background: transparent;
+  box-shadow: none;
   color: var(--slate-700);
   font-size: var(--type-eyebrow-size);
   font-weight: var(--type-eyebrow-weight);
@@ -1446,7 +1393,7 @@ html[data-debug-ui='true'] .eli5-control-dock {
   display: grid;
   justify-self: center;
   justify-items: center;
-  gap: 12px;
+  gap: clamp(28px, 3.2vh, 32px);
   margin-top: 0;
   text-align: center;
   width: min(100%, 35rem);
@@ -1482,7 +1429,7 @@ html[data-debug-ui='true'] .eli5-control-dock {
 
 .eli5-floating-letters[data-floating-letters-frame='desktop'] {
   aspect-ratio: 16 / 9;
-  width: min(100%, 888px);
+  width: min(100%, 1022px);
 }
 
 .eli5-floating-letters[data-floating-letters-frame='mobile'] {
@@ -1843,9 +1790,29 @@ html[data-debug-ui='true'] .eli5-control-dock {
   flex: 0 0 auto;
 }
 
+.eli5-section-break__slot::before {
+  content: '';
+  position: absolute;
+  inset: 16% 10% 22%;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: 50%;
+  background:
+    radial-gradient(
+      ellipse at center,
+      rgba(113, 82, 44, 0.07) 0%,
+      rgba(113, 82, 44, 0.032) 30%,
+      rgba(113, 82, 44, 0.014) 48%,
+      transparent 72%
+    );
+  filter: blur(18px);
+  transform: translateY(2%);
+}
+
 .eli5-section-break__magnet {
   position: absolute;
   inset: 0;
+  z-index: 1;
 }
 
 .eli5-section {
@@ -1868,28 +1835,84 @@ html[data-debug-ui='true'] .eli5-control-dock {
 }
 
 .eli5-install-step {
+  --chunky-hover-rotate: -2deg;
+  --install-step-front: var(--magnet-coral);
+  --install-step-depth: color-mix(in srgb, var(--install-step-front) 54%, #48372a 46%);
   display: grid;
   justify-items: center;
   gap: var(--space-3);
   text-align: center;
 }
 
+.eli5-install-step:nth-child(2) {
+  --chunky-hover-rotate: 2deg;
+  --install-step-front: var(--magnet-amber);
+}
+
+.eli5-install-step:nth-child(3) {
+  --chunky-hover-rotate: -1.5deg;
+  --install-step-front: var(--magnet-mint);
+}
+
 .eli5-install-step__art-frame {
   display: grid;
   place-items: center;
-  width: min(100%, 206px);
-  aspect-ratio: 1;
-  overflow: hidden;
+  width: min(100%, 186px);
+  min-height: 154px;
+  overflow: visible;
+  transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
 }
 
-.eli5-install-step__art {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
-  transform: scale(var(--install-art-scale, 1));
-  transform-origin: center;
-  filter: var(--shadow-install-art);
+.eli5-install-step:hover .eli5-install-step__art-frame,
+.eli5-install-step:focus-within .eli5-install-step__art-frame {
+  transform: translate3d(0, -6px, 0) rotate(var(--chunky-hover-rotate));
+}
+
+.eli5-install-step__number {
+  position: relative;
+  z-index: 0;
+  min-width: 1em;
+  font-family: var(--font-magnet);
+  font-size: clamp(102px, 9.6vw, 136px);
+  font-weight: 700;
+  line-height: 0.82;
+  letter-spacing: -0.08em;
+  color: transparent;
+  background-image:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--install-step-front) 78%, white 22%) 0%,
+      color-mix(in srgb, var(--install-step-front) 94%, white 6%) 54%,
+      color-mix(in srgb, var(--install-step-front) 86%, #48372a 14%) 100%
+    );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 10px 14px rgba(72, 55, 42, 0.1));
+  text-shadow:
+    0 -1px 0 rgba(255, 253, 247, 0.3),
+    0 1px 0 rgba(72, 55, 42, 0.08);
+}
+
+.eli5-install-step__number::before,
+.eli5-install-step__number::after {
+  content: attr(data-step);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.eli5-install-step__number::before {
+  z-index: -2;
+  transform: translate(0.082em, 0.11em);
+  color: var(--install-step-depth);
+}
+
+.eli5-install-step__number::after {
+  z-index: -1;
+  transform: translate(0.028em, 0.032em);
+  color: rgba(255, 253, 247, 0.18);
 }
 
 .eli5-install-step__copy {
@@ -2154,7 +2177,27 @@ html[data-debug-ui='true'] .eli5-control-dock {
   margin-top: var(--space-8);
 }
 
+@keyframes eli5-chunky-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(-1.4deg);
+  }
+
+  50% {
+    transform: translate3d(0, calc(var(--chunky-float-distance, 10px) * -1), 0) rotate(1.4deg);
+  }
+}
+
+.eli5-chunky-float {
+  display: block;
+  transform-origin: center;
+  animation: eli5-chunky-float 4.6s ease-in-out infinite;
+  animation-delay: var(--chunky-float-delay, 0s);
+  will-change: transform;
+}
+
 .eli5-how-benefit {
+  --chunky-hover-rotate: -2deg;
   display: flex;
   align-items: center;
   gap: var(--space-4);
@@ -2162,15 +2205,27 @@ html[data-debug-ui='true'] .eli5-control-dock {
   border-top: 1px solid var(--slate-200);
 }
 
+.eli5-how-benefit:nth-child(even) {
+  --chunky-hover-rotate: 2deg;
+}
+
 .eli5-how-benefit__art {
   flex: 0 0 112px;
   width: 112px;
+  transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+.eli5-how-benefit:hover .eli5-how-benefit__art,
+.eli5-how-benefit:focus-within .eli5-how-benefit__art {
+  transform: translate3d(0, -6px, 0) rotate(var(--chunky-hover-rotate));
 }
 
 .eli5-how-benefit__art img {
   display: block;
   width: 100%;
   height: auto;
+  filter: drop-shadow(0 10px 14px rgba(72, 55, 42, 0.1));
 }
 
 .eli5-how-benefit__copy {
@@ -3048,7 +3103,7 @@ html[data-debug-ui='true'] .eli5-control-dock {
   }
 
   .eli5-hero {
-    padding: clamp(18px, 3.4vh, 30px) 0 clamp(10px, 2vh, 18px);
+    padding: calc(var(--eli5-menu-height) + clamp(18px, 3.4vh, 30px)) 0 clamp(10px, 2vh, 18px);
   }
 
   .eli5-hero-stage {
@@ -3065,7 +3120,7 @@ html[data-debug-ui='true'] .eli5-control-dock {
 
   .eli5-hero__notes {
     width: min(100%, 35rem);
-    gap: 9px;
+    gap: clamp(28px, 3.2vh, 32px);
   }
 
   .eli5-hero__notes-copy {
@@ -3245,6 +3300,8 @@ html[data-debug-ui='true'] .eli5-control-dock {
 @media (max-width: 720px) {
   :root {
     --shell: min(var(--shell-max), calc(100vw - 32px));
+    --eli5-menu-height: 48px;
+    --eli5-menu-offset: calc(var(--eli5-menu-height) + 10px);
   }
 
   .eli5-control-launcher,
@@ -3279,7 +3336,7 @@ html[data-debug-ui='true'] .eli5-control-dock {
   .eli5-header {
     width: 100%;
     max-width: none;
-    margin: 0 calc(50% - 50vw);
+    margin: 0;
   }
 
   .eli5-nav a {
@@ -3374,6 +3431,14 @@ html[data-debug-ui='true'] .eli5-control-dock {
   .eli5-how-benefit__art {
     flex-basis: 104px;
     width: 104px;
+  }
+
+  .eli5-install-step__art-frame {
+    min-height: 132px;
+  }
+
+  .eli5-install-step__number {
+    font-size: clamp(88px, 24vw, 118px);
   }
 
   .eli5-depth-lab__layout {
@@ -3531,16 +3596,13 @@ html[data-debug-ui='true'] .eli5-control-dock {
   .eli5-load-item {
     opacity: 1;
     transform: none;
-    filter: none;
     animation: none;
     will-change: auto;
   }
 
-  .eli5-reveal {
+  .eli5-scroll-intro {
     opacity: 1;
     transform: none;
-    filter: none;
-    animation: none;
     will-change: auto;
   }
 
@@ -3560,6 +3622,19 @@ html[data-debug-ui='true'] .eli5-control-dock {
   }
 
   .eli5-sticky-ease {
+    transform: none;
+    will-change: auto;
+  }
+
+  .eli5-chunky-float {
+    animation: none;
+    transform: none;
+    will-change: auto;
+  }
+
+  .eli5-how-benefit__art,
+  .eli5-install-step__art-frame {
+    transition: none;
     transform: none;
     will-change: auto;
   }

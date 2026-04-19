@@ -41,6 +41,7 @@
   "--magnet-mint": "#00cf73",
   "--magnet-orange": "#ff6d00",
   "--magnet-violet": "#6530ff",
+  "--page-bg": "#FBFCF8",
   "--page-noise-image": "url('/assets/paper-noise.png')",
   "--page-noise-opacity": "0.038",
   "--page-noise-size": "400px",

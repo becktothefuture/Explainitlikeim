@@ -1,6 +1,7 @@
 import { applyPublicAssetVariables } from './publicAssetUrls.js';
 
 const FOUNDATIONS = {
+  pageBg: '#FBFCF8',
   slate050: '#f8faf9',
   slate100: '#edf0ee',
   slate200: '#dbe0dc',
@@ -15,6 +16,7 @@ const FOUNDATIONS = {
 };
 
 const COLORS = {
+  pageBg: FOUNDATIONS.pageBg,
   bg: FOUNDATIONS.slate200,
   bgSoft: FOUNDATIONS.slate100,
   paper: FOUNDATIONS.slate100,
@@ -122,6 +124,7 @@ export const DEPTH_CONTROL_DEFAULTS = {
 };
 
 const STATIC_THEME_VARS = {
+  '--page-bg': COLORS.pageBg,
   '--slate-050': FOUNDATIONS.slate050,
   '--slate-100': FOUNDATIONS.slate100,
   '--slate-200': FOUNDATIONS.slate200,

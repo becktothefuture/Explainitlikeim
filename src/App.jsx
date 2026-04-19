@@ -100,40 +100,28 @@ const DEBUG_UI_ENABLED = import.meta.env.DEV || import.meta.env.VITE_ENABLE_DEBU
 const LOAD_CUES = {
   header: 1,
   heroBadge: 2,
-  heroTitle: 3,
-  heroNotes: 4,
-  breakHow: 5,
-  how: 6,
-  breakExamples: 7,
-  examples: 8,
-  breakInstall: 9,
-  install: 10,
-  breakScience: 11,
-  science: 12,
-  breakDownload: 13,
-  download: 14,
-  controls: 15,
-  controlDock: 16,
+  heroSummary: 3,
+  heroTitle: 4,
+  heroNotes: 5,
+  controls: 6,
+  controlDock: 7,
 };
 const LOAD_TIMELINE = [
-  { stage: LOAD_CUES.header, delay: 720 },
-  { stage: LOAD_CUES.heroBadge, delay: 1100 },
-  { stage: LOAD_CUES.heroTitle, delay: 1600 },
-  { stage: LOAD_CUES.heroNotes, delay: 2280 },
-  { stage: LOAD_CUES.breakHow, delay: 3260 },
-  { stage: LOAD_CUES.how, delay: 3480 },
-  { stage: LOAD_CUES.breakExamples, delay: 4100 },
-  { stage: LOAD_CUES.examples, delay: 4320 },
-  { stage: LOAD_CUES.breakInstall, delay: 4940 },
-  { stage: LOAD_CUES.install, delay: 5160 },
-  { stage: LOAD_CUES.breakScience, delay: 5780 },
-  { stage: LOAD_CUES.science, delay: 6000 },
-  { stage: LOAD_CUES.breakDownload, delay: 6620 },
-  { stage: LOAD_CUES.download, delay: 6840 },
-  { stage: LOAD_CUES.controls, delay: 7360 },
-  { stage: LOAD_CUES.controlDock, delay: 7520 },
+  { stage: LOAD_CUES.header, delay: 200 },
+  { stage: LOAD_CUES.heroBadge, delay: 360 },
+  { stage: LOAD_CUES.heroSummary, delay: 520 },
+  { stage: LOAD_CUES.heroTitle, delay: 720 },
+  { stage: LOAD_CUES.heroNotes, delay: 980 },
+  { stage: LOAD_CUES.controls, delay: 1160 },
+  { stage: LOAD_CUES.controlDock, delay: 1240 },
 ];
 const FINAL_LOAD_STAGE = LOAD_TIMELINE[LOAD_TIMELINE.length - 1]?.stage ?? 0;
+const SCROLL_INTRO_DISTANCE = 300;
+const SCROLL_INTRO_BAND_RATIO = 0.2;
+const SCROLL_INTRO_ACTIVE_ROOT_MARGIN = '0px 0px 35% 0px';
+const SCROLL_INTRO_SLOW_BAND_MULTIPLIER = 1.45;
+const SCROLL_INTRO_BASE_EASE_POWER = 4.6;
+const SCROLL_INTRO_SLOW_EASE_POWER = 2.8;
 const HERO_TITLE_SLOT_PADDING_X = 28;
 const HERO_TITLE_SLOT_PADDING_Y = 24;
 const HERO_SLOT_MIN_HEIGHT = 380;
@@ -152,6 +140,8 @@ const HERO_LAYOUT_MIGRATION_EXPANSION = 1.35;
 const HERO_AUTHORED_LETTER_GAP = -48;
 const HERO_AUTHORED_WORD_GAP = 0.07;
 const HERO_AUTHORED_LINE_GAP = 48;
+
+let scrollIntroManager = null;
 
 const HERO_REFERENCE_LAYOUT = {
   'hero-0-0-E': { cx: 0.109, cy: 0.207, rotation: -4.4 },
@@ -585,6 +575,267 @@ function getLoadItemClass(baseClassName, isEntered, variantClassName = '') {
   ].filter(Boolean).join(' ');
 }
 
+function getLoadItemStyle(delay = 0) {
+  if (!delay) {
+    return undefined;
+  }
+
+  return {
+    '--enter-delay': `${delay}ms`,
+  };
+}
+
+function easeOutPower(progress, power) {
+  return 1 - ((1 - progress) ** power);
+}
+
+function applyScrollIntroState(record, progress, isSettled = false) {
+  const clampedProgress = clamp(progress, 0, 1);
+  const translateY = isSettled
+    ? 0
+    : Math.round((1 - clampedProgress) * SCROLL_INTRO_DISTANCE * 1000) / 1000;
+  const opacity = isSettled
+    ? 1
+    : Math.round(clampedProgress * 1000) / 1000;
+
+  record.node.style.setProperty('--scroll-intro-y', `${translateY}px`);
+  record.node.style.setProperty('--scroll-intro-opacity', `${opacity}`);
+  record.node.style.setProperty('--scroll-intro-progress', `${clampedProgress}`);
+  record.node.classList.toggle('is-settled', isSettled);
+}
+
+function createScrollIntroManager() {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  const records = new Map();
+  const activeRecords = new Set();
+  const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+  let frameId = 0;
+
+  const settleRecord = (record) => {
+    if (!record || record.settled) {
+      return;
+    }
+
+    record.settled = true;
+    activeRecords.delete(record);
+    applyScrollIntroState(record, 1, true);
+    observer?.unobserve(record.node);
+  };
+
+  const measureActiveRecords = () => {
+    frameId = 0;
+
+    if (reducedMotionQuery.matches) {
+      records.forEach((record) => {
+        settleRecord(record);
+      });
+      return;
+    }
+
+    if (activeRecords.size === 0) {
+      return;
+    }
+
+    const viewportHeight = Math.max(
+      window.innerHeight || 0,
+      document.documentElement.clientHeight || 0,
+      1,
+    );
+    const measurements = Array.from(activeRecords, (record) => ({
+      record,
+      rect: record.node.getBoundingClientRect(),
+    }));
+
+    measurements.forEach(({ record, rect }) => {
+      if (!records.has(record.node) || record.settled) {
+        return;
+      }
+
+      const bandRatio = SCROLL_INTRO_BAND_RATIO * (
+        record.speed === 'slow' ? SCROLL_INTRO_SLOW_BAND_MULTIPLIER : 1
+      );
+      const bandHeight = Math.max(viewportHeight * bandRatio, 1);
+      const settleLine = viewportHeight - bandHeight;
+      const rawProgress = clamp((viewportHeight - rect.top) / bandHeight, 0, 1);
+      const easedProgress = easeOutPower(
+        rawProgress,
+        record.speed === 'slow' ? SCROLL_INTRO_SLOW_EASE_POWER : SCROLL_INTRO_BASE_EASE_POWER,
+      );
+
+      applyScrollIntroState(record, easedProgress);
+
+      if (rawProgress >= 1 || rect.top <= settleLine || rect.bottom <= 0) {
+        settleRecord(record);
+        return;
+      }
+
+      if (rect.top >= viewportHeight + SCROLL_INTRO_DISTANCE + 160) {
+        activeRecords.delete(record);
+        applyScrollIntroState(record, 0);
+      }
+    });
+
+    if (activeRecords.size > 0) {
+      requestMeasure();
+    }
+  };
+
+  const requestMeasure = () => {
+    if (frameId || activeRecords.size === 0) {
+      return;
+    }
+
+    frameId = window.requestAnimationFrame(measureActiveRecords);
+  };
+
+  const handleObserverEntries = (entries) => {
+    entries.forEach((entry) => {
+      const record = records.get(entry.target);
+
+      if (!record || record.settled) {
+        return;
+      }
+
+      if (reducedMotionQuery.matches) {
+        settleRecord(record);
+        return;
+      }
+
+      if (entry.boundingClientRect.bottom <= 0) {
+        settleRecord(record);
+        return;
+      }
+
+      if (entry.isIntersecting || entry.boundingClientRect.top < window.innerHeight + SCROLL_INTRO_DISTANCE) {
+        activeRecords.add(record);
+        return;
+      }
+
+      activeRecords.delete(record);
+      applyScrollIntroState(record, 0);
+    });
+
+    requestMeasure();
+  };
+
+  const observer = typeof IntersectionObserver === 'function'
+    ? new IntersectionObserver(handleObserverEntries, {
+      rootMargin: SCROLL_INTRO_ACTIVE_ROOT_MARGIN,
+      threshold: 0,
+    })
+    : null;
+
+  const queueActiveMeasure = () => {
+    if (activeRecords.size === 0) {
+      return;
+    }
+
+    requestMeasure();
+  };
+
+  const handleMotionChange = (event) => {
+    if (event.matches) {
+      records.forEach((record) => {
+        settleRecord(record);
+      });
+      return;
+    }
+
+    records.forEach((record) => {
+      if (!record.settled) {
+        activeRecords.add(record);
+      }
+    });
+    requestMeasure();
+  };
+
+  window.addEventListener('scroll', queueActiveMeasure, { passive: true });
+  window.addEventListener('resize', queueActiveMeasure);
+
+  if (typeof reducedMotionQuery.addEventListener === 'function') {
+    reducedMotionQuery.addEventListener('change', handleMotionChange);
+  } else {
+    reducedMotionQuery.addListener(handleMotionChange);
+  }
+
+  return {
+    observe(node, { speed = 'base' } = {}) {
+      if (!node) {
+        return () => {};
+      }
+
+      const record = {
+        node,
+        speed,
+        settled: false,
+      };
+
+      records.set(node, record);
+      node.dataset.scrollIntroSpeed = speed;
+      applyScrollIntroState(record, reducedMotionQuery.matches ? 1 : 0, reducedMotionQuery.matches);
+
+      if (reducedMotionQuery.matches || !observer) {
+        settleRecord(record);
+      } else {
+        observer.observe(node);
+      }
+
+      return () => {
+        activeRecords.delete(record);
+        observer?.unobserve(node);
+        records.delete(node);
+        node.classList.remove('is-settled');
+        node.style.removeProperty('--scroll-intro-y');
+        node.style.removeProperty('--scroll-intro-opacity');
+        node.style.removeProperty('--scroll-intro-progress');
+        delete node.dataset.scrollIntroSpeed;
+      };
+    },
+  };
+}
+
+function getScrollIntroManager() {
+  if (!scrollIntroManager) {
+    scrollIntroManager = createScrollIntroManager();
+  }
+
+  return scrollIntroManager;
+}
+
+function ScrollIntro({
+  as: Tag = 'div',
+  children,
+  className = '',
+  speed = 'base',
+  ...props
+}) {
+  const nodeRef = useRef(null);
+
+  useEffect(() => {
+    const manager = getScrollIntroManager();
+    const node = nodeRef.current;
+
+    if (!manager || !node) {
+      return undefined;
+    }
+
+    return manager.observe(node, { speed });
+  }, [speed]);
+
+  return (
+    <Tag
+      ref={nodeRef}
+      className={['eli5-scroll-intro', className].filter(Boolean).join(' ')}
+      {...props}
+    >
+      {children}
+    </Tag>
+  );
+}
+
 const HERO_COPY = {
   badge: 'AI agent skill',
   summary: 'An AI skill for answers you can follow.',
@@ -594,27 +845,21 @@ const HERO_COPY = {
 
 const HOW_BENEFITS = [
   {
-    title: 'Start with the simple version.',
+    title: 'Get the simple version first.',
     copy:
-      'The first pass gets you oriented fast, before the denser language shows up.',
-    art: '/assets/how/how-benefit-start.png',
+      'The first pass is plain enough to follow straight away.',
+    art: '/assets/how/how-benefit-simple-first.png',
   },
   {
-    title: 'The detail is still there when you want it.',
+    title: 'Works on code, docs, papers, plans, and odd questions.',
     copy:
-      'Each pass adds back the terms, mechanism, and caveats, so the answer stays useful instead of getting watered down.',
-    art: '/assets/how/how-benefit-detail.png',
+      'If the answer is dense, the skill breaks it into steps instead of dumping it on your head.',
+    art: '/assets/how/how-benefit-modules.png',
   },
   {
-    title: 'It works on code, docs, papers, plans, and odd questions.',
-    copy:
-      'Anything that is correct but annoyingly dense gets easier when the answer arrives in steps instead of one long slab.',
-    art: '/assets/how/how-benefit-anywhere.png',
-  },
-  {
-    title: 'It saves you from asking twice.',
-    copy: 'You spend less time asking for a rewrite and more time using the answer.',
-    art: '/assets/how/how-benefit-reprompt.png',
+    title: 'You do not need the “say that simpler” follow-up.',
+    copy: 'The rewrite is already there, so you spend less time asking twice.',
+    art: '/assets/how/how-benefit-questions.png',
   },
 ];
 
@@ -1031,24 +1276,15 @@ const COMPAT_TOOLS = [
 const INSTALL_STEPS = [
   {
     title: 'Download the file.',
-    copy: 'Grab the skill and keep it somewhere easy to find.',
-    image: './assets/install/install-step-1.png',
-    alt: 'A hand placing the skill into an AI app.',
-    artScale: 1.08,
+    copy: 'It is one Markdown skill file. Keep it somewhere easy to find.',
   },
   {
-    title: 'Add it to your AI setup.',
-    copy: 'Use it in Codex, Claude Code, Cursor, or a similar AI setup.',
-    image: './assets/install/install-step-2.png',
-    alt: 'A chat window splitting into cleaner answer layers.',
-    artScale: 1.18,
+    title: 'Add it to your AI agent.',
+    copy: 'Use it in Codex, Claude Code, Cursor, or a similar setup.',
   },
   {
     title: 'Ask your question.',
-    copy: 'The skill rewrites the answer in five levels, so you can start simple and keep going.',
-    image: './assets/install/install-step-3.png',
-    alt: 'A person having an aha moment while learning.',
-    artScale: 1.2,
+    copy: 'You get five clearer versions back, starting with the simple one.',
   },
 ];
 
@@ -3265,6 +3501,10 @@ function SectionBreak({
 }) {
   const pillHeight = 22;
   const pillMotionSize = Math.max(28, pillHeight);
+  const dividerMagnetProps = buildSharedMagnetVisualProps(
+    levelControls,
+    getFiniteNumber(heroMagnetControls.vibrance, HERO_MAGNET_DEFAULTS.vibrance),
+  );
   const pillMagnet = createShapeMagnet({
     id: `section-break-${color}-${tilt}-${width}`,
     shapeType: 'pill',
@@ -3275,13 +3515,15 @@ function SectionBreak({
     rotation: tilt,
     color,
     magnetProps: {
-      ...buildSharedMagnetVisualProps(
-        levelControls,
-        getFiniteNumber(heroMagnetControls.vibrance, HERO_MAGNET_DEFAULTS.vibrance),
-      ),
+      ...dividerMagnetProps,
       styleReferenceHeight: pillHeight,
       motionWidth: pillMotionSize,
       motionHeight: pillMotionSize,
+      innerLightOpacity: dividerMagnetProps.innerLightOpacity * 0.82,
+      groundShadow1Opacity: dividerMagnetProps.groundShadow1Opacity * 0.56,
+      groundShadow1Blur: dividerMagnetProps.groundShadow1Blur * 0.72,
+      groundShadow2Opacity: dividerMagnetProps.groundShadow2Opacity * 0.5,
+      groundShadow2Blur: dividerMagnetProps.groundShadow2Blur * 0.68,
       x: 0,
       y: 0,
       zIndex: 1,
@@ -3321,96 +3563,6 @@ function SectionBreak({
       </div>
       <span className="eli5-section-break__rail" />
     </div>
-  );
-}
-
-function RevealOnView({
-  as: Tag = 'div',
-  active = true,
-  children,
-  className = '',
-  delay = 0,
-  rootMargin = '0px 0px 6% 0px',
-  threshold = 0.12,
-  variantClassName = '',
-  style,
-  ...props
-}) {
-  const nodeRef = useRef(null);
-  const [isVisible, setIsVisible] = useState(() => {
-    if (typeof window === 'undefined') {
-      return true;
-    }
-
-    return active && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  });
-
-  useEffect(() => {
-    if (typeof window === 'undefined' || !active) {
-      return;
-    }
-
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      setIsVisible(true);
-      return;
-    }
-
-    if (isVisible) {
-      return;
-    }
-
-    if (typeof IntersectionObserver !== 'function') {
-      setIsVisible(true);
-      return;
-    }
-
-    const node = nodeRef.current;
-
-    if (!node) {
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const nextEntry = entries[0];
-
-        if (!nextEntry?.isIntersecting) {
-          return;
-        }
-
-        setIsVisible(true);
-        observer.disconnect();
-      },
-      {
-        rootMargin,
-        threshold,
-      },
-    );
-
-    observer.observe(node);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, [active, isVisible, rootMargin, threshold]);
-
-  return (
-    <Tag
-      ref={nodeRef}
-      className={[
-        className,
-        'eli5-reveal',
-        variantClassName,
-        isVisible ? 'is-visible' : '',
-      ].filter(Boolean).join(' ')}
-      style={{
-        ...style,
-        '--reveal-delay': `${delay}ms`,
-      }}
-      {...props}
-    >
-      {children}
-    </Tag>
   );
 }
 
@@ -5476,146 +5628,143 @@ export default function App() {
   return (
     <div className="eli5-page" data-load-stage={loadStage}>
       <CustomCursor />
+      <header
+        className={getLoadItemClass(
+          'eli5-header eli5-depth--2',
+          hasEnteredLoadCue(LOAD_CUES.header),
+          'eli5-load-item--header',
+        )}
+      >
+        <nav className="eli5-nav" aria-label="Primary">
+          <a href="#how">What it does</a>
+          <a href="#examples">Examples</a>
+          <a href="#science">The science</a>
+          <a href="#install">How to install</a>
+        </nav>
+      </header>
       <main className="eli5-main">
         <div className="eli5-shell">
           <div className="eli5-surface">
             <div className="eli5-first-fold">
-              <header
-                className={getLoadItemClass(
-                  'eli5-header eli5-depth--2',
-                  hasEnteredLoadCue(LOAD_CUES.header),
-                  'eli5-load-item--header',
-                )}
-              >
-                <nav className="eli5-nav" aria-label="Primary">
-                  <a href="#how">What it does</a>
-                  <a href="#examples">Examples</a>
-                  <a href="#science">The science</a>
-                  <a href="#install">How to install</a>
-                </nav>
-              </header>
-
-                <section id="hero" className="eli5-hero">
-                  <div className="eli5-hero-stage">
-                    <h1 className="eli5-sr-only">Explain It Like I&apos;m Five</h1>
-                    <div className="eli5-hero__intro">
-                      <RevealOnView
-                        as="span"
-                        active={hasEnteredLoadCue(LOAD_CUES.heroBadge)}
-                        className="eli5-hero__badge"
-                        delay={0}
-                        variantClassName="eli5-reveal--pill"
-                      >
-                        {HERO_COPY.badge}
-                      </RevealOnView>
-                      <RevealOnView
-                        as="p"
-                        active={hasEnteredLoadCue(LOAD_CUES.heroNotes)}
-                        className="eli5-hero__summary eli5-hero__summary--lead"
-                        delay={40}
-                        variantClassName="eli5-reveal--soft"
-                      >
-                        {HERO_COPY.summary}
-                      </RevealOnView>
-                    </div>
-
-                    <div className="eli5-hero__art">
-                      <FloatingLettersCanvas
-                        boardRef={floatingLettersBoardRef}
-                        magnets={floatingLetterRenderMagnets}
-                        frameVariant={activeHeroLayoutVariant}
-                        layoutEditing={isHeroLayoutEditing}
-                        introEnabled={hasEnteredLoadCue(LOAD_CUES.heroTitle)}
-                        motionConfig={heroMagnetControls}
-                        onLayoutCommit={handleHeroLayoutDraftCommit}
-                        className={getLoadItemClass(
-                          'eli5-floating-letters eli5-floating-letters--hero',
-                          hasEnteredLoadCue(LOAD_CUES.heroTitle),
-                          'eli5-load-item--hero-title',
-                        )}
-                      />
-                    </div>
-
-                    <div
+              <section id="hero" className="eli5-hero">
+                <div className="eli5-hero-stage">
+                  <h1 className="eli5-sr-only">Explain It Like I&apos;m Five</h1>
+                  <div className="eli5-hero__intro">
+                    <span
                       className={getLoadItemClass(
-                        'eli5-hero__notes',
-                        hasEnteredLoadCue(LOAD_CUES.heroNotes),
-                        'eli5-load-item--hero-notes',
+                        'eli5-hero__badge',
+                        hasEnteredLoadCue(LOAD_CUES.heroBadge),
+                        'eli5-load-item--hero-badge',
                       )}
                     >
-                      <div className="eli5-hero__notes-copy">
-                        <RevealOnView
-                          as="p"
-                          active={hasEnteredLoadCue(LOAD_CUES.heroNotes)}
-                          className="eli5-hero__detail"
-                          delay={170}
-                          variantClassName="eli5-reveal--soft"
-                        >
-                          {HERO_COPY.detail}
-                        </RevealOnView>
-                      </div>
+                      {HERO_COPY.badge}
+                    </span>
+                    <p
+                      className={getLoadItemClass(
+                        'eli5-hero__summary eli5-hero__summary--lead',
+                        hasEnteredLoadCue(LOAD_CUES.heroSummary),
+                        'eli5-load-item--hero-summary',
+                      )}
+                      style={getLoadItemStyle(40)}
+                    >
+                      {HERO_COPY.summary}
+                    </p>
+                  </div>
 
-                      <div className="eli5-hero__actions">
-                        <RevealOnView
-                          active={hasEnteredLoadCue(LOAD_CUES.heroNotes)}
-                          className="eli5-hero__action-reveal"
-                          delay={320}
-                          variantClassName="eli5-reveal--soft"
-                        >
-                          <DownloadLink className="eli5-button eli5-button--primary eli5-button--hero-cta eli5-depth--1">
-                            Download skill
-                          </DownloadLink>
-                        </RevealOnView>
-                        <RevealOnView
-                          active={hasEnteredLoadCue(LOAD_CUES.heroNotes)}
-                          className="eli5-hero__action-reveal"
-                          delay={440}
-                          variantClassName="eli5-reveal--soft"
-                        >
-                          <a className="eli5-button eli5-button--secondary eli5-button--hero-cta eli5-depth--1" href="#examples">
-                            See Examples
-                          </a>
-                        </RevealOnView>
-                      </div>
+                  <div className="eli5-hero__art">
+                    <FloatingLettersCanvas
+                      boardRef={floatingLettersBoardRef}
+                      magnets={floatingLetterRenderMagnets}
+                      frameVariant={activeHeroLayoutVariant}
+                      layoutEditing={isHeroLayoutEditing}
+                      introEnabled={hasEnteredLoadCue(LOAD_CUES.heroTitle)}
+                      motionConfig={heroMagnetControls}
+                      onLayoutCommit={handleHeroLayoutDraftCommit}
+                      className={getLoadItemClass(
+                        'eli5-floating-letters eli5-floating-letters--hero',
+                        hasEnteredLoadCue(LOAD_CUES.heroTitle),
+                        'eli5-load-item--hero-title',
+                      )}
+                    />
+                  </div>
 
-                      <div className="eli5-hero__compat" aria-label="Supported tools">
-                        <RevealOnView
-                          as="span"
-                          active={hasEnteredLoadCue(LOAD_CUES.heroNotes)}
-                          className="eli5-hero__compat-label"
-                          delay={520}
-                          variantClassName="eli5-reveal--soft"
-                        >
-                          {HERO_COPY.compatLabel}
-                        </RevealOnView>
-                        {COMPAT_TOOLS.map((tool, index) => (
-                          <RevealOnView
-                            as="span"
-                            key={tool.key}
-                            active={hasEnteredLoadCue(LOAD_CUES.heroNotes)}
-                            className="eli5-hero__compat-item"
-                            delay={600 + index * 80}
-                            variantClassName="eli5-reveal--pill"
-                          >
-                            <span className={`eli5-tool-logo eli5-tool-logo--${tool.key}`} aria-hidden="true">
-                              <ToolLogo toolKey={tool.key} />
-                            </span>
-                            <span>{tool.label}</span>
-                          </RevealOnView>
-                        ))}
+                  <div className="eli5-hero__notes">
+                    <div className="eli5-hero__notes-copy">
+                      <p
+                        className={getLoadItemClass(
+                          'eli5-hero__detail',
+                          hasEnteredLoadCue(LOAD_CUES.heroNotes),
+                          'eli5-load-item--hero-detail',
+                        )}
+                        style={getLoadItemStyle(100)}
+                      >
+                        {HERO_COPY.detail}
+                      </p>
+                    </div>
+
+                    <div className="eli5-hero__actions">
+                      <div
+                        className={getLoadItemClass(
+                          'eli5-hero__action-reveal',
+                          hasEnteredLoadCue(LOAD_CUES.heroNotes),
+                          'eli5-load-item--hero-action',
+                        )}
+                        style={getLoadItemStyle(180)}
+                      >
+                        <DownloadLink className="eli5-button eli5-button--primary eli5-button--hero-cta eli5-depth--1">
+                          Download skill
+                        </DownloadLink>
+                      </div>
+                      <div
+                        className={getLoadItemClass(
+                          'eli5-hero__action-reveal',
+                          hasEnteredLoadCue(LOAD_CUES.heroNotes),
+                          'eli5-load-item--hero-action',
+                        )}
+                        style={getLoadItemStyle(260)}
+                      >
+                        <a className="eli5-button eli5-button--secondary eli5-button--hero-cta eli5-depth--1" href="#examples">
+                          See Examples
+                        </a>
                       </div>
                     </div>
+
+                    <div className="eli5-hero__compat" aria-label="Supported tools">
+                      <span
+                        className={getLoadItemClass(
+                          'eli5-hero__compat-label',
+                          hasEnteredLoadCue(LOAD_CUES.heroNotes),
+                          'eli5-load-item--hero-meta',
+                        )}
+                        style={getLoadItemStyle(340)}
+                      >
+                        {HERO_COPY.compatLabel}
+                      </span>
+                      {COMPAT_TOOLS.map((tool, index) => (
+                        <span
+                          key={tool.key}
+                          className={getLoadItemClass(
+                            'eli5-hero__compat-item',
+                            hasEnteredLoadCue(LOAD_CUES.heroNotes),
+                            'eli5-load-item--hero-pill',
+                          )}
+                          style={getLoadItemStyle(420 + index * 70)}
+                        >
+                          <span className={`eli5-tool-logo eli5-tool-logo--${tool.key}`} aria-hidden="true">
+                            <ToolLogo toolKey={tool.key} />
+                          </span>
+                          <span>{tool.label}</span>
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                </section>
-              </div>
+                </div>
+              </section>
+            </div>
 
             <>
                 <SectionBreak
-                  className={getLoadItemClass(
-                    'eli5-section-break',
-                    hasEnteredLoadCue(LOAD_CUES.breakHow),
-                    'eli5-load-item--divider',
-                  )}
+                  className="eli5-section-break"
                   color={SECTION_BREAK_COLORS.orange}
                   tilt={5}
                   width={114}
@@ -5623,22 +5772,10 @@ export default function App() {
                   levelControls={levelControls}
                 />
 
-                <section
-                  id="how"
-                  className={getLoadItemClass(
-                    'eli5-section eli5-section--how',
-                    hasEnteredLoadCue(LOAD_CUES.how),
-                    'eli5-load-item--section',
-                  )}
-                >
+                <section id="how" className="eli5-section eli5-section--how">
                   <div ref={howSectionRef} className="eli5-how">
                     <div className="eli5-how__copy">
-                      <RevealOnView
-                        active={hasEnteredLoadCue(LOAD_CUES.how)}
-                        className="eli5-how__intro"
-                        delay={80}
-                        variantClassName="eli5-reveal--soft"
-                      >
+                      <ScrollIntro className="eli5-how__intro" speed="slow">
                         <h2>What this skill does</h2>
                         <p className="eli5-how__lede">
                           The skill rewrites one answer in five levels. You get the simple version first, then the fuller version right underneath.
@@ -5650,36 +5787,35 @@ export default function App() {
                           prompt={HOW_EXAMPLE.prompt}
                           className="eli5-how__prompt"
                         />
-                      </RevealOnView>
+                      </ScrollIntro>
 
                       <div className="eli5-how__benefits">
                         {HOW_BENEFITS.map((benefit, index) => (
-                          <RevealOnView
-                            as="article"
-                            key={benefit.title}
-                            active={hasEnteredLoadCue(LOAD_CUES.how)}
-                            className="eli5-how-benefit"
-                            delay={180 + index * 130}
-                            variantClassName="eli5-reveal--card"
-                          >
-                            <div className="eli5-how-benefit__art" aria-hidden="true">
-                              <img src={benefit.art} alt="" loading="lazy" />
+                          <ScrollIntro as="article" key={benefit.title} className="eli5-how-benefit">
+                            <div
+                              className="eli5-how-benefit__art"
+                              aria-hidden="true"
+                              style={{
+                                '--chunky-float-delay': `${index * -0.7}s`,
+                              }}
+                            >
+                              <img
+                                className="eli5-chunky-float"
+                                src={benefit.art}
+                                alt=""
+                                loading="lazy"
+                              />
                             </div>
 
                             <div className="eli5-how-benefit__copy">
                               <h3>{benefit.title}</h3>
                               <p>{benefit.copy}</p>
                             </div>
-                          </RevealOnView>
+                          </ScrollIntro>
                         ))}
                       </div>
 
-                      <RevealOnView
-                        active={hasEnteredLoadCue(LOAD_CUES.how)}
-                        className="eli5-how__use-cases"
-                        delay={620}
-                        variantClassName="eli5-reveal--soft"
-                      >
+                      <ScrollIntro className="eli5-how__use-cases">
                         <p className="eli5-how__use-cases-label">Great for</p>
 
                         <div className="eli5-how__use-cases-list" aria-label="Best use cases">
@@ -5689,24 +5825,22 @@ export default function App() {
                             </span>
                           ))}
                         </div>
-                      </RevealOnView>
+                      </ScrollIntro>
                     </div>
 
-                    <ScrollScrubMedia
-                      trackRef={howSectionRef}
-                      topVh={HOW_GIF_STICKY_TOP_VH}
-                      label="Michael Scott waiting for the answer to become intelligible."
-                      motionControls={heroMagnetControls}
-                    />
+                    <ScrollIntro className="eli5-how__media">
+                      <ScrollScrubMedia
+                        trackRef={howSectionRef}
+                        topVh={HOW_GIF_STICKY_TOP_VH}
+                        label="Michael Scott waiting for the answer to become intelligible."
+                        motionControls={heroMagnetControls}
+                      />
+                    </ScrollIntro>
                   </div>
                 </section>
 
                 <SectionBreak
-                  className={getLoadItemClass(
-                    'eli5-section-break',
-                    hasEnteredLoadCue(LOAD_CUES.breakExamples),
-                    'eli5-load-item--divider',
-                  )}
+                  className="eli5-section-break"
                   color={SECTION_BREAK_COLORS.green}
                   tilt={-3}
                   width={101}
@@ -5714,31 +5848,13 @@ export default function App() {
                   levelControls={levelControls}
                 />
 
-                <section
-                  id="examples"
-                  className={getLoadItemClass(
-                    'eli5-section eli5-section--examples',
-                    hasEnteredLoadCue(LOAD_CUES.examples),
-                    'eli5-load-item--section',
-                  )}
-                >
-                  <RevealOnView
-                    active={hasEnteredLoadCue(LOAD_CUES.examples)}
-                    className="eli5-section-heading"
-                    delay={80}
-                    variantClassName="eli5-reveal--soft"
-                  >
+                <section id="examples" className="eli5-section eli5-section--examples">
+                  <ScrollIntro className="eli5-section-heading" speed="slow">
                     <h2>See the output.</h2>
                     <p>Pick a topic. The prompt stays short. The skill rewrites the answer in five visual levels, from simple to precise.</p>
-                  </RevealOnView>
+                  </ScrollIntro>
 
-                  <RevealOnView
-                    active={hasEnteredLoadCue(LOAD_CUES.examples)}
-                    className="eli5-playfield"
-                    data-magnet-board="playfield"
-                    delay={220}
-                    variantClassName="eli5-reveal--card"
-                  >
+                  <ScrollIntro className="eli5-playfield" data-magnet-board="playfield">
                     <div ref={playfieldBoardRef} className="eli5-playfield__board">
                       <ExampleTopicTabs
                         examples={EXAMPLES}
@@ -5780,15 +5896,11 @@ export default function App() {
                         </div>
                       </div>
                     </div>
-                  </RevealOnView>
+                  </ScrollIntro>
                 </section>
 
                 <SectionBreak
-                  className={getLoadItemClass(
-                    'eli5-section-break',
-                    hasEnteredLoadCue(LOAD_CUES.breakInstall),
-                    'eli5-load-item--divider',
-                  )}
+                  className="eli5-section-break"
                   color={SECTION_BREAK_COLORS.violet}
                   tilt={4}
                   width={109}
@@ -5796,44 +5908,28 @@ export default function App() {
                   levelControls={levelControls}
                 />
 
-                <section
-                  id="install"
-                  className={getLoadItemClass(
-                    'eli5-section eli5-section--install',
-                    hasEnteredLoadCue(LOAD_CUES.install),
-                    'eli5-load-item--section',
-                  )}
-                >
-                  <RevealOnView
-                    active={hasEnteredLoadCue(LOAD_CUES.install)}
-                    className="eli5-section-heading"
-                    delay={80}
-                    variantClassName="eli5-reveal--soft"
-                  >
+                <section id="install" className="eli5-section eli5-section--install">
+                  <ScrollIntro className="eli5-section-heading" speed="slow">
                     <h2>Add the skill in three short steps.</h2>
                     <p>This is a Markdown skill file for AI agents. Download it, add it to Codex, Claude Code, Cursor, or a similar AI setup, and ask your question as usual. That&apos;s the whole setup.</p>
-                  </RevealOnView>
+                  </ScrollIntro>
 
                   <div className="eli5-install-grid">
                     {INSTALL_STEPS.map((step, index) => (
-                      <RevealOnView
-                        as="article"
-                        key={step.title}
-                        active={hasEnteredLoadCue(LOAD_CUES.install)}
-                        className="eli5-install-step"
-                        delay={220 + index * 140}
-                        variantClassName="eli5-reveal--card"
-                      >
-                        <div className="eli5-install-step__art-frame">
-                          <img
-                            className="eli5-install-step__art"
-                            src={step.image}
-                            alt={step.alt}
-                            loading="lazy"
-                            style={{
-                              '--install-art-scale': step.artScale ?? 1,
-                            }}
-                          />
+                      <ScrollIntro as="article" key={step.title} className="eli5-install-step">
+                        <div
+                          className="eli5-install-step__art-frame"
+                          aria-hidden="true"
+                          style={{
+                            '--chunky-float-delay': `${(index * -0.7) - 0.35}s`,
+                          }}
+                        >
+                          <span
+                            className="eli5-install-step__number eli5-chunky-float"
+                            data-step={index + 1}
+                          >
+                            {index + 1}
+                          </span>
                         </div>
 
                         <div className="eli5-install-step__copy">
@@ -5841,17 +5937,13 @@ export default function App() {
                           <h3>{step.title}</h3>
                           <p>{step.copy}</p>
                         </div>
-                      </RevealOnView>
+                      </ScrollIntro>
                     ))}
                   </div>
                 </section>
 
                 <SectionBreak
-                  className={getLoadItemClass(
-                    'eli5-section-break',
-                    hasEnteredLoadCue(LOAD_CUES.breakScience),
-                    'eli5-load-item--divider',
-                  )}
+                  className="eli5-section-break"
                   color={SECTION_BREAK_COLORS.blue}
                   tilt={-6}
                   width={104}
@@ -5861,33 +5953,17 @@ export default function App() {
 
                 <section
                   id="science"
-                  className={getLoadItemClass(
-                    'eli5-section eli5-section--science',
-                    hasEnteredLoadCue(LOAD_CUES.science),
-                    'eli5-load-item--section',
-                  )}
+                  className="eli5-section eli5-section--science"
                   aria-label="The science"
                 >
-                  <RevealOnView
-                    active={hasEnteredLoadCue(LOAD_CUES.science)}
-                    className="eli5-section-heading"
-                    delay={80}
-                    variantClassName="eli5-reveal--soft"
-                  >
+                  <ScrollIntro className="eli5-section-heading" speed="slow">
                     <h2>Why this format works.</h2>
                     <p>The tone is cheeky. The method is not. Research on plain language, segmentation, scaffolding, and relevant humor points the same way: people understand more when explanations arrive in smaller, clearer steps.</p>
-                  </RevealOnView>
+                  </ScrollIntro>
 
                   <div className="eli5-science-grid">
-                    {SCIENCE_PRINCIPLES.map((item, index) => (
-                      <RevealOnView
-                        as="article"
-                        key={item.title}
-                        active={hasEnteredLoadCue(LOAD_CUES.science)}
-                        className="eli5-science-point eli5-depth--0"
-                        delay={220 + index * 120}
-                        variantClassName="eli5-reveal--card"
-                      >
+                    {SCIENCE_PRINCIPLES.map((item) => (
+                      <ScrollIntro as="article" key={item.title} className="eli5-science-point eli5-depth--0">
                         <div>
                           <h3>{item.title}</h3>
                           <p>{item.copy}</p>
@@ -5916,17 +5992,13 @@ export default function App() {
                             </div>
                           </div>
                         </div>
-                      </RevealOnView>
+                      </ScrollIntro>
                     ))}
                   </div>
                 </section>
 
                 <SectionBreak
-                  className={getLoadItemClass(
-                    'eli5-section-break',
-                    hasEnteredLoadCue(LOAD_CUES.breakDownload),
-                    'eli5-load-item--divider',
-                  )}
+                  className="eli5-section-break"
                   color={SECTION_BREAK_COLORS.red}
                   tilt={-2}
                   width={107}
@@ -5934,23 +6006,10 @@ export default function App() {
                   levelControls={levelControls}
                 />
 
-                <section
-                  id="download"
-                  className={getLoadItemClass(
-                    'eli5-section eli5-section--download',
-                    hasEnteredLoadCue(LOAD_CUES.download),
-                    'eli5-load-item--section',
-                  )}
-                >
+                <section id="download" className="eli5-section eli5-section--download">
                   <div className="eli5-cta-end">
-                    <div className="eli5-cta eli5-depth--2">
-                      <RevealOnView
-                        as="div"
-                        active={hasEnteredLoadCue(LOAD_CUES.download)}
-                        className="eli5-hero__compat eli5-cta__compat"
-                        delay={40}
-                        variantClassName="eli5-reveal--soft"
-                      >
+                    <ScrollIntro className="eli5-cta eli5-depth--2">
+                      <div className="eli5-hero__compat eli5-cta__compat">
                         <span className="eli5-hero__compat-label">{HERO_COPY.compatLabel}</span>
                         {COMPAT_TOOLS.map((tool) => (
                           <span key={`cta-${tool.key}`} className="eli5-hero__compat-item">
@@ -5960,45 +6019,22 @@ export default function App() {
                             <span>{tool.label}</span>
                           </span>
                         ))}
-                      </RevealOnView>
+                      </div>
                       <h2>Get clearer answers.</h2>
-                      <RevealOnView
-                        as="p"
-                        active={hasEnteredLoadCue(LOAD_CUES.download)}
-                        className="eli5-cta__support"
-                        delay={140}
-                        variantClassName="eli5-reveal--soft"
-                      >
+                      <p className="eli5-cta__support">
                         One question in. Five clearer versions out.
-                      </RevealOnView>
-                      <RevealOnView
-                        as="p"
-                        active={hasEnteredLoadCue(LOAD_CUES.download)}
-                        className="eli5-cta__body"
-                        delay={260}
-                        variantClassName="eli5-reveal--soft"
-                      >
+                      </p>
+                      <p className="eli5-cta__body">
                         Explain It Like I&apos;m Five is a Markdown skill for AI agents. It rewrites
                         one answer into five levels and works in Codex, Claude Code, Cursor, and similar tools.
-                      </RevealOnView>
-                      <RevealOnView
-                        active={hasEnteredLoadCue(LOAD_CUES.download)}
-                        delay={680}
-                        variantClassName="eli5-reveal--soft"
-                      >
+                      </p>
+                      <div>
                         <DownloadLink className="eli5-button eli5-button--primary eli5-button--large eli5-button--cta-download eli5-depth--1">
                           Download the skill
                         </DownloadLink>
-                      </RevealOnView>
-                    </div>
-                    <RevealOnView
-                      as="footer"
-                      active={hasEnteredLoadCue(LOAD_CUES.download)}
-                      className="eli5-site-footer eli5-depth--0"
-                      delay={820}
-                      variantClassName="eli5-reveal--soft"
-                      aria-label="Site footer"
-                    >
+                      </div>
+                    </ScrollIntro>
+                    <ScrollIntro as="footer" className="eli5-site-footer eli5-depth--0" aria-label="Site footer">
                       <div className="eli5-site-footer__brand">
                         <p className="eli5-site-footer__title">Explain It Like I&apos;m Five</p>
                         <p className="eli5-site-footer__summary">
@@ -6024,7 +6060,7 @@ export default function App() {
                           <SupportLink className="eli5-site-footer__link">Buy me a coffee</SupportLink>
                         </div>
                       </div>
-                    </RevealOnView>
+                    </ScrollIntro>
                   </div>
                 </section>
             </>
