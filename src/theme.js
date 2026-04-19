@@ -83,7 +83,7 @@ export const MAGNET_RENDER_THEME = {
 };
 
 export const LEVEL_CONTROL_STORAGE_KEY = 'eli5-scene-depth-controls-v3';
-export const DEPTH_CONTROL_STORAGE_KEY = 'eli5-depth-token-controls-v1';
+export const DEPTH_CONTROL_STORAGE_KEY = 'eli5-depth-token-controls-v4';
 
 export const LEVEL_CONTROL_DEFAULTS = {
   sceneLevelStep: 1,
@@ -99,18 +99,18 @@ export const LEVEL_CONTROL_DEFAULTS = {
 };
 
 export const DEPTH_CONTROL_DEFAULTS = {
-  depthInsetDropShadow: '0 0 0 rgba(0, 0, 0, 0)',
-  depthInsetLightEdge: 'inset 0px -1.215px 1.582px rgba(248, 250, 249, 0.109), inset 0px -2.7px 5.897px rgba(248, 250, 249, 0.132)',
-  depthInsetShadowEdge: 'inset 0px 1.08px 1.726px rgba(72, 55, 42, 0.198), inset 0px 2.7px 6.329px rgba(50, 39, 31, 0.107)',
-  depthInsetLightGradient: 'linear-gradient(180deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.08) 38%, rgba(255, 255, 255, 0) 100%)',
+  depthInsetDropShadow: '0px 0.5px 1.2px rgba(50, 39, 31, 0.038)',
+  depthInsetLightEdge: 'inset 0px -1px 0px rgba(255, 253, 247, 0.74), inset 0px -2px 3.2px rgba(248, 250, 249, 0.16)',
+  depthInsetShadowEdge: 'inset 0px 1px 0px rgba(72, 55, 42, 0.26), inset 0px 2px 3.8px rgba(50, 39, 31, 0.12)',
+  depthInsetLightGradient: 'linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.025) 56%, rgba(255, 255, 255, 0.12) 100%)',
   depth0DropShadow: '0px 3.499px 9.267px rgba(72, 55, 42, 0.002), 0px 12.546px 27.414px rgba(50, 39, 31, 0.004), 0px 29.952px 59.199px rgba(50, 39, 31, 0.002)',
   depth0LightEdge: 'inset 0px 0.8px 7.267px rgba(248, 250, 249, 0.028)',
   depth0ShadowEdge: 'inset 0px -3.2px 14.108px rgba(89, 97, 92, 0.024)',
   depth0LightGradient: 'linear-gradient(180deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.05) 42%, rgba(255, 255, 255, 0) 100%)',
-  depth1DropShadow: '0px 1.008px 4.005px rgba(72, 55, 42, 0.193), 0px 4.89px 14.799px rgba(50, 39, 31, 0.041), 0px 10.59px 29.577px rgba(50, 39, 31, 0.016)',
-  depth1LightEdge: 'inset 0px 0.8px 5.779px rgba(248, 250, 249, 0.06)',
-  depth1ShadowEdge: 'inset 0px -3.2px 10.899px rgba(89, 97, 92, 0.063)',
-  depth1LightGradient: 'linear-gradient(180deg, rgba(255, 255, 255, 0.24) 0%, rgba(255, 255, 255, 0.07) 38%, rgba(255, 255, 255, 0) 100%)',
+  depth1DropShadow: '0px 1px 2px rgba(72, 55, 42, 0.19), 0px 4px 8px rgba(50, 39, 31, 0.085), 0px 8px 16px rgba(50, 39, 31, 0.03)',
+  depth1LightEdge: 'inset 0px 1px 0px rgba(255, 253, 247, 0.92), inset 0px 1.5px 2.6px rgba(248, 250, 249, 0.18)',
+  depth1ShadowEdge: 'inset 0px -1px 0px rgba(72, 55, 42, 0.28), inset 0px -2px 4px rgba(50, 39, 31, 0.125)',
+  depth1LightGradient: 'linear-gradient(180deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.055) 28%, rgba(255, 255, 255, 0) 100%)',
   depth2DropShadow: '0px 6.579px 29.27px rgba(72, 55, 42, 0.081), 0px 34.199px 101.624px rgba(50, 39, 31, 0.06), 0px 88.447px 233.919px rgba(50, 39, 31, 0.044)',
   depth2LightEdge: 'inset 0px 0.8px 10.163px rgba(248, 250, 249, 0.072)',
   depth2ShadowEdge: 'inset 0px -3.2px 18.613px rgba(89, 97, 92, 0.076)',

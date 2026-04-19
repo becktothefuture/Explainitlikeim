@@ -25,6 +25,8 @@ const HOW_GIF_POSTER = './assets/how/michael-scott-waiting-poster.jpg';
 const HOW_GIF_STICKY_TOP_VH = 35;
 const EXAMPLE_SEPARATOR = '---';
 const EXAMPLE_TAB_VISIBLE_COUNT = 5;
+const EXAMPLE_TAB_MOBILE_VISIBLE_COUNT = 3;
+const EXAMPLE_TAB_MOBILE_BREAKPOINT = 720;
 const EXAMPLE_TAB_HEIGHT = 56;
 const EXAMPLE_TAB_GAP = 12;
 const EXAMPLE_TAB_STEP = EXAMPLE_TAB_HEIGHT + EXAMPLE_TAB_GAP;
@@ -3261,13 +3263,15 @@ function SectionBreak({
   heroMagnetControls = HERO_MAGNET_DEFAULTS,
   levelControls = LEVEL_CONTROL_DEFAULTS,
 }) {
+  const pillHeight = 22;
+  const pillMotionSize = Math.max(28, pillHeight);
   const pillMagnet = createShapeMagnet({
     id: `section-break-${color}-${tilt}-${width}`,
     shapeType: 'pill',
     authorX: 0,
     authorY: 0,
     width,
-    height: 22,
+    height: pillHeight,
     rotation: tilt,
     color,
     magnetProps: {
@@ -3275,6 +3279,9 @@ function SectionBreak({
         levelControls,
         getFiniteNumber(heroMagnetControls.vibrance, HERO_MAGNET_DEFAULTS.vibrance),
       ),
+      styleReferenceHeight: pillHeight,
+      motionWidth: pillMotionSize,
+      motionHeight: pillMotionSize,
       x: 0,
       y: 0,
       zIndex: 1,
@@ -3696,7 +3703,7 @@ function DepthLabView({
           <section className="eli5-depth-lab__minimal-demo" aria-label="Depth preview">
             <button
               type="button"
-              className="eli5-button eli5-button--primary eli5-depth--1 eli5-depth-lab__button-sample"
+              className="eli5-button eli5-button--secondary eli5-depth--1 eli5-depth-lab__button-sample"
             >
               Button
             </button>
@@ -3742,55 +3749,6 @@ function DepthLabView({
   );
 }
 
-function TypographyLabSection({
-  eyebrow,
-  title,
-  detail,
-  children,
-}) {
-  return (
-    <section className="eli5-typography-lab__section">
-      <header className="eli5-typography-lab__section-header">
-        <p className="eli5-depth-lab__eyebrow">{eyebrow}</p>
-        <h2>{title}</h2>
-        <p>{detail}</p>
-      </header>
-
-      {children}
-    </section>
-  );
-}
-
-function TypographyLabCard({
-  eyebrow,
-  title,
-  detail,
-  tokenLabel,
-  children,
-}) {
-  return (
-    <article
-      className={[
-        'eli5-depth-lab__card',
-        'eli5-typography-lab__card',
-      ].filter(Boolean).join(' ')}
-    >
-      <div className="eli5-depth-lab__card-copy">
-        <p className="eli5-depth-lab__card-level">{eyebrow}</p>
-        <h2>{title}</h2>
-        <p className="eli5-typography-lab__card-detail">{detail}</p>
-        {tokenLabel ? (
-          <p className="eli5-typography-lab__token">{tokenLabel}</p>
-        ) : null}
-      </div>
-
-      <div className="eli5-depth-lab__card-demo eli5-typography-lab__card-demo">
-        {children}
-      </div>
-    </article>
-  );
-}
-
 function TypographyLabView({
   onOpenDepthLab,
   onReturnHome,
@@ -3805,17 +3763,7 @@ function TypographyLabView({
 
       <main className="eli5-main eli5-main--depth-lab">
         <div className="eli5-depth-lab eli5-typography-lab">
-          <div className="eli5-depth-lab__topbar">
-            <div className="eli5-depth-lab__intro eli5-typography-lab__intro">
-              <p className="eli5-depth-lab__eyebrow">Typography Lab</p>
-              <h1>Final public type styles only.</h1>
-              <p>
-                This page shows the six styles the public site keeps: H1 display, H2 heading, UI,
-                body, meta, and eyebrow. Section headlines use the display style. Hero and content
-                headers use the heading style.
-              </p>
-            </div>
-
+          <div className="eli5-depth-lab__topbar eli5-typography-lab__topbar">
             <div className="eli5-depth-lab__topbar-actions">
               {onOpenDepthLab ? (
                 <button
@@ -3838,135 +3786,87 @@ function TypographyLabView({
           </div>
 
           <div className="eli5-typography-lab__stack">
-            <TypographyLabSection
-              eyebrow="Retained public styles"
-              title="The public site now runs on six text styles."
-              detail="Section headlines use the H1 display style. Hero and content headers use the H2 heading style. Everything else maps to UI, body, meta, or eyebrow."
-            >
-              <div className="eli5-typography-lab__grid">
-                <TypographyLabCard
-                  eyebrow="Main header"
-                  title="Display / H1"
-                  detail="For large section headlines like What this skill does, See the output, and Add the skill in three short steps."
-                  tokenLabel="--type-display-*"
-                >
-                  <div className="eli5-typography-lab__demo eli5-typography-lab__specimen-stack">
-                    <div className="eli5-section-heading eli5-typography-lab__section-heading-sample">
-                      <h2>What this skill does</h2>
-                    </div>
-                    <div className="eli5-section-heading eli5-typography-lab__section-heading-sample">
-                      <h2>See the output.</h2>
-                    </div>
-                    <div className="eli5-section-heading eli5-typography-lab__section-heading-sample">
-                      <h2>Add the skill in three short steps.</h2>
-                    </div>
-                  </div>
-                </TypographyLabCard>
-
-                <TypographyLabCard
-                  eyebrow="Secondary header"
-                  title="Heading / H2"
-                  detail="For the hero summary and secondary content headers. Public H3s can sit on this same style when needed."
-                  tokenLabel="--type-heading-*"
-                >
-                  <div className="eli5-typography-lab__demo eli5-typography-lab__specimen-stack">
-                    <p className="eli5-hero__summary">An AI skill for answers you can follow.</p>
-
-                    <article className="eli5-how-benefit eli5-typography-lab__heading-frame">
-                      <div className="eli5-how-benefit__copy">
-                        <h3>Start with the simple version.</h3>
-                      </div>
-                    </article>
-
-                    <article className="eli5-install-step eli5-typography-lab__heading-frame">
-                      <div className="eli5-install-step__copy">
-                        <h3>Download the file.</h3>
-                      </div>
-                    </article>
-
-                    <article className="eli5-science-point eli5-typography-lab__heading-frame eli5-depth--0">
-                      <div>
-                        <h3>Plain language improves first-pass comprehension.</h3>
-                      </div>
-                    </article>
-                  </div>
-                </TypographyLabCard>
-
-                <TypographyLabCard
-                  eyebrow="Interface"
-                  title="UI"
-                  detail="For navigation, buttons, tabs, chips, and prompt pills."
-                  tokenLabel="--type-ui-*"
-                >
-                  <div className="eli5-typography-lab__demo">
-                    <nav className="eli5-nav eli5-typography-lab__nav-preview" aria-label="Navigation type sample">
-                      <a href="#type-nav" onClick={preventDemoNavigation}>What it does</a>
-                      <a href="#type-nav" className="is-active" onClick={preventDemoNavigation}>Examples</a>
-                      <a href="#type-nav" onClick={preventDemoNavigation}>Install</a>
-                    </nav>
-
-                    <div className="eli5-typography-lab__row">
-                      <button type="button" className="eli5-button eli5-button--primary eli5-depth--1">
-                        Download the skill
-                      </button>
-                      <button type="button" className="eli5-button eli5-button--secondary eli5-depth--1">
-                        See Examples
-                      </button>
-                      <span className="eli5-prompt-field__skill eli5-prompt-field__skill--printed">
-                        Explain It Like I&apos;m Five
-                      </span>
-                    </div>
-                  </div>
-                </TypographyLabCard>
-
-                <TypographyLabCard
-                  eyebrow="Reading copy"
-                  title="Body"
-                  detail="For the plain-English paragraphs that do most of the explaining."
-                  tokenLabel="--type-body-*"
-                >
-                  <div className="eli5-typography-lab__demo eli5-typography-lab__specimen-stack">
-                    <p className="eli5-how__lede">
-                      You ask one question and get the answer in five passes, starting simple and
-                      building toward the fuller version as you keep reading.
-                    </p>
-                    <p className="eli5-cta__body">
-                      Explain It Like I&apos;m Five is a Markdown skill for AI agents. It works in
-                      Codex, Claude Code, Cursor, and similar tools.
-                    </p>
-                  </div>
-                </TypographyLabCard>
-
-                <TypographyLabCard
-                  eyebrow="Support copy"
-                  title="Meta"
-                  detail="For smaller explanatory lines, compatibility rows, and footer detail."
-                  tokenLabel="--type-meta-*"
-                >
-                  <div className="eli5-typography-lab__demo eli5-typography-lab__specimen-stack">
-                    <p className="eli5-hero__detail">
-                      Ask one question. Get five versions of the answer, from simple to precise.
-                    </p>
-                    <p className="eli5-site-footer__summary">
-                      Markdown skill for AI agents with five explanation levels.
-                    </p>
-                  </div>
-                </TypographyLabCard>
-
-                <TypographyLabCard
-                  eyebrow="Small label"
-                  title="Eyebrow"
-                  detail="For small uppercase labels that guide the scan without taking over."
-                  tokenLabel="--type-eyebrow-*"
-                >
-                  <div className="eli5-typography-lab__demo eli5-typography-lab__specimen-stack">
-                    <p className="eli5-prompt-field__label">What you ask</p>
-                    <p className="eli5-how__use-cases-label">Great for</p>
-                    <p className="eli5-site-footer__heading">Product</p>
-                  </div>
-                </TypographyLabCard>
+            <div className="eli5-typography-lab__specimens">
+              <div className="eli5-typography-lab__demo eli5-typography-lab__specimen-stack">
+                <div className="eli5-section-heading eli5-typography-lab__section-heading-sample">
+                  <h2>What this skill does</h2>
+                </div>
+                <div className="eli5-section-heading eli5-typography-lab__section-heading-sample">
+                  <h2>See the output.</h2>
+                </div>
+                <div className="eli5-section-heading eli5-typography-lab__section-heading-sample">
+                  <h2>Add the skill in three short steps.</h2>
+                </div>
               </div>
-            </TypographyLabSection>
+
+              <div className="eli5-typography-lab__demo eli5-typography-lab__specimen-stack">
+                <p className="eli5-hero__summary">An AI skill for answers you can follow.</p>
+
+                <article className="eli5-how-benefit eli5-typography-lab__heading-frame">
+                  <div className="eli5-how-benefit__copy">
+                    <h3>Start with the simple version.</h3>
+                  </div>
+                </article>
+
+                <article className="eli5-install-step eli5-typography-lab__heading-frame">
+                  <div className="eli5-install-step__copy">
+                    <h3>Download the file.</h3>
+                  </div>
+                </article>
+
+                <article className="eli5-science-point eli5-typography-lab__heading-frame eli5-depth--0">
+                  <div>
+                    <h3>Plain language improves first-pass comprehension.</h3>
+                  </div>
+                </article>
+              </div>
+
+              <div className="eli5-typography-lab__demo eli5-typography-lab__specimen-stack">
+                <nav className="eli5-nav eli5-typography-lab__nav-preview" aria-label="Navigation type sample">
+                  <a href="#type-nav" onClick={preventDemoNavigation}>What it does</a>
+                  <a href="#type-nav" className="is-active" onClick={preventDemoNavigation}>Examples</a>
+                  <a href="#type-nav" onClick={preventDemoNavigation}>Install</a>
+                </nav>
+
+                <div className="eli5-typography-lab__row">
+                  <button type="button" className="eli5-button eli5-button--primary eli5-depth--1">
+                    Download the skill
+                  </button>
+                  <button type="button" className="eli5-button eli5-button--secondary eli5-depth--1">
+                    See Examples
+                  </button>
+                  <span className="eli5-prompt-field__skill eli5-prompt-field__skill--printed">
+                    Explain It Like I&apos;m Five
+                  </span>
+                </div>
+              </div>
+
+              <div className="eli5-typography-lab__demo eli5-typography-lab__specimen-stack">
+                <p className="eli5-how__lede">
+                  You ask one question and get the answer in five passes, starting simple and
+                  building toward the fuller version as you keep reading.
+                </p>
+                <p className="eli5-cta__body">
+                  Explain It Like I&apos;m Five is a Markdown skill for AI agents. It works in
+                  Codex, Claude Code, Cursor, and similar tools.
+                </p>
+              </div>
+
+              <div className="eli5-typography-lab__demo eli5-typography-lab__specimen-stack">
+                <p className="eli5-hero__detail">
+                  Ask one question. Get five versions of the answer, from simple to precise.
+                </p>
+                <p className="eli5-site-footer__summary">
+                  Markdown skill for AI agents with five explanation levels.
+                </p>
+              </div>
+
+              <div className="eli5-typography-lab__demo eli5-typography-lab__specimen-stack">
+                <p className="eli5-prompt-field__label">What you ask</p>
+                <p className="eli5-how__use-cases-label">Great for</p>
+                <p className="eli5-site-footer__heading">Product</p>
+              </div>
+            </div>
           </div>
         </div>
       </main>
@@ -4025,6 +3925,9 @@ function ExampleTopicTabs({
   const focusTargetIndexRef = useRef(null);
   const transitionTimeoutRef = useRef(0);
   const resetFrameRef = useRef(0);
+  const [isMobileTopicRail, setIsMobileTopicRail] = useState(() =>
+    typeof window !== 'undefined' && window.innerWidth <= EXAMPLE_TAB_MOBILE_BREAKPOINT,
+  );
   const activeIndex = Math.max(0, examples.findIndex((example) => example.slug === activeSlug));
   const [committedIndex, setCommittedIndex] = useState(activeIndex);
   const [queuedSteps, setQueuedSteps] = useState(0);
@@ -4095,6 +3998,34 @@ function ExampleTopicTabs({
   useEffect(() => () => {
     clearPendingTransition();
   }, [clearPendingTransition]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const syncMobileTopicRail = () => {
+      setIsMobileTopicRail(window.innerWidth <= EXAMPLE_TAB_MOBILE_BREAKPOINT);
+    };
+
+    syncMobileTopicRail();
+    window.addEventListener('resize', syncMobileTopicRail);
+
+    return () => {
+      window.removeEventListener('resize', syncMobileTopicRail);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isMobileTopicRail) {
+      return;
+    }
+
+    clearPendingTransition();
+    setQueuedSteps(0);
+    setStepOffset(0);
+    setPhase('idle');
+  }, [clearPendingTransition, isMobileTopicRail]);
 
   useEffect(() => {
     if (!activeSlug || isAnimating || isResetting || queuedSteps !== 0) {
@@ -4239,6 +4170,29 @@ function ExampleTopicTabs({
     }
   };
 
+  const handleMobileTabKeyDown = (event, index) => {
+    switch (event.key) {
+      case 'ArrowRight':
+        event.preventDefault();
+        selectIndexImmediately(index + 1, true);
+        break;
+      case 'ArrowLeft':
+        event.preventDefault();
+        selectIndexImmediately(index - 1, true);
+        break;
+      case 'Home':
+        event.preventDefault();
+        selectIndexImmediately(0, true);
+        break;
+      case 'End':
+        event.preventDefault();
+        selectIndexImmediately(examples.length - 1, true);
+        break;
+      default:
+        break;
+    }
+  };
+
   const handleTrackTransitionEnd = (event) => {
     if (event.target !== event.currentTarget || event.propertyName !== 'transform' || !isAnimating) {
       return;
@@ -4251,6 +4205,88 @@ function ExampleTopicTabs({
   const trackShift = isAnimating
     ? `${-stepOffset * EXAMPLE_TAB_STEP}px`
     : '0px';
+  const mobileTabTrack = examples.length === 0
+    ? []
+    : Array.from({ length: EXAMPLE_TAB_MOBILE_VISIBLE_COUNT }, (_, slotIndex) => {
+      const exampleIndex = wrapIndex(
+        committedIndex + slotIndex - 1,
+        examples.length,
+      );
+
+      return {
+        example: examples[exampleIndex],
+        exampleIndex,
+        slotIndex,
+      };
+    }).filter(({ example }) => Boolean(example));
+
+  if (isMobileTopicRail) {
+    return (
+      <div className="eli5-example-tabs eli5-example-tabs--mobile">
+        <div className="eli5-example-tabs__mobile-shell" aria-label="Scroll topics">
+          <button
+            type="button"
+            className="eli5-example-tabs__chevron eli5-example-tabs__chevron--left eli5-depth--2"
+            onClick={() => selectIndexImmediately(committedIndex - 1, true)}
+            aria-label="Show previous topic"
+          >
+            <ExampleChevronIcon className="eli5-example-tabs__chevron-icon" />
+          </button>
+
+          <div
+            className="eli5-example-tabs__mobile-list"
+            role="tablist"
+            aria-label="Example topics"
+            aria-orientation="horizontal"
+          >
+            {mobileTabTrack.map(({ example, exampleIndex, slotIndex }) => {
+              const isActive = example.slug === activeSlug;
+              const exampleColor = getExampleTabIdentityColor(exampleIndex);
+              const tabRoleClassName = slotIndex === 1
+                ? 'is-center'
+                : 'is-side';
+
+              return (
+                <button
+                  key={example.slug}
+                  id={`example-tab-${example.slug}`}
+                  type="button"
+                  role="tab"
+                  tabIndex={isActive ? 0 : -1}
+                  aria-selected={isActive}
+                  aria-controls={`example-panel-${example.slug}`}
+                  className={`eli5-example-tab eli5-example-tab--mobile ${tabRoleClassName} ${isActive ? 'eli5-depth--2 is-active' : 'eli5-depth--1'}`}
+                  style={{
+                    '--example-tab-color': exampleColor,
+                  }}
+                  onClick={() => {
+                    if (isActive) {
+                      focusExampleIndex(exampleIndex);
+                      return;
+                    }
+
+                    selectIndexImmediately(exampleIndex, true);
+                  }}
+                  onKeyDown={(event) => handleMobileTabKeyDown(event, exampleIndex)}
+                >
+                  <span>{example.subject}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          <button
+            type="button"
+            className="eli5-example-tabs__chevron eli5-example-tabs__chevron--right eli5-depth--2"
+            onClick={() => selectIndexImmediately(committedIndex + 1, true)}
+            aria-label="Show next topic"
+          >
+            <ExampleChevronIcon className="eli5-example-tabs__chevron-icon" />
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -4592,7 +4628,7 @@ function FloatingLettersView({
               <div className="eli5-floating-letters-view__mode-group" aria-label="Floating letters preview">
                 <button
                   type="button"
-                  className={`eli5-floating-letters-view__mode-button${previewVariant === FLOATING_LETTERS_LAYOUT_VARIANTS.desktop ? ' is-active' : ''}`}
+                  className={`eli5-floating-letters-view__mode-button eli5-depth--1${previewVariant === FLOATING_LETTERS_LAYOUT_VARIANTS.desktop ? ' is-active' : ''}`}
                   onClick={() => onSelectPreviewVariant(FLOATING_LETTERS_LAYOUT_VARIANTS.desktop)}
                   disabled={isLayoutEditing}
                 >
@@ -4600,7 +4636,7 @@ function FloatingLettersView({
                 </button>
                 <button
                   type="button"
-                  className={`eli5-floating-letters-view__mode-button${previewVariant === FLOATING_LETTERS_LAYOUT_VARIANTS.mobile ? ' is-active' : ''}`}
+                  className={`eli5-floating-letters-view__mode-button eli5-depth--1${previewVariant === FLOATING_LETTERS_LAYOUT_VARIANTS.mobile ? ' is-active' : ''}`}
                   onClick={() => onSelectPreviewVariant(FLOATING_LETTERS_LAYOUT_VARIANTS.mobile)}
                   disabled={isLayoutEditing}
                 >

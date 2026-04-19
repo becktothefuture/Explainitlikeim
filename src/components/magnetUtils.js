@@ -370,6 +370,15 @@ function drawLetterSprite(ctx, magnet, layout, style) {
   drawCachedSprite(ctx, sprite);
 }
 
+function getSharedFaceGradientStops(style) {
+  return [
+    { position: 0, color: shiftColor(style.baseColor, 0.072 + style.faceContrast * 0.092) },
+    { position: 0.38, color: shiftColor(style.baseColor, 0.018 + style.faceContrast * 0.024) },
+    { position: 0.7, color: shiftColor(style.baseColor, -(0.014 + style.faceContrast * 0.02)) },
+    { position: 1, color: shiftColor(style.baseColor, -(0.096 + style.faceContrast * 0.126)) },
+  ];
+}
+
 function buildLetterSprite(
   magnet,
   layout,
@@ -465,12 +474,7 @@ function buildLetterSprite(
     fromY: textY - scaledMagnet.height * 0.62,
     toX: textX + scaledMagnet.width * 0.22,
     toY: textY + scaledMagnet.height * 0.78,
-    stops: [
-      { position: 0, color: shiftColor(style.baseColor, 0.072 + style.faceContrast * 0.092) },
-      { position: 0.38, color: shiftColor(style.baseColor, 0.018 + style.faceContrast * 0.024) },
-      { position: 0.7, color: shiftColor(style.baseColor, -(0.014 + style.faceContrast * 0.02)) },
-      { position: 1, color: shiftColor(style.baseColor, -(0.096 + style.faceContrast * 0.126)) },
-    ],
+    stops: getSharedFaceGradientStops(style),
   });
   const faceCtx = faceCanvas.getContext('2d');
 
@@ -598,17 +602,14 @@ function buildShapeSprite(magnet, style) {
     spread: scaledDepthSpread,
   });
 
+  const faceCenterX = pad + scaledMagnet.width / 2;
+  const faceCenterY = pad + scaledMagnet.height / 2;
   const faceCanvas = buildGradientGlyphCanvas(maskCanvas, width, height, {
-    fromX: pad - scaledMagnet.width * 0.18,
-    fromY: pad - scaledMagnet.height * 0.62,
-    toX: pad + scaledMagnet.width * 1.22,
-    toY: pad + scaledMagnet.height * 0.78,
-    stops: [
-      { position: 0, color: style.faceTop },
-      { position: 0.38, color: style.faceMid },
-      { position: 0.7, color: shiftColor(style.baseColor, -(0.014 + style.faceContrast * 0.02)) },
-      { position: 1, color: style.faceBottom },
-    ],
+    fromX: faceCenterX - scaledMagnet.width * 0.18,
+    fromY: faceCenterY - scaledMagnet.height * 0.62,
+    toX: faceCenterX + scaledMagnet.width * 0.22,
+    toY: faceCenterY + scaledMagnet.height * 0.78,
+    stops: getSharedFaceGradientStops(style),
   });
   const faceCtx = faceCanvas.getContext('2d');
 

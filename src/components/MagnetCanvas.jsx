@@ -995,8 +995,14 @@ function createFloatProfile(
   motionConfig = DEFAULT_MOTION_CONFIG,
 ) {
   const seed = hashString(`${magnet.id}:${sessionPhase.toFixed(6)}`);
-  const height = Math.max(28, magnet.height ?? magnet.size ?? 68);
-  const width = Math.max(28, magnet.width ?? height);
+  const height = Math.max(
+    28,
+    magnet.motionHeight ?? magnet.height ?? magnet.size ?? 68,
+  );
+  const width = Math.max(
+    28,
+    magnet.motionWidth ?? magnet.width ?? height,
+  );
   const unit = (shift) => ((seed >>> shift) & 1023) / 1023;
   const resolvedMotion = resolveMotionConfig(motionConfig);
 
