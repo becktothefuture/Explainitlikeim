@@ -35,8 +35,9 @@ const EXAMPLE_TAB_TRANSITION_MS = 340;
 const EXAMPLE_TAB_WINDOW_START = -1;
 const EXAMPLE_TAB_WINDOW_END = (EXAMPLE_TAB_VISIBLE_COUNT * 2) - 2;
 const EXAMPLE_TAB_WINDOW_COUNT = EXAMPLE_TAB_WINDOW_END - EXAMPLE_TAB_WINDOW_START + 1;
-const HERO_CONTROL_STORAGE_KEY = 'eli5-hero-magnet-controls-v14';
+const HERO_CONTROL_STORAGE_KEY = 'eli5-hero-magnet-controls-v15';
 const HERO_LEGACY_CONTROL_STORAGE_KEYS = [
+  'eli5-hero-magnet-controls-v14',
   'eli5-hero-magnet-controls-v13',
   'eli5-hero-magnet-controls-v12',
   'eli5-hero-magnet-controls-v11',
@@ -52,12 +53,23 @@ const HERO_LAYOUT_STORAGE_DEPRECATED_KEYS = [
   'eli5-hero-custom-layout-v4',
   'eli5-hero-custom-layout-v3',
 ];
+const FLOATING_LETTERS_LAYOUT_STORAGE_KEY = 'eli5-floating-letters-layouts-v4';
+const FLOATING_LETTER_STYLE_STORAGE_KEY = 'eli5-floating-letter-style-controls-v1';
+const FLOATING_LETTERS_LAYOUT_STORAGE_DEPRECATED_KEYS = [];
+const FLOATING_LETTERS_LAYOUT_VARIANTS = {
+  desktop: 'desktop',
+  mobile: 'mobile',
+};
+const FLOATING_LETTERS_DESKTOP_ASPECT_RATIO = 16 / 9;
+const FLOATING_LETTERS_MOBILE_ASPECT_RATIO = 4 / 3;
+const FLOATING_LETTERS_MOBILE_BREAKPOINT = 720;
 const HERO_CONTROL_WINDOW_NAME = 'eli5-hero-control-panel';
 const HERO_CONTROL_WINDOW_TITLE = "Config Panel for Explain It Like I'm Five";
 const CONTROL_PANEL_SECTION_STORAGE_KEY = 'eli5-control-panel-sections-v1';
 const APP_VIEWS = {
   home: 'home',
   depthLab: 'depth-lab',
+  floatingLetters: 'floating-letters',
   typographyLab: 'typography-lab',
 };
 const LOAD_CUES = {
@@ -109,6 +121,7 @@ const HERO_SIZE_MIN = 72;
 const HERO_SIZE_MAX = 560;
 const HERO_LAYOUT_REFERENCE_SIZE = 269;
 const HERO_DEFAULT_SIZE = 270;
+const FLOATING_LETTERS_SIZE_MULTIPLIER = 1.18;
 const HERO_LAYOUT_VERTICAL_COMPRESSION = 0.4;
 const HERO_LAYOUT_MIGRATION_EXPANSION = 1.35;
 const HERO_AUTHORED_LETTER_GAP = -48;
@@ -146,6 +159,71 @@ const HERO_REFERENCE_LAYOUT = {
   'hero-2-3-E': { cx: 0.642, cy: 0.819, rotation: -2.3 },
   'hero-2-4-…': { cx: 0.776, cy: 0.9, rotation: -1.2 },
 };
+
+const LEGACY_FLOATING_LETTERS_MOBILE_REFERENCE_LAYOUT = {
+  'hero-0-0-E': { cx: 0.165, cy: 0.262, rotation: -4.4 },
+  'hero-0-1-X': { cx: 0.286, cy: 0.278, rotation: -16.8 },
+  'hero-0-2-P': { cx: 0.414, cy: 0.248, rotation: -0.8 },
+  'hero-0-3-L': { cx: 0.536, cy: 0.264, rotation: -1.6 },
+  'hero-0-4-A': { cx: 0.656, cy: 0.256, rotation: 2.8 },
+  'hero-0-5-I': { cx: 0.762, cy: 0.244, rotation: -4.8 },
+  'hero-0-6-N': { cx: 0.858, cy: 0.246, rotation: -1.4 },
+  'hero-0-8-I': { cx: 0.22, cy: 0.51, rotation: 0.4 },
+  'hero-0-9-T': { cx: 0.348, cy: 0.48, rotation: -1.9 },
+  'hero-1-0-L': { cx: 0.518, cy: 0.512, rotation: 1.6 },
+  'hero-1-1-I': { cx: 0.626, cy: 0.513, rotation: 0.2 },
+  'hero-1-2-K': { cx: 0.732, cy: 0.499, rotation: 4.9 },
+  'hero-1-3-E': { cx: 0.846, cy: 0.498, rotation: -5.8 },
+  'hero-1-5-I': { cx: 0.21, cy: 0.738, rotation: 0.8 },
+  "hero-1-6-'": { cx: 0.264, cy: 0.652, rotation: 4.2 },
+  'hero-1-7-M': { cx: 0.376, cy: 0.736, rotation: 8.4 },
+  'hero-2-0-F': { cx: 0.546, cy: 0.78, rotation: 7.9 },
+  'hero-2-1-I': { cx: 0.654, cy: 0.782, rotation: -6.7 },
+  'hero-2-2-V': { cx: 0.758, cy: 0.768, rotation: 6.2 },
+  'hero-2-3-E': { cx: 0.864, cy: 0.772, rotation: -2.3 },
+  'hero-2-4-…': { cx: 0.925, cy: 0.822, rotation: -1.2 },
+};
+
+const FLOATING_LETTERS_MOBILE_REFERENCE_LAYOUT = {
+  'hero-0-0-E': { cx: 0.19, cy: 0.25, rotation: -4.4 },
+  'hero-0-1-X': { cx: 0.31, cy: 0.264, rotation: -16.8 },
+  'hero-0-2-P': { cx: 0.43, cy: 0.236, rotation: -0.8 },
+  'hero-0-3-L': { cx: 0.55, cy: 0.251, rotation: -1.6 },
+  'hero-0-4-A': { cx: 0.67, cy: 0.243, rotation: 2.8 },
+  'hero-0-5-I': { cx: 0.77, cy: 0.233, rotation: -4.8 },
+  'hero-0-6-N': { cx: 0.85, cy: 0.235, rotation: -1.4 },
+  'hero-0-8-I': { cx: 0.23, cy: 0.462, rotation: 0.4 },
+  'hero-0-9-T': { cx: 0.35, cy: 0.434, rotation: -1.9 },
+  'hero-1-0-L': { cx: 0.49, cy: 0.464, rotation: 1.6 },
+  'hero-1-1-I': { cx: 0.58, cy: 0.466, rotation: 0.2 },
+  'hero-1-2-K': { cx: 0.68, cy: 0.451, rotation: 4.9 },
+  'hero-1-3-E': { cx: 0.79, cy: 0.45, rotation: -5.8 },
+  'hero-1-5-I': { cx: 0.18, cy: 0.656, rotation: 0.8 },
+  "hero-1-6-'": { cx: 0.235, cy: 0.58, rotation: 4.2 },
+  'hero-1-7-M': { cx: 0.33, cy: 0.652, rotation: 8.4 },
+  'hero-2-0-F': { cx: 0.48, cy: 0.696, rotation: 7.9 },
+  'hero-2-1-I': { cx: 0.59, cy: 0.698, rotation: -6.7 },
+  'hero-2-2-V': { cx: 0.7, cy: 0.684, rotation: 6.2 },
+  'hero-2-3-E': { cx: 0.81, cy: 0.688, rotation: -2.3 },
+  'hero-2-4-…': { cx: 0.9, cy: 0.744, rotation: -1.2 },
+};
+
+const FLOATING_LETTERS_CANVAS_PRESETS = Object.freeze({
+  [FLOATING_LETTERS_LAYOUT_VARIANTS.desktop]: {
+    width: 1600,
+    height: 900,
+    aspectRatio: 16 / 9,
+    letterSize: 330,
+    fallbackMaxWidth: 972,
+  },
+  [FLOATING_LETTERS_LAYOUT_VARIANTS.mobile]: {
+    width: 1056,
+    height: 720,
+    aspectRatio: 22 / 15,
+    letterSize: 251,
+    fallbackMaxWidth: 608,
+  },
+});
 
 const HERO_MISALIGNED_LAYOUT_V5 = {
   'hero-0-0-E': { cx: 0.09063788679884617, cy: 0.215293138154343, rotation: -4.4 },
@@ -196,16 +274,16 @@ const BOARD_LAYOUTS = {
 
 const HERO_MAGNET_DEFAULTS = {
   size: HERO_DEFAULT_SIZE,
-  floatRangeX: 1,
-  floatRangeY: 1.06,
-  floatSpeed: 1.1,
-  floatRotate: 1.18,
-  hoverSink: 0.46,
-  hoverLean: 2.24,
-  bounceLift: 1.3,
-  bounceTwist: 1.88,
-  bounceSpeed: 0.37,
-  bounceDamping: 1.43,
+  floatRangeX: 1.14,
+  floatRangeY: 1.18,
+  floatSpeed: 1.24,
+  floatRotate: 1.34,
+  hoverSink: 0.58,
+  hoverLean: 2.36,
+  bounceLift: 1.52,
+  bounceTwist: 2.08,
+  bounceSpeed: 0.46,
+  bounceDamping: 1.22,
   stickyEaseBand: 196,
   stickyEaseEnterStrength: 1.36,
   stickyEaseReleaseStrength: 1.24,
@@ -231,15 +309,17 @@ const HERO_MAGNET_DEFAULTS = {
   groundShadow2OffsetY: 26.7,
   groundShadow2Blur: 7,
 };
+
+const FLOATING_LETTER_STYLE_DEFAULTS = Object.freeze({
+  styleReferenceScale: 1,
+  innerLight: 1,
+  innerShade: 1,
+  depthOffsetX: HERO_MAGNET_DEFAULTS.depthOffsetX,
+  depthOffsetY: HERO_MAGNET_DEFAULTS.depthOffsetY,
+  groundShadow: 1,
+});
+
 const HERO_CONTROL_SECTIONS = [
-  {
-    id: 'hero-layout',
-    title: 'Layout',
-    defaultCollapsed: true,
-    fields: [
-      { key: 'size', label: 'Size', min: HERO_SIZE_MIN, max: HERO_SIZE_MAX, step: 1, format: (value) => `${value}px` },
-    ],
-  },
   {
     id: 'hero-float',
     title: 'Float',
@@ -274,17 +354,33 @@ const HERO_CONTROL_SECTIONS = [
       { key: 'stickyEaseReleaseStrength', label: 'Release Drift', min: 0, max: 2.2, step: 0.01, format: (value) => value.toFixed(2) },
     ],
   },
-  {
-    id: 'hero-letters',
-    title: 'Letters',
-    defaultCollapsed: true,
-    fields: [
-      { key: 'vibrance', label: 'Vibrance', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
-    ],
-  },
 ];
 const HERO_CONTROL_FIELDS = HERO_CONTROL_SECTIONS.flatMap((section) => section.fields);
 const HERO_CONTROL_KEYS = new Set(HERO_CONTROL_FIELDS.map((field) => field.key));
+const FLOATING_LETTER_STYLE_SECTIONS = [
+  {
+    id: 'floating-style-face',
+    title: 'Surface',
+    detail: 'Keep the body controls tight: reference height, inner light, and inner shade only.',
+    defaultCollapsed: false,
+    fields: [
+      { key: 'styleReferenceScale', label: 'Reference Height', min: 0.7, max: 1.35, step: 0.01, format: (value) => `${Math.round(value * 100)}%` },
+      { key: 'innerLight', label: 'Inner Light', min: 0, max: 1.4, step: 0.01, format: (value) => value.toFixed(2) },
+      { key: 'innerShade', label: 'Inner Shade', min: 0, max: 1.4, step: 0.01, format: (value) => value.toFixed(2) },
+    ],
+  },
+  {
+    id: 'floating-style-depth',
+    title: 'Depth',
+    detail: 'Depth stays practical: X, Y, and one ground-shadow strength control.',
+    defaultCollapsed: false,
+    fields: [
+      { key: 'depthOffsetX', label: 'Depth X', min: -6, max: 8, step: 0.1, format: (value) => value.toFixed(1) },
+      { key: 'depthOffsetY', label: 'Depth Y', min: 0, max: 12, step: 0.1, format: (value) => value.toFixed(1) },
+      { key: 'groundShadow', label: 'Ground Shadow', min: 0, max: 1.6, step: 0.01, format: (value) => value.toFixed(2) },
+    ],
+  },
+];
 const DEPTH_CONTROL_SECTIONS = [
   {
     id: 'depth-inset',
@@ -350,6 +446,7 @@ const DEPTH_CONTROL_SECTIONS = [
 const DEPTH_CONTROL_KEYS = new Set(Object.keys(DEPTH_CONTROL_DEFAULTS));
 const ALL_CONTROL_PANEL_SECTIONS = [
   ...HERO_CONTROL_SECTIONS,
+  ...FLOATING_LETTER_STYLE_SECTIONS,
   ...DEPTH_CONTROL_SECTIONS,
 ];
 
@@ -408,6 +505,7 @@ function readAppView(isDebugUIEnabled = true) {
 
   switch (view) {
     case APP_VIEWS.depthLab:
+    case APP_VIEWS.floatingLetters:
     case APP_VIEWS.typographyLab:
       return view;
     default:
@@ -1120,7 +1218,88 @@ function migrateLegacyHeroMagnetControls(controls = {}, sourceKey = '') {
 }
 
 function loadHeroMagnetControls() {
+  if (typeof window === 'undefined') {
+    return HERO_MAGNET_DEFAULTS;
+  }
+
+  const currentControls = window.localStorage.getItem(HERO_CONTROL_STORAGE_KEY);
+
+  if (currentControls) {
+    try {
+      return sanitizeHeroMagnetControls(JSON.parse(currentControls));
+    } catch {
+      return HERO_MAGNET_DEFAULTS;
+    }
+  }
+
+  for (const storageKey of HERO_LEGACY_CONTROL_STORAGE_KEYS) {
+    const legacyControls = window.localStorage.getItem(storageKey);
+
+    if (!legacyControls) {
+      continue;
+    }
+
+    try {
+      return migrateLegacyHeroMagnetControls(JSON.parse(legacyControls), storageKey);
+    } catch {
+      return HERO_MAGNET_DEFAULTS;
+    }
+  }
+
   return HERO_MAGNET_DEFAULTS;
+}
+
+function sanitizeFloatingLetterStyleControls(controls = {}) {
+  return {
+    styleReferenceScale: clamp(
+      getFiniteNumber(controls.styleReferenceScale, FLOATING_LETTER_STYLE_DEFAULTS.styleReferenceScale),
+      0.7,
+      1.35,
+    ),
+    innerLight: clamp(
+      getFiniteNumber(controls.innerLight, FLOATING_LETTER_STYLE_DEFAULTS.innerLight),
+      0,
+      1.4,
+    ),
+    innerShade: clamp(
+      getFiniteNumber(controls.innerShade, FLOATING_LETTER_STYLE_DEFAULTS.innerShade),
+      0,
+      1.4,
+    ),
+    depthOffsetX: clamp(
+      getFiniteNumber(controls.depthOffsetX, FLOATING_LETTER_STYLE_DEFAULTS.depthOffsetX),
+      -6,
+      8,
+    ),
+    depthOffsetY: clamp(
+      getFiniteNumber(controls.depthOffsetY, FLOATING_LETTER_STYLE_DEFAULTS.depthOffsetY),
+      0,
+      12,
+    ),
+    groundShadow: clamp(
+      getFiniteNumber(controls.groundShadow, FLOATING_LETTER_STYLE_DEFAULTS.groundShadow),
+      0,
+      1.6,
+    ),
+  };
+}
+
+function loadFloatingLetterStyleControls() {
+  if (typeof window === 'undefined') {
+    return FLOATING_LETTER_STYLE_DEFAULTS;
+  }
+
+  try {
+    const raw = window.localStorage.getItem(FLOATING_LETTER_STYLE_STORAGE_KEY);
+
+    if (!raw) {
+      return FLOATING_LETTER_STYLE_DEFAULTS;
+    }
+
+    return sanitizeFloatingLetterStyleControls(JSON.parse(raw));
+  } catch {
+    return FLOATING_LETTER_STYLE_DEFAULTS;
+  }
 }
 
 function sanitizeHeroLayout(layout = {}) {
@@ -1248,6 +1427,56 @@ function getReferenceHeroLayout() {
   return sanitizeHeroLayout(HERO_REFERENCE_LAYOUT);
 }
 
+function getReferenceFloatingLettersMobileLayout() {
+  return sanitizeHeroLayout(FLOATING_LETTERS_MOBILE_REFERENCE_LAYOUT);
+}
+
+function getReferenceFloatingLettersLayouts() {
+  const desktopLayout = getReferenceHeroLayout();
+
+  return {
+    [FLOATING_LETTERS_LAYOUT_VARIANTS.desktop]: desktopLayout,
+    [FLOATING_LETTERS_LAYOUT_VARIANTS.mobile]: getReferenceFloatingLettersMobileLayout(),
+  };
+}
+
+function resolveHeroLayoutWithFallback(layout, fallback) {
+  const sanitizedLayout = sanitizeHeroLayout(layout);
+  return Object.keys(sanitizedLayout).length > 0
+    ? sanitizedLayout
+    : sanitizeHeroLayout(fallback);
+}
+
+function sanitizeFloatingLettersLayouts(layouts = {}) {
+  const referenceLayouts = getReferenceFloatingLettersLayouts();
+  const hasVariantKeys =
+    layouts &&
+    typeof layouts === 'object' &&
+    (
+      FLOATING_LETTERS_LAYOUT_VARIANTS.desktop in layouts ||
+      FLOATING_LETTERS_LAYOUT_VARIANTS.mobile in layouts
+    );
+  const desktopSource = hasVariantKeys
+    ? layouts[FLOATING_LETTERS_LAYOUT_VARIANTS.desktop]
+    : layouts;
+  const desktopLayout = resolveHeroLayoutWithFallback(
+    desktopSource,
+    referenceLayouts[FLOATING_LETTERS_LAYOUT_VARIANTS.desktop],
+  );
+  const mobileSource = hasVariantKeys
+    ? layouts[FLOATING_LETTERS_LAYOUT_VARIANTS.mobile]
+    : null;
+  const mobileLayout = resolveHeroLayoutWithFallback(
+    mobileSource,
+    referenceLayouts[FLOATING_LETTERS_LAYOUT_VARIANTS.mobile],
+  );
+
+  return {
+    [FLOATING_LETTERS_LAYOUT_VARIANTS.desktop]: desktopLayout,
+    [FLOATING_LETTERS_LAYOUT_VARIANTS.mobile]: mobileLayout,
+  };
+}
+
 function getHeroLayoutRenderExpansion(heroMagnetControls = HERO_MAGNET_DEFAULTS) {
   const heroControls = sanitizeHeroMagnetControls(heroMagnetControls);
   const sizeRatio = heroControls.size / HERO_LAYOUT_REFERENCE_SIZE;
@@ -1261,6 +1490,43 @@ function getHeroLayoutRenderExpansion(heroMagnetControls = HERO_MAGNET_DEFAULTS)
 
 function loadHeroLayout() {
   return getReferenceHeroLayout();
+}
+
+function loadFloatingLettersLayouts() {
+  if (typeof window === 'undefined') {
+    return getReferenceFloatingLettersLayouts();
+  }
+
+  try {
+    const raw = window.localStorage.getItem(FLOATING_LETTERS_LAYOUT_STORAGE_KEY);
+
+    if (raw) {
+      return sanitizeFloatingLettersLayouts(JSON.parse(raw));
+    }
+  } catch {
+    return getReferenceFloatingLettersLayouts();
+  }
+
+  return getReferenceFloatingLettersLayouts();
+}
+
+function getFloatingLettersViewportVariant(viewportWidth) {
+  if (typeof window === 'undefined' && !Number.isFinite(viewportWidth)) {
+    return FLOATING_LETTERS_LAYOUT_VARIANTS.desktop;
+  }
+
+  const width = Number.isFinite(viewportWidth) ? viewportWidth : window.innerWidth;
+
+  return width <= FLOATING_LETTERS_MOBILE_BREAKPOINT
+    ? FLOATING_LETTERS_LAYOUT_VARIANTS.mobile
+    : FLOATING_LETTERS_LAYOUT_VARIANTS.desktop;
+}
+
+function getFloatingLettersCanvasPreset(
+  layoutVariant = FLOATING_LETTERS_LAYOUT_VARIANTS.desktop,
+) {
+  return FLOATING_LETTERS_CANVAS_PRESETS[layoutVariant]
+    ?? FLOATING_LETTERS_CANVAS_PRESETS[FLOATING_LETTERS_LAYOUT_VARIANTS.desktop];
 }
 
 function createPhraseMagnets({
@@ -2102,13 +2368,20 @@ function buildAuthoredMagnets(
   levelControls = LEVEL_CONTROL_DEFAULTS,
 ) {
   const heroControls = sanitizeHeroMagnetControls(heroMagnetControls);
+  const scaledHeroControls = {
+    ...heroControls,
+    size: Math.round(heroControls.size * FLOATING_LETTERS_SIZE_MULTIPLIER),
+  };
   const sharedMagnetProps = buildSharedMagnetVisualProps(
     levelControls,
     heroControls.vibrance,
   );
 
   return [
-    ...buildHeroTitleAuthoredMagnets(heroMagnetControls, sharedMagnetProps),
+    ...buildHeroTitleAuthoredMagnets(scaledHeroControls, {
+      ...sharedMagnetProps,
+      styleReferenceHeight: HERO_LAYOUT_REFERENCE_SIZE,
+    }),
   ];
 }
 
@@ -2280,6 +2553,222 @@ function applyPersistedHeroLayout(
   });
 
   return positionedMagnets;
+}
+
+function measureElementPageRect(node) {
+  if (!node) {
+    return null;
+  }
+
+  const rect = node.getBoundingClientRect();
+
+  if (rect.width <= 0 || rect.height <= 0) {
+    return null;
+  }
+
+  return {
+    left: rect.left + window.scrollX,
+    top: rect.top + window.scrollY,
+    width: rect.width,
+    height: rect.height,
+  };
+}
+
+function getFloatingLettersAspectRatio(layoutVariant) {
+  return getFloatingLettersCanvasPreset(layoutVariant).aspectRatio;
+}
+
+function buildFloatingLettersVisualProps(
+  referenceHeight,
+  styleControls = FLOATING_LETTER_STYLE_DEFAULTS,
+) {
+  const controls = sanitizeFloatingLetterStyleControls(styleControls);
+  const lightAmount = controls.innerLight;
+  const shadeAmount = controls.innerShade;
+  const shadowAmount = controls.groundShadow;
+
+  return {
+    styleReferenceHeight: referenceHeight * controls.styleReferenceScale,
+    innerLightOpacity: clamp(HERO_MAGNET_DEFAULTS.innerLightOpacity * lightAmount, 0, 1),
+    innerLightOffsetY: HERO_MAGNET_DEFAULTS.innerLightOffsetY,
+    innerLightBlur: clamp(
+      HERO_MAGNET_DEFAULTS.innerLightBlur * (0.82 + lightAmount * 0.36),
+      0,
+      16,
+    ),
+    innerShadeOpacity: clamp(HERO_MAGNET_DEFAULTS.innerShadeOpacity * shadeAmount, 0, 1),
+    innerShadeOffsetX: HERO_MAGNET_DEFAULTS.innerShadeOffsetX,
+    innerShadeOffsetY: HERO_MAGNET_DEFAULTS.innerShadeOffsetY,
+    innerShadeBlur: clamp(
+      HERO_MAGNET_DEFAULTS.innerShadeBlur * (0.82 + shadeAmount * 0.28),
+      0,
+      16,
+    ),
+    depthContrast: HERO_MAGNET_DEFAULTS.depthContrast,
+    depthOffsetX: controls.depthOffsetX,
+    depthOffsetY: controls.depthOffsetY,
+    depthSpread: HERO_MAGNET_DEFAULTS.depthSpread,
+    groundShadow1Opacity: clamp(
+      HERO_MAGNET_DEFAULTS.groundShadow1Opacity * shadowAmount,
+      0,
+      1,
+    ),
+    groundShadow1OffsetX: HERO_MAGNET_DEFAULTS.groundShadow1OffsetX,
+    groundShadow1OffsetY: HERO_MAGNET_DEFAULTS.groundShadow1OffsetY,
+    groundShadow1Blur: clamp(
+      HERO_MAGNET_DEFAULTS.groundShadow1Blur * (0.88 + shadowAmount * 0.24),
+      0,
+      40,
+    ),
+    groundShadow2Opacity: clamp(
+      HERO_MAGNET_DEFAULTS.groundShadow2Opacity * shadowAmount,
+      0,
+      1,
+    ),
+    groundShadow2OffsetX: HERO_MAGNET_DEFAULTS.groundShadow2OffsetX,
+    groundShadow2OffsetY: HERO_MAGNET_DEFAULTS.groundShadow2OffsetY,
+    groundShadow2Blur: clamp(
+      HERO_MAGNET_DEFAULTS.groundShadow2Blur * (0.88 + shadowAmount * 0.24),
+      0,
+      72,
+    ),
+  };
+}
+
+function resolveFloatingLettersLayoutPosition(layoutValue, canvasRect, width, height) {
+  if (Number.isFinite(layoutValue?.cx) && Number.isFinite(layoutValue?.cy)) {
+    return {
+      x: canvasRect.left + layoutValue.cx * canvasRect.width - width / 2,
+      y: canvasRect.top + layoutValue.cy * canvasRect.height - height / 2,
+    };
+  }
+
+  return {
+    x: canvasRect.left + getFiniteNumber(layoutValue?.x, 0) * Math.max(canvasRect.width - width, 0),
+    y: canvasRect.top + getFiniteNumber(layoutValue?.y, 0) * Math.max(canvasRect.height - height, 0),
+  };
+}
+
+function buildFloatingLettersMagnets(
+  boardRect,
+  heroLayout = {},
+  layoutVariant = FLOATING_LETTERS_LAYOUT_VARIANTS.desktop,
+) {
+  if (!boardRect) {
+    return [];
+  }
+
+  const preset = getFloatingLettersCanvasPreset(layoutVariant);
+  const referenceLayouts = getReferenceFloatingLettersLayouts();
+  const resolvedLayout = resolveHeroLayoutWithFallback(
+    heroLayout,
+    referenceLayouts[layoutVariant],
+  );
+  const authoredMagnets = buildHeroTitleAuthoredMagnets(
+    { size: preset.letterSize },
+  );
+  const scale = Math.min(
+    boardRect.width / Math.max(preset.width, 1),
+    boardRect.height / Math.max(preset.height, 1),
+  );
+  const renderedWidth = preset.width * scale;
+  const renderedHeight = preset.height * scale;
+  const canvasRect = {
+    left: boardRect.left + Math.max((boardRect.width - renderedWidth) / 2, 0),
+    top: boardRect.top + Math.max((boardRect.height - renderedHeight) / 2, 0),
+    width: renderedWidth,
+    height: renderedHeight,
+  };
+  const canvasBounds = {
+    left: canvasRect.left,
+    top: canvasRect.top,
+    right: canvasRect.left + canvasRect.width,
+    bottom: canvasRect.top + canvasRect.height,
+  };
+
+  return authoredMagnets.map((magnet) => {
+    const baseHeight = Math.max(28, magnet.height ?? magnet.size ?? 68);
+    const baseWidth = magnet.width ?? getMagnetWidthForLabel(magnet.label, baseHeight);
+    const width = baseWidth * scale;
+    const height = baseHeight * scale;
+    const layoutValue = resolvedLayout[magnet.id];
+
+    if (!layoutValue) {
+      return null;
+    }
+
+    const nextPosition = resolveFloatingLettersLayoutPosition(
+      layoutValue,
+      canvasRect,
+      width,
+      height,
+    );
+
+    return {
+      ...magnet,
+      x: clamp(nextPosition.x, canvasBounds.left, canvasBounds.right - width),
+      y: clamp(nextPosition.y, canvasBounds.top, canvasBounds.bottom - height),
+      size: magnet.size ? magnet.size * scale : magnet.size,
+      width,
+      height,
+      rotation: clamp(getFiniteNumber(layoutValue.rotation, magnet.rotation ?? 0), -45, 45),
+      bounds: canvasBounds,
+      userPlaced: true,
+    };
+  }).filter(Boolean);
+}
+
+function getFloatingLettersLayoutRect(
+  boardRect,
+  layoutVariant = FLOATING_LETTERS_LAYOUT_VARIANTS.desktop,
+  heroMagnetControls = HERO_MAGNET_DEFAULTS,
+) {
+  if (!boardRect) {
+    return {
+      left: 0,
+      top: 0,
+      width: 0,
+      height: 0,
+    };
+  }
+
+  if (layoutVariant === FLOATING_LETTERS_LAYOUT_VARIANTS.mobile) {
+    return boardRect;
+  }
+
+  return buildCenteredHeroBoardRect(
+    boardRect,
+    heroMagnetControls,
+    buildHeroTitleSlot(boardRect),
+  );
+}
+
+function buildFallbackFloatingLettersBoardRect(
+  layoutVariant = FLOATING_LETTERS_LAYOUT_VARIANTS.desktop,
+) {
+  if (typeof window === 'undefined') {
+    return {
+      left: 0,
+      top: 0,
+      width: 0,
+      height: 0,
+    };
+  }
+
+  const preset = getFloatingLettersCanvasPreset(layoutVariant);
+  const maxWidth = Math.min(
+    window.innerWidth - 32,
+    preset.fallbackMaxWidth,
+  );
+  const width = Math.max(maxWidth, 0);
+  const aspectRatio = preset.aspectRatio;
+
+  return {
+    left: 0,
+    top: 0,
+    width,
+    height: width / Math.max(aspectRatio, 0.01),
+  };
 }
 
 function buildFallbackBoardRects() {
@@ -2646,8 +3135,8 @@ function ControlPanelSurface({
         <div className="eli5-control-panel__layout-tools">
           <p className="eli5-control-panel__layout-caption">
             {isLayoutEditing
-              ? 'Drag the hero letters on the page, then save this composition as the new resting layout. Press / to hide or show this panel while you work.'
-              : 'Use Edit Layout to drag the hero letters into place, then save that composition as the new default.'}
+              ? 'Drag the floating letters on the page, then save this composition as the current layout. Press / to hide or show this panel while you work.'
+              : 'Use Edit Layout to drag the floating letters into place, then save that composition as the current layout.'}
           </p>
 
           <div className="eli5-control-panel__layout-actions">
@@ -2757,6 +3246,39 @@ function ControlPanelSurface({
         })}
       </div>
     </aside>
+  );
+}
+
+function FloatingLettersCanvas({
+  boardRef,
+  magnets,
+  frameVariant = FLOATING_LETTERS_LAYOUT_VARIANTS.desktop,
+  layoutEditing = false,
+  introEnabled = true,
+  motionConfig = HERO_MAGNET_DEFAULTS,
+  onLayoutCommit,
+  className = '',
+}) {
+  return (
+    <div
+      ref={boardRef}
+      aria-hidden="true"
+      className={className}
+      data-floating-letters-frame={frameVariant}
+      data-layout-editing={layoutEditing ? 'true' : undefined}
+    >
+      {magnets.length > 0 ? (
+        <MagnetCanvas
+          className={`eli5-magnet-layer${layoutEditing ? ' is-layout-editing' : ''}`}
+          magnets={magnets}
+          introEnabled={introEnabled}
+          motionConfig={motionConfig}
+          localCoordinates
+          layoutEditing={layoutEditing}
+          onLayoutCommit={onLayoutCommit}
+        />
+      ) : null}
+    </div>
   );
 }
 
@@ -2976,8 +3498,7 @@ function TypographyLabCard({
   eyebrow,
   title,
   detail,
-  selector,
-  wide = false,
+  tokenLabel,
   children,
 }) {
   return (
@@ -2985,15 +3506,14 @@ function TypographyLabCard({
       className={[
         'eli5-depth-lab__card',
         'eli5-typography-lab__card',
-        wide ? 'eli5-typography-lab__card--wide' : '',
       ].filter(Boolean).join(' ')}
     >
       <div className="eli5-depth-lab__card-copy">
         <p className="eli5-depth-lab__card-level">{eyebrow}</p>
         <h2>{title}</h2>
-        <p>{detail}</p>
-        {selector ? (
-          <code className="eli5-typography-lab__selector">{selector}</code>
+        <p className="eli5-typography-lab__card-detail">{detail}</p>
+        {tokenLabel ? (
+          <p className="eli5-typography-lab__token">{tokenLabel}</p>
         ) : null}
       </div>
 
@@ -3019,12 +3539,13 @@ function TypographyLabView({
       <main className="eli5-main eli5-main--depth-lab">
         <div className="eli5-depth-lab eli5-typography-lab">
           <div className="eli5-depth-lab__topbar">
-            <div className="eli5-depth-lab__intro">
+            <div className="eli5-depth-lab__intro eli5-typography-lab__intro">
               <p className="eli5-depth-lab__eyebrow">Typography Lab</p>
-              <h1>Check every live text style without hunting through the landing page.</h1>
+              <h1>Final public type styles only.</h1>
               <p>
-                These specimens use the site&apos;s actual classes, in the colors they normally show
-                up in, so you can judge the real type system instead of a decorative fake one.
+                This page shows the six styles the public site keeps: H1 display, H2 heading, UI,
+                body, meta, and eyebrow. Section headlines use the display style. Hero and content
+                headers use the heading style.
               </p>
             </div>
 
@@ -3051,469 +3572,130 @@ function TypographyLabView({
 
           <div className="eli5-typography-lab__stack">
             <TypographyLabSection
-              eyebrow="Families"
-              title="The site uses two font families."
-              detail="One handles the readable UI. The other is reserved for the hero magnets, because one dramatic exception is enough."
+              eyebrow="Retained public styles"
+              title="The public site now runs on six text styles."
+              detail="Section headlines use the H1 display style. Hero and content headers use the H2 heading style. Everything else maps to UI, body, meta, or eyebrow."
             >
               <div className="eli5-typography-lab__grid">
                 <TypographyLabCard
-                  eyebrow="Family"
-                  title="UI / body"
-                  detail="This is the working voice for navigation, headings, body copy, prompts, examples, and CTAs."
-                  selector="--font-ui"
+                  eyebrow="Main header"
+                  title="Display / H1"
+                  detail="For large section headlines like What this skill does, See the output, and Add the skill in three short steps."
+                  tokenLabel="--type-display-*"
                 >
-                  <div className="eli5-typography-lab__demo">
-                    <p className="eli5-typography-lab__family-note">Outfit</p>
-                    <p className="eli5-typography-lab__family-sample eli5-typography-lab__family-sample--body">
-                      A clear sentence beats a grand speech.
-                    </p>
-                    <p className="eli5-hero__detail">
-                      It stays readable at almost every size on the site and does not start showing
-                      off halfway through the job.
-                    </p>
+                  <div className="eli5-typography-lab__demo eli5-typography-lab__specimen-stack">
+                    <div className="eli5-section-heading eli5-typography-lab__section-heading-sample">
+                      <h2>What this skill does</h2>
+                    </div>
+                    <div className="eli5-section-heading eli5-typography-lab__section-heading-sample">
+                      <h2>See the output.</h2>
+                    </div>
+                    <div className="eli5-section-heading eli5-typography-lab__section-heading-sample">
+                      <h2>Add the skill in three short steps.</h2>
+                    </div>
                   </div>
                 </TypographyLabCard>
 
                 <TypographyLabCard
-                  eyebrow="Family"
-                  title="Hero magnet lettering"
-                  detail="Used for the hero letters only. The headline gets to be louder than the rest of the site."
-                  selector="--font-magnet"
+                  eyebrow="Secondary header"
+                  title="Heading / H2"
+                  detail="For the hero summary and secondary content headers. Public H3s can sit on this same style when needed."
+                  tokenLabel="--type-heading-*"
                 >
-                  <div className="eli5-typography-lab__demo">
-                    <p className="eli5-typography-lab__family-note">Fredoka</p>
-                    <p className="eli5-typography-lab__family-sample eli5-typography-lab__family-sample--magnet">
-                      {"EXPLAIN IT LIKE I'M FIVE".split('').map((character, index) => (
-                        <span
-                          key={`magnet-sample-${index}`}
-                          style={{
-                            color:
-                              character === ' '
-                                ? 'transparent'
-                                : MAGNET_COLORS[index % MAGNET_COLORS.length],
-                          }}
-                        >
-                          {character === ' ' ? '\u00A0' : character}
-                        </span>
-                      ))}
-                    </p>
-                    <p className="eli5-hero__detail">
-                      Bright, chunky, and deliberately not invited to the body copy.
-                    </p>
+                  <div className="eli5-typography-lab__demo eli5-typography-lab__specimen-stack">
+                    <p className="eli5-hero__summary">An AI skill for answers you can follow.</p>
+
+                    <article className="eli5-how-benefit eli5-typography-lab__heading-frame">
+                      <div className="eli5-how-benefit__copy">
+                        <h3>Start with the simple version.</h3>
+                      </div>
+                    </article>
+
+                    <article className="eli5-install-step eli5-typography-lab__heading-frame">
+                      <div className="eli5-install-step__copy">
+                        <h3>Download the file.</h3>
+                      </div>
+                    </article>
+
+                    <article className="eli5-science-point eli5-typography-lab__heading-frame eli5-depth--0">
+                      <div>
+                        <h3>Plain language improves first-pass comprehension.</h3>
+                      </div>
+                    </article>
                   </div>
                 </TypographyLabCard>
-              </div>
-            </TypographyLabSection>
 
-            <TypographyLabSection
-              eyebrow="Chrome"
-              title="Navigation, actions, and control labels stay crisp and compact."
-              detail="These are the styles you keep clicking, so they need to read fast before they try to look pretty."
-            >
-              <div className="eli5-typography-lab__grid">
                 <TypographyLabCard
-                  eyebrow="Navigation"
-                  title="Primary nav and example tabs"
-                  detail="Pill labels use a tighter weight and smaller size than the big content headings."
-                  selector=".eli5-nav a, .eli5-example-tab"
+                  eyebrow="Interface"
+                  title="UI"
+                  detail="For navigation, buttons, tabs, chips, and prompt pills."
+                  tokenLabel="--type-ui-*"
                 >
                   <div className="eli5-typography-lab__demo">
                     <nav className="eli5-nav eli5-typography-lab__nav-preview" aria-label="Navigation type sample">
                       <a href="#type-nav" onClick={preventDemoNavigation}>What it does</a>
-                      <a href="#type-nav" className="is-active" onClick={preventDemoNavigation}>See output</a>
+                      <a href="#type-nav" className="is-active" onClick={preventDemoNavigation}>Examples</a>
                       <a href="#type-nav" onClick={preventDemoNavigation}>Install</a>
                     </nav>
 
                     <div className="eli5-typography-lab__row">
-                      <button
-                        type="button"
-                        className="eli5-example-tab eli5-depth--1"
-                        style={{ '--example-tab-color': 'var(--magnet-orange)' }}
-                      >
-                        Inflation
+                      <button type="button" className="eli5-button eli5-button--primary eli5-depth--1">
+                        Download the skill
                       </button>
-                      <button
-                        type="button"
-                        className="eli5-example-tab is-active eli5-depth--2"
-                        style={{ '--example-tab-color': 'var(--magnet-violet)' }}
-                      >
-                        Banking
+                      <button type="button" className="eli5-button eli5-button--secondary eli5-depth--1">
+                        See Examples
                       </button>
+                      <span className="eli5-prompt-field__skill eli5-prompt-field__skill--printed">
+                        Explain It Like I&apos;m Five
+                      </span>
                     </div>
                   </div>
                 </TypographyLabCard>
 
                 <TypographyLabCard
-                  eyebrow="Actions"
-                  title="Buttons"
-                  detail="Primary, secondary, and header buttons share one type base, then change only by context."
-                  selector=".eli5-button"
+                  eyebrow="Reading copy"
+                  title="Body"
+                  detail="For the plain-English paragraphs that do most of the explaining."
+                  tokenLabel="--type-body-*"
                 >
-                  <div className="eli5-typography-lab__demo">
-                    <div className="eli5-typography-lab__row">
-                      <button type="button" className="eli5-button eli5-button--primary eli5-depth--1">Download the skill</button>
-                      <button type="button" className="eli5-button eli5-button--secondary eli5-depth--1">See the output</button>
-                    </div>
-                    <div className="eli5-typography-lab__row">
-                      <button type="button" className="eli5-button eli5-button--primary eli5-button--header eli5-depth--1">Download</button>
-                      <button type="button" className="eli5-button eli5-button--secondary eli5-button--header eli5-depth--1">See output</button>
-                    </div>
-                  </div>
-                </TypographyLabCard>
-
-                <TypographyLabCard
-                  eyebrow="Panel"
-                  title="Control panel copy"
-                  detail="The control panel keeps its labels practical: quiet eyebrow, strong title, plain caption, compact row labels."
-                  selector=".eli5-control-panel*"
-                  wide
-                >
-                  <div className="eli5-typography-lab__panel-preview">
-                    <aside className="eli5-control-panel eli5-depth--2" aria-label="Control panel type specimen">
-                      <div className="eli5-control-panel__header">
-                        <div>
-                          <p className="eli5-control-panel__eyebrow">Linked control panel</p>
-                          <h2>Live page controls</h2>
-                          <p className="eli5-control-panel__caption">
-                            Edit each depth class directly. Every level has its own drop shadow, light edge, shadow edge, and light gradient.
-                          </p>
-                        </div>
-
-                        <div className="eli5-control-panel__actions">
-                          <button type="button" className="eli5-control-panel__reset eli5-depth--1">Reset</button>
-                          <button type="button" className="eli5-control-panel__close eli5-depth--1">Close</button>
-                        </div>
-                      </div>
-
-                      <div className="eli5-control-panel__layout-tools">
-                        <p className="eli5-control-panel__layout-caption">
-                          Use Edit Layout to drag the hero letters into place, then save that composition as the new default.
-                        </p>
-
-                        <div className="eli5-control-panel__layout-actions">
-                          <button type="button" className="eli5-control-panel__close eli5-depth--1">Edit Layout</button>
-                          <button type="button" className="eli5-control-panel__reset eli5-depth--1">Use Reference</button>
-                        </div>
-                      </div>
-
-                      <section className="eli5-control-section">
-                        <button type="button" className="eli5-control-section__toggle" aria-expanded="true">
-                          <span>Depth 1</span>
-                          <span className="eli5-control-section__toggle-state">Hide</span>
-                        </button>
-
-                        <div className="eli5-control-panel__rows">
-                          <label className="eli5-control-row eli5-control-row--token">
-                            <span className="eli5-control-row__top">
-                              <span>Drop Shadow</span>
-                              <code className="eli5-control-row__token-name">--eli5-depth-1-drop-shadow</code>
-                            </span>
-                            <textarea
-                              className="eli5-control-row__textarea"
-                              rows={3}
-                              defaultValue="0px 1px 4px rgba(72, 55, 42, 0.19), 0px 5px 15px rgba(50, 39, 31, 0.04)"
-                            />
-                          </label>
-                        </div>
-                      </section>
-                    </aside>
-                  </div>
-                </TypographyLabCard>
-              </div>
-            </TypographyLabSection>
-
-            <TypographyLabSection
-              eyebrow="Content"
-              title="The content stack moves from loud headings to calmer body copy."
-              detail="Big statements pull attention. Supporting text settles down quickly so the page still reads like help instead of theatre."
-            >
-              <div className="eli5-typography-lab__grid">
-                <TypographyLabCard
-                  eyebrow="Hero"
-                  title="Hero badge, summary, detail, and compatibility line"
-                  detail="The hero uses one printed badge, one stronger summary line, one calmer detail line, and a compact compatibility row."
-                  selector=".eli5-hero__badge, .eli5-hero__summary, .eli5-hero__detail, .eli5-hero__compat"
-                  wide
-                >
-                  <div className="eli5-typography-lab__demo eli5-typography-lab__hero-preview">
-                    <div className="eli5-hero__badge eli5-hero__badge--printed eli5-depth--1">Skill for AI agents</div>
-
-                    <div className="eli5-hero__notes">
-                      <div className="eli5-hero__notes-copy">
-                        <p className="eli5-hero__summary">An AI skill for answers you can follow.</p>
-                        <p className="eli5-hero__detail">
-                          Install it in any AI agent. Ask one question. Get five versions of the
-                          answer, from simple to precise.
-                        </p>
-                      </div>
-
-                      <div className="eli5-hero__compat" aria-label="Supported tools">
-                        <span className="eli5-hero__compat-label">Works in</span>
-                        {COMPAT_TOOLS.map((tool) => (
-                          <span key={tool.key} className="eli5-hero__compat-item">
-                            <span className={`eli5-tool-logo eli5-tool-logo--${tool.key}`} aria-hidden="true">
-                              <ToolLogo toolKey={tool.key} />
-                            </span>
-                            <span>{tool.label}</span>
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </TypographyLabCard>
-
-                <TypographyLabCard
-                  eyebrow="Prompts"
-                  title="Prompt field labels"
-                  detail="Labels stay quiet. The prompt itself gets the stronger weight."
-                  selector=".eli5-prompt-field*"
-                >
-                  <div className="eli5-prompt-field">
-                    <p className="eli5-prompt-field__label">What you ask</p>
-                    <div className="eli5-prompt-field__shell eli5-depth--inset">
-                      <span className="eli5-prompt-field__skill eli5-prompt-field__skill--printed">Skills for AI agents</span>
-                      <span className="eli5-prompt-field__text">Explain inflation like I&apos;m five</span>
-                      <span className="eli5-prompt-field__cursor" aria-hidden="true" />
-                    </div>
-                  </div>
-                </TypographyLabCard>
-
-                <TypographyLabCard
-                  eyebrow="Headings"
-                  title="Section heading and intro copy"
-                  detail="The main section headline gets the largest UI type. The paragraph underneath does the explaining."
-                  selector=".eli5-section-heading h2, .eli5-section-heading p"
-                >
-                  <div className="eli5-section-heading eli5-typography-lab__section-heading-sample">
-                    <h2>What this skill does</h2>
-                    <p>
+                  <div className="eli5-typography-lab__demo eli5-typography-lab__specimen-stack">
+                    <p className="eli5-how__lede">
                       You ask one question and get the answer in five passes, starting simple and
                       building toward the fuller version as you keep reading.
+                    </p>
+                    <p className="eli5-cta__body">
+                      Explain It Like I&apos;m Five is a Markdown skill for AI agents. It works in
+                      Codex, Claude Code, Cursor, and similar tools.
                     </p>
                   </div>
                 </TypographyLabCard>
 
                 <TypographyLabCard
-                  eyebrow="Supporting copy"
-                  title="Benefit cards and use-case labels"
-                  detail="These carry the explanatory load, so they stay readable first and decorative second."
-                  selector=".eli5-how-benefit*, .eli5-how__use-cases*"
+                  eyebrow="Support copy"
+                  title="Meta"
+                  detail="For smaller explanatory lines, compatibility rows, and footer detail."
+                  tokenLabel="--type-meta-*"
                 >
-                  <div className="eli5-typography-lab__demo">
-                    <article className="eli5-how-benefit">
-                      <div className="eli5-how-benefit__copy">
-                        <h3>People can start simple and keep going.</h3>
-                        <p>
-                          The first version gets them oriented. The later ones add the proper detail
-                          without forcing a second explanation request.
-                        </p>
-                      </div>
-                    </article>
-
-                    <div className="eli5-how__use-cases">
-                      <p className="eli5-how__use-cases-label">Great for</p>
-                      <div className="eli5-how__use-cases-list">
-                        <span className="eli5-how__use-case">Docs</span>
-                        <span className="eli5-how__use-case">Meetings</span>
-                        <span className="eli5-how__use-case">Teaching</span>
-                      </div>
-                    </div>
+                  <div className="eli5-typography-lab__demo eli5-typography-lab__specimen-stack">
+                    <p className="eli5-hero__detail">
+                      Ask one question. Get five versions of the answer, from simple to precise.
+                    </p>
+                    <p className="eli5-site-footer__summary">
+                      Markdown skill for AI agents with five explanation levels.
+                    </p>
                   </div>
                 </TypographyLabCard>
 
                 <TypographyLabCard
-                  eyebrow="Media"
-                  title="Sticky media summary"
-                  detail="The media card uses a stronger mid-size line so the ask/write contrast still reads under motion and video."
-                  selector=".eli5-gif-card__summary-text"
+                  eyebrow="Small label"
+                  title="Eyebrow"
+                  detail="For small uppercase labels that guide the scan without taking over."
+                  tokenLabel="--type-eyebrow-*"
                 >
-                  <div className="eli5-gif-card__frame eli5-typography-lab__gif-preview eli5-depth--0">
-                    <div className="eli5-gif-card__summary" aria-label="What the skill outputs">
-                      <div className="eli5-gif-card__summary-row">
-                        <p className="eli5-gif-card__summary-text eli5-gif-card__summary-text--ask">
-                          Ask one question.
-                        </p>
-                        <div className="eli5-gif-card__summary-icon" aria-hidden="true">
-                          <svg
-                            className="eli5-gif-card__summary-icon-svg"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="1.8"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            <path d="M6 12h12" />
-                            <path d="m13 7 5 5-5 5" />
-                          </svg>
-                        </div>
-                        <p className="eli5-gif-card__summary-text eli5-gif-card__summary-text--write">
-                          Get five clearer versions back.
-                        </p>
-                      </div>
-
-                      <button type="button" className="eli5-button eli5-button--secondary eli5-gif-card__summary-action eli5-depth--1">
-                        See the output
-                      </button>
-                    </div>
-                  </div>
-                </TypographyLabCard>
-              </div>
-            </TypographyLabSection>
-
-            <TypographyLabSection
-              eyebrow="Examples and proof"
-              title="Examples, citations, and install steps keep the hierarchy obvious."
-              detail="Small labels guide the scan. Titles stay distinct. Proof copy should read quickly without turning into tiny grey dust."
-            >
-              <div className="eli5-typography-lab__grid">
-                <TypographyLabCard
-                  eyebrow="Examples"
-                  title="Example prompt and output"
-                  detail="Blue labels flag the example system. The body copy does the actual explaining."
-                  selector=".eli5-example-thread*, .eli5-example-output*"
-                  wide
-                >
-                  <div className="eli5-typography-lab__example-preview">
-                    <div className="eli5-example-thread">
-                      <p className="eli5-example-thread__category">Example prompt</p>
-
-                      <div className="eli5-prompt-field eli5-example-thread__prompt">
-                        <div className="eli5-prompt-field__shell eli5-depth--inset">
-                          <span className="eli5-prompt-field__skill eli5-prompt-field__skill--printed">Explain It Like I&apos;m Five</span>
-                          <span className="eli5-prompt-field__text">Why do we have a surplus?</span>
-                          <span className="eli5-prompt-field__cursor" aria-hidden="true" />
-                        </div>
-                      </div>
-
-                      <div className="eli5-example-output">
-                        <p className="eli5-example-output__entry">
-                          <span className="eli5-example-output__label">🧸:</span>{' '}
-                          More came in than went out.
-                        </p>
-                        <p className="eli5-example-output__separator" aria-hidden="true">---</p>
-                        <p className="eli5-example-output__entry">
-                          <span className="eli5-example-output__label">📚:</span>{' '}
-                          A surplus means income or supply was higher than spending or demand for that period.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </TypographyLabCard>
-
-                <TypographyLabCard
-                  eyebrow="Install"
-                  title="Install steps"
-                  detail="Step labels stay pale. The title does the directing. The body handles the plain-English instruction."
-                  selector=".eli5-install-step*"
-                >
-                  <article className="eli5-install-step">
-                    <div className="eli5-install-step__copy">
-                      <p className="eli5-install-step__index">Step 1</p>
-                      <h3>Drop the skill file into your agent setup.</h3>
-                      <p>
-                        Codex, Claude Code, Cursor, and similar agents can load it from Markdown.
-                      </p>
-                    </div>
-                  </article>
-                </TypographyLabCard>
-
-                <TypographyLabCard
-                  eyebrow="References"
-                  title="Science cards and source lines"
-                  detail="Sources run in a lighter horizontal row so they stay visible without pulling focus from the point."
-                  selector=".eli5-science-point*"
-                >
-                  <article className="eli5-science-point eli5-depth--0">
-                    <div>
-                      <h3>Keep the citation readable.</h3>
-                      <p>
-                        The point card uses a muted heading, a steady body size, and a very small
-                        source treatment so the evidence stays visible without taking over the room.
-                      </p>
-
-                      <div className="eli5-science-point__sources">
-                        <div className="eli5-science-point__source-list">
-                          <a
-                            className="eli5-science-point__source"
-                            href="#source-1"
-                            onClick={preventDemoNavigation}
-                          >
-                            <span>Clark and Mayer</span>
-                            <span>eLearning and the Science of Instruction</span>
-                          </a>
-                          <a
-                            className="eli5-science-point__source"
-                            href="#source-2"
-                            onClick={preventDemoNavigation}
-                          >
-                            <span>Plain Language Action</span>
-                            <span>Short sentences and structured information</span>
-                          </a>
-                        </div>
-                      </div>
-                    </div>
-                  </article>
-                </TypographyLabCard>
-              </div>
-            </TypographyLabSection>
-
-            <TypographyLabSection
-              eyebrow="Endgame"
-              title="The CTA goes bigger, but it still explains itself."
-              detail="This block stays direct: what it is, where it works, and one clean action."
-            >
-              <div className="eli5-typography-lab__grid">
-                <TypographyLabCard
-                  eyebrow="CTA"
-                  title="End-of-page call to action"
-                  detail="Simple headline, short body copy, and a formal footer with clear navigation."
-                  selector=".eli5-cta*, .eli5-site-footer*"
-                  wide
-                >
-                  <div className="eli5-typography-lab__cta-preview">
-                    <div className="eli5-cta eli5-depth--2">
-                      <h2>Get clearer answers.</h2>
-                      <p className="eli5-cta__support">One question in. Five clearer versions out.</p>
-                      <p className="eli5-cta__body">
-                        Explain It Like I&apos;m Five is a Markdown skill for AI agents. It rewrites
-                        one answer into five levels and works in Codex, Claude Code, Cursor, and similar tools.
-                      </p>
-                      <button
-                        type="button"
-                        className="eli5-button eli5-button--primary eli5-button--large eli5-button--cta-download eli5-depth--1"
-                      >
-                        Download the skill
-                      </button>
-                    </div>
-
-                    <footer className="eli5-site-footer eli5-site-footer--preview eli5-depth--0" aria-label="Preview footer">
-                      <div className="eli5-site-footer__brand">
-                        <p className="eli5-site-footer__title">Explain It Like I&apos;m Five</p>
-                        <p className="eli5-site-footer__summary">
-                          Markdown skill for AI agents with five explanation levels.
-                        </p>
-                      </div>
-                      <div className="eli5-site-footer__links">
-                        <div className="eli5-site-footer__column">
-                          <p className="eli5-site-footer__heading">Product</p>
-                          <a href="#footer-how" onClick={preventDemoNavigation}>What it does</a>
-                          <a href="#footer-output" onClick={preventDemoNavigation}>See output</a>
-                          <a href="#footer-install" onClick={preventDemoNavigation}>How to install</a>
-                        </div>
-                        <div className="eli5-site-footer__column">
-                          <p className="eli5-site-footer__heading">Works with</p>
-                          <span>Codex</span>
-                          <span>Claude Code</span>
-                          <span>Cursor</span>
-                        </div>
-                        <div className="eli5-site-footer__column">
-                          <p className="eli5-site-footer__heading">Resources</p>
-                          <a href="#footer-download" onClick={preventDemoNavigation}>Download skill</a>
-                          <a href="#footer-coffee" onClick={preventDemoNavigation}>Buy me a coffee</a>
-                        </div>
-                      </div>
-                    </footer>
+                  <div className="eli5-typography-lab__demo eli5-typography-lab__specimen-stack">
+                    <p className="eli5-prompt-field__label">What you ask</p>
+                    <p className="eli5-how__use-cases-label">Great for</p>
+                    <p className="eli5-site-footer__heading">Product</p>
                   </div>
                 </TypographyLabCard>
               </div>
@@ -4097,30 +4279,192 @@ function ScrollScrubMedia({
   );
 }
 
+function FloatingLettersView({
+  boardRef,
+  magnets,
+  previewVariant,
+  isLayoutEditing = false,
+  onSelectPreviewVariant,
+  onStartLayoutEdit,
+  onSaveLayoutEdit,
+  onCancelLayoutEdit,
+  onResetLayout,
+  motionControls = HERO_MAGNET_DEFAULTS,
+  onLayoutCommit,
+  onReturnHome,
+  panelSurface,
+}) {
+  const previewLabel = previewVariant === FLOATING_LETTERS_LAYOUT_VARIANTS.mobile
+    ? 'Mobile preview uses the saved mobile canvas and saves only the mobile layout.'
+    : 'Desktop preview keeps the current composition inside the fixed desktop canvas.';
+
+  return (
+    <div className="eli5-page eli5-page--floating-letters">
+      <CustomCursor />
+      <main className="eli5-main">
+        <div className="eli5-floating-letters-view">
+          <div className="eli5-floating-letters-view__shell">
+            <div className="eli5-floating-letters-view__intro">
+              <button
+                type="button"
+                className="eli5-button eli5-button--secondary eli5-button--floating-back eli5-depth--1"
+                onClick={onReturnHome}
+              >
+                Back to home
+              </button>
+              <p className="eli5-control-panel__eyebrow">Floating letters</p>
+              <h1>Responsive hero canvas test.</h1>
+              <p>
+                This is the live wordmark canvas for the Explain It Like I&apos;m Five
+                skill for AI agents. It is built for Codex, Claude Code, Cursor,
+                and similar tools, not for decorative guesswork.
+              </p>
+            </div>
+
+            <div className="eli5-floating-letters-view__toolbar eli5-depth--1">
+              <div className="eli5-floating-letters-view__mode-group" aria-label="Floating letters preview">
+                <button
+                  type="button"
+                  className={`eli5-floating-letters-view__mode-button${previewVariant === FLOATING_LETTERS_LAYOUT_VARIANTS.desktop ? ' is-active' : ''}`}
+                  onClick={() => onSelectPreviewVariant(FLOATING_LETTERS_LAYOUT_VARIANTS.desktop)}
+                  disabled={isLayoutEditing}
+                >
+                  Desktop 16:9
+                </button>
+                <button
+                  type="button"
+                  className={`eli5-floating-letters-view__mode-button${previewVariant === FLOATING_LETTERS_LAYOUT_VARIANTS.mobile ? ' is-active' : ''}`}
+                  onClick={() => onSelectPreviewVariant(FLOATING_LETTERS_LAYOUT_VARIANTS.mobile)}
+                  disabled={isLayoutEditing}
+                >
+                  Mobile
+                </button>
+              </div>
+
+              <div className="eli5-floating-letters-view__layout-actions">
+                {isLayoutEditing ? (
+                  <>
+                    <button
+                      type="button"
+                      className="eli5-button eli5-button--primary eli5-depth--1"
+                      onClick={onSaveLayoutEdit}
+                    >
+                      Save layout
+                    </button>
+                    <button
+                      type="button"
+                      className="eli5-button eli5-button--secondary eli5-depth--1"
+                      onClick={onCancelLayoutEdit}
+                    >
+                      Cancel edit
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      className="eli5-button eli5-button--primary eli5-depth--1"
+                      onClick={onStartLayoutEdit}
+                    >
+                      Edit layout
+                    </button>
+                    <button
+                      type="button"
+                      className="eli5-button eli5-button--secondary eli5-depth--1"
+                      onClick={onResetLayout}
+                    >
+                      Use reference
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <p className="eli5-floating-letters-view__status">
+              {previewLabel}
+              {isLayoutEditing
+                ? ' Drag the letters into place, then save.'
+                : ' Pick the frame you want first, then edit that layout.'}
+            </p>
+
+            <div className="eli5-floating-letters-view__workspace">
+              <section className="eli5-floating-letters-view__hero eli5-depth--2" aria-labelledby="floating-letters-hero-heading">
+                <div className="eli5-floating-letters-view__hero-copy">
+                  <p className="eli5-control-panel__eyebrow">Explain It Like I&apos;m Five</p>
+                  <h2 id="floating-letters-hero-heading">{HERO_COPY.summary}</h2>
+                  <p>{HERO_COPY.detail}</p>
+                </div>
+
+                <div className="eli5-floating-letters-view__hero-art">
+                  <FloatingLettersCanvas
+                    boardRef={boardRef}
+                    magnets={magnets}
+                    frameVariant={previewVariant}
+                    layoutEditing={isLayoutEditing}
+                    introEnabled={false}
+                    motionConfig={motionControls}
+                    onLayoutCommit={onLayoutCommit}
+                    className="eli5-floating-letters eli5-floating-letters--lab"
+                  />
+                </div>
+
+                <div className="eli5-hero__compat" aria-label="Supported tools">
+                  <span className="eli5-hero__compat-label">{HERO_COPY.compatLabel}</span>
+                  {COMPAT_TOOLS.map((tool) => (
+                    <span key={`floating-${tool.key}`} className="eli5-hero__compat-item">
+                      <span className={`eli5-tool-logo eli5-tool-logo--${tool.key}`} aria-hidden="true">
+                        <ToolLogo toolKey={tool.key} />
+                      </span>
+                      <span>{tool.label}</span>
+                    </span>
+                  ))}
+                </div>
+              </section>
+
+              {panelSurface ? (
+                <div className="eli5-floating-letters-view__panel">
+                  {panelSurface}
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
+
 export default function App() {
   const isDebugUIEnabled = import.meta.env.DEV || import.meta.env.VITE_ENABLE_DEBUG_UI === 'true';
-  const heroStageRef = useRef(null);
+  const floatingLettersBoardRef = useRef(null);
   const playfieldBoardRef = useRef(null);
   const howSectionRef = useRef(null);
   const controlPanelWindowRef = useRef(null);
   const [appView, setAppView] = useState(() => readAppView(isDebugUIEnabled));
   const [activeExampleSlug, setActiveExampleSlug] = useState(EXAMPLES[0]?.slug ?? '');
-  const [heroTitleSlot, setHeroTitleSlot] = useState(() =>
-    buildHeroTitleSlot(buildFallbackBoardRects().hero),
-  );
   const [heroMagnetControls, setHeroMagnetControls] = useState(() =>
     loadHeroMagnetControls(),
+  );
+  const [floatingLetterStyleControls, setFloatingLetterStyleControls] = useState(() =>
+    loadFloatingLetterStyleControls(),
   );
   const [depthControls, setDepthControls] = useState(() =>
     loadDepthControls(),
   );
-  const [heroSavedLayout, setHeroSavedLayout] = useState(() =>
-    loadHeroLayout(),
+  const [heroSavedLayouts, setHeroSavedLayouts] = useState(() =>
+    loadFloatingLettersLayouts(),
   );
-  const [heroDraftLayout, setHeroDraftLayout] = useState(() =>
-    loadHeroLayout(),
+  const [heroDraftLayouts, setHeroDraftLayouts] = useState(() =>
+    loadFloatingLettersLayouts(),
   );
   const [isHeroLayoutEditing, setIsHeroLayoutEditing] = useState(false);
+  const [floatingLettersPreviewVariant, setFloatingLettersPreviewVariant] = useState(
+    FLOATING_LETTERS_LAYOUT_VARIANTS.desktop,
+  );
+  const [responsiveHeroLayoutVariant, setResponsiveHeroLayoutVariant] = useState(() =>
+    getFloatingLettersViewportVariant(),
+  );
+  const [heroLayoutEditingVariant, setHeroLayoutEditingVariant] = useState(null);
   const [collapsedControlSections, setCollapsedControlSections] = useState(() =>
     loadControlPanelSectionState(),
   );
@@ -4128,49 +4472,68 @@ export default function App() {
   const [isInlineFallbackOpen, setIsInlineFallbackOpen] = useState(false);
   const [loadStage, setLoadStage] = useState(() => getInitialLoadStage());
   const [magnetSeed, setMagnetSeed] = useState([]);
+
+  useEffect(() => {
+    const legacyMobileLayout = sanitizeHeroLayout(
+      LEGACY_FLOATING_LETTERS_MOBILE_REFERENCE_LAYOUT,
+    );
+    const nextMobileLayout = getReferenceFloatingLettersMobileLayout();
+
+    setHeroSavedLayouts((current) => {
+      if (!areHeroLayoutsEquivalent(current[FLOATING_LETTERS_LAYOUT_VARIANTS.mobile], legacyMobileLayout)) {
+        return current;
+      }
+
+      return sanitizeFloatingLettersLayouts({
+        ...current,
+        [FLOATING_LETTERS_LAYOUT_VARIANTS.mobile]: nextMobileLayout,
+      });
+    });
+
+    setHeroDraftLayouts((current) => {
+      if (!areHeroLayoutsEquivalent(current[FLOATING_LETTERS_LAYOUT_VARIANTS.mobile], legacyMobileLayout)) {
+        return current;
+      }
+
+      return sanitizeFloatingLettersLayouts({
+        ...current,
+        [FLOATING_LETTERS_LAYOUT_VARIANTS.mobile]: nextMobileLayout,
+      });
+    });
+  }, []);
+
   const levelControls = LEVEL_CONTROL_DEFAULTS;
+  const isFloatingLettersView = appView === APP_VIEWS.floatingLetters;
+  const liveHeroLayoutVariant = isFloatingLettersView
+    ? floatingLettersPreviewVariant
+    : responsiveHeroLayoutVariant;
+  const activeHeroLayoutVariant = heroLayoutEditingVariant ?? liveHeroLayoutVariant;
   const activeHeroLayout = isHeroLayoutEditing
-    ? heroDraftLayout
-    : heroSavedLayout;
+    ? heroDraftLayouts[activeHeroLayoutVariant]
+    : heroSavedLayouts[liveHeroLayoutVariant];
+  const floatingLetterVisualProps = buildFloatingLettersVisualProps(
+    getFloatingLettersCanvasPreset(activeHeroLayoutVariant).letterSize,
+    floatingLetterStyleControls,
+  );
+  const floatingLetterRenderMagnets = magnetSeed.map((magnet) => ({
+    ...magnet,
+    ...floatingLetterVisualProps,
+  }));
 
   const syncMagnetSeed = useEffectEvent(() => {
-    const heroStageRect = heroStageRef.current
-      ? {
-          left: heroStageRef.current.getBoundingClientRect().left + window.scrollX,
-          top: heroStageRef.current.getBoundingClientRect().top + window.scrollY,
-          width: heroStageRef.current.getBoundingClientRect().width,
-          height: heroStageRef.current.getBoundingClientRect().height,
-        }
-      : null;
-    const playfieldRect = playfieldBoardRef.current
-      ? {
-          left: playfieldBoardRef.current.getBoundingClientRect().left + window.scrollX,
-          top: playfieldBoardRef.current.getBoundingClientRect().top + window.scrollY,
-          width: playfieldBoardRef.current.getBoundingClientRect().width,
-          height: playfieldBoardRef.current.getBoundingClientRect().height,
-        }
-      : null;
-
-    const resolvedHeroStageRect = heroStageRect ?? buildFallbackBoardRects().hero;
-    const heroLayoutForRender = activeHeroLayout;
-    const provisionalHeroSlot = buildHeroTitleSlot(resolvedHeroStageRect);
-    const nextHeroSlot = provisionalHeroSlot;
-    const nextHeroRect = {
-      left: 0,
-      top: 0,
-      width: nextHeroSlot.width,
-      height: nextHeroSlot.height,
-    };
-    const nextSeed = applyPersistedHeroLayout(
-      buildRuntimeMagnets({
-        hero: nextHeroRect,
-        playfield: playfieldRect,
-      }, heroMagnetControls, levelControls),
-      nextHeroRect,
-      heroLayoutForRender,
+    const floatingLettersBoardRect = measureElementPageRect(floatingLettersBoardRef.current);
+    const resolvedHeroBoardRect =
+      floatingLettersBoardRect ?? buildFallbackFloatingLettersBoardRect(activeHeroLayoutVariant);
+    const nextSeed = buildFloatingLettersMagnets(
+      {
+        left: 0,
+        top: 0,
+        width: resolvedHeroBoardRect.width,
+        height: resolvedHeroBoardRect.height,
+      },
+      activeHeroLayout,
+      activeHeroLayoutVariant,
     );
-
-    setHeroTitleSlot(nextHeroSlot);
 
     if (nextSeed.length === 0) {
       return;
@@ -4186,12 +4549,8 @@ export default function App() {
       ? new ResizeObserver(() => syncMagnetSeed())
       : null;
 
-    if (heroStageRef.current) {
-      resizeObserver?.observe(heroStageRef.current);
-    }
-
-    if (playfieldBoardRef.current) {
-      resizeObserver?.observe(playfieldBoardRef.current);
+    if (floatingLettersBoardRef.current) {
+      resizeObserver?.observe(floatingLettersBoardRef.current);
     }
 
     window.addEventListener('resize', syncMagnetSeed);
@@ -4209,7 +4568,24 @@ export default function App() {
 
   useLayoutEffect(() => {
     syncMagnetSeed();
-  }, [activeHeroLayout, heroMagnetControls, levelControls]);
+  }, [activeHeroLayout, activeHeroLayoutVariant]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const syncViewportVariant = () => {
+      setResponsiveHeroLayoutVariant(getFloatingLettersViewportVariant(window.innerWidth));
+    };
+
+    syncViewportVariant();
+    window.addEventListener('resize', syncViewportVariant);
+
+    return () => {
+      window.removeEventListener('resize', syncViewportVariant);
+    };
+  }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -4294,12 +4670,26 @@ export default function App() {
       return;
     }
 
-    window.localStorage.removeItem(HERO_CONTROL_STORAGE_KEY);
+    window.localStorage.setItem(
+      HERO_CONTROL_STORAGE_KEY,
+      JSON.stringify(heroMagnetControls),
+    );
 
     HERO_CONTROL_STORAGE_DEPRECATED_KEYS.forEach((storageKey) => {
       window.localStorage.removeItem(storageKey);
     });
   }, [heroMagnetControls]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    window.localStorage.setItem(
+      FLOATING_LETTER_STYLE_STORAGE_KEY,
+      JSON.stringify(floatingLetterStyleControls),
+    );
+  }, [floatingLetterStyleControls]);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -4328,12 +4718,17 @@ export default function App() {
       return;
     }
 
+    window.localStorage.setItem(
+      FLOATING_LETTERS_LAYOUT_STORAGE_KEY,
+      JSON.stringify(heroSavedLayouts),
+    );
+
     window.localStorage.removeItem(HERO_LAYOUT_STORAGE_KEY);
 
     HERO_LAYOUT_STORAGE_DEPRECATED_KEYS.forEach((storageKey) => {
       window.localStorage.removeItem(storageKey);
     });
-  }, [heroSavedLayout]);
+  }, [heroSavedLayouts]);
 
   useEffect(() => {
     if (typeof document === 'undefined') {
@@ -4404,6 +4799,30 @@ export default function App() {
     setDepthControls(DEPTH_CONTROL_DEFAULTS);
   });
 
+  const handleFloatingLetterControlChange = useEffectEvent((key, value) => {
+    if (HERO_CONTROL_KEYS.has(key)) {
+      setHeroMagnetControls((current) =>
+        sanitizeHeroMagnetControls({
+          ...current,
+          [key]: value,
+        }),
+      );
+      return;
+    }
+
+    setFloatingLetterStyleControls((current) =>
+      sanitizeFloatingLetterStyleControls({
+        ...current,
+        [key]: value,
+      }),
+    );
+  });
+
+  const handleFloatingLetterControlReset = useEffectEvent(() => {
+    setHeroMagnetControls(HERO_MAGNET_DEFAULTS);
+    setFloatingLetterStyleControls(FLOATING_LETTER_STYLE_DEFAULTS);
+  });
+
   const handleToggleControlSection = useEffectEvent((sectionId) => {
     setCollapsedControlSections((current) =>
       sanitizeControlPanelSectionState({
@@ -4414,8 +4833,9 @@ export default function App() {
   });
 
   const handleStartHeroLayoutEdit = useEffectEvent(() => {
-    setHeroDraftLayout(sanitizeHeroLayout(heroSavedLayout));
-    setIsInlineFallbackOpen(true);
+    setHeroDraftLayouts(sanitizeFloatingLettersLayouts(heroSavedLayouts));
+    setHeroLayoutEditingVariant(liveHeroLayoutVariant);
+    setIsInlineFallbackOpen(!isFloatingLettersView);
 
     if (controlPanelWindowRef.current && !controlPanelWindowRef.current.closed) {
       controlPanelWindowRef.current.close();
@@ -4427,29 +4847,49 @@ export default function App() {
   });
 
   const handleCancelHeroLayoutEdit = useEffectEvent(() => {
-    setHeroDraftLayout(sanitizeHeroLayout(heroSavedLayout));
+    setHeroDraftLayouts(sanitizeFloatingLettersLayouts(heroSavedLayouts));
+    setHeroLayoutEditingVariant(null);
     setIsHeroLayoutEditing(false);
   });
 
   const handleSaveHeroLayoutEdit = useEffectEvent(() => {
-    const nextLayout = sanitizeHeroLayout(heroDraftLayout);
-    setHeroSavedLayout(nextLayout);
-    setHeroDraftLayout(nextLayout);
+    const layoutVariant = heroLayoutEditingVariant ?? liveHeroLayoutVariant;
+    const nextLayout = sanitizeHeroLayout(heroDraftLayouts[layoutVariant]);
+    const nextLayouts = sanitizeFloatingLettersLayouts({
+      ...heroSavedLayouts,
+      [layoutVariant]: nextLayout,
+    });
+
+    setHeroSavedLayouts(nextLayouts);
+    setHeroDraftLayouts(nextLayouts);
+    setHeroLayoutEditingVariant(null);
     setIsHeroLayoutEditing(false);
   });
 
   const handleResetHeroLayout = useEffectEvent(() => {
-    const referenceLayout = getReferenceHeroLayout();
-    setHeroSavedLayout(referenceLayout);
-    setHeroDraftLayout(referenceLayout);
+    const layoutVariant = heroLayoutEditingVariant ?? liveHeroLayoutVariant;
+    const referenceLayouts = getReferenceFloatingLettersLayouts();
+    const nextLayouts = sanitizeFloatingLettersLayouts({
+      ...heroSavedLayouts,
+      [layoutVariant]: referenceLayouts[layoutVariant],
+    });
+
+    setHeroSavedLayouts(nextLayouts);
+    setHeroDraftLayouts(nextLayouts);
+    setHeroLayoutEditingVariant(null);
     setIsHeroLayoutEditing(false);
   });
 
   const handleHeroLayoutDraftCommit = useEffectEvent((layoutPatch) => {
-    setHeroDraftLayout((current) =>
-      sanitizeHeroLayout({
+    const layoutVariant = heroLayoutEditingVariant ?? liveHeroLayoutVariant;
+
+    setHeroDraftLayouts((current) =>
+      sanitizeFloatingLettersLayouts({
         ...current,
-        ...layoutPatch,
+        [layoutVariant]: {
+          ...current[layoutVariant],
+          ...layoutPatch,
+        },
       }),
     );
   });
@@ -4517,6 +4957,10 @@ export default function App() {
     }
 
     if (appView === APP_VIEWS.typographyLab) {
+      return;
+    }
+
+    if (appView === APP_VIEWS.floatingLetters) {
       return;
     }
 
@@ -4590,6 +5034,10 @@ export default function App() {
     ...heroMagnetControls,
     ...depthControls,
   };
+  const floatingLetterPanelControls = {
+    ...heroMagnetControls,
+    ...floatingLetterStyleControls,
+  };
   const panelSections = [
     ...HERO_CONTROL_SECTIONS,
     ...DEPTH_CONTROL_SECTIONS,
@@ -4597,6 +5045,7 @@ export default function App() {
   const hasEnteredLoadCue = (cue) => loadStage >= cue;
   const isControlPanelVisible = isInlineFallbackOpen || Boolean(controlPanelHost);
   const isDepthLabView = appView === APP_VIEWS.depthLab;
+  const isFloatingLettersLabView = appView === APP_VIEWS.floatingLetters;
   const isTypographyLabView = appView === APP_VIEWS.typographyLab;
   const showFloatingControls =
     isDebugUIEnabled &&
@@ -4605,6 +5054,8 @@ export default function App() {
   const useReferenceHeroArt = !showFloatingControls;
   const sharedPanelCaption =
     'Edit each depth class directly. Every level has its own drop shadow, light edge, shadow edge, and light gradient.';
+  const floatingLettersPanelCaption =
+    'Adjust motion plus the body controls that matter: reference height, inner light, inner shade, depth offset, and ground shadow.';
   const sharedPanelProps = {
     eyebrow: 'Linked control panel',
     title: 'Live page controls',
@@ -4614,6 +5065,20 @@ export default function App() {
     collapsedSections: collapsedControlSections,
     onChange: handlePanelControlChange,
     onReset: handlePanelControlReset,
+    onToggleSection: handleToggleControlSection,
+  };
+  const floatingLettersPanelProps = {
+    eyebrow: 'Floating letter controls',
+    title: 'Motion and body style',
+    caption: floatingLettersPanelCaption,
+    controls: floatingLetterPanelControls,
+    sections: [
+      ...HERO_CONTROL_SECTIONS,
+      ...FLOATING_LETTER_STYLE_SECTIONS,
+    ],
+    collapsedSections: collapsedControlSections,
+    onChange: handleFloatingLetterControlChange,
+    onReset: handleFloatingLetterControlReset,
     onToggleSection: handleToggleControlSection,
   };
 
@@ -4634,6 +5099,26 @@ export default function App() {
       <TypographyLabView
         onOpenDepthLab={isDebugUIEnabled ? () => handleSetAppView(APP_VIEWS.depthLab) : undefined}
         onReturnHome={() => handleSetAppView(APP_VIEWS.home)}
+      />
+    );
+  }
+
+  if (isFloatingLettersLabView) {
+    return (
+      <FloatingLettersView
+        boardRef={floatingLettersBoardRef}
+        magnets={floatingLetterRenderMagnets}
+        previewVariant={activeHeroLayoutVariant}
+        isLayoutEditing={isHeroLayoutEditing}
+        onSelectPreviewVariant={setFloatingLettersPreviewVariant}
+        onStartLayoutEdit={handleStartHeroLayoutEdit}
+        onSaveLayoutEdit={handleSaveHeroLayoutEdit}
+        onCancelLayoutEdit={handleCancelHeroLayoutEdit}
+        onResetLayout={handleResetHeroLayout}
+        motionControls={heroMagnetControls}
+        onLayoutCommit={handleHeroLayoutDraftCommit}
+        onReturnHome={() => handleSetAppView(APP_VIEWS.home)}
+        panelSurface={<ControlPanelSurface {...floatingLettersPanelProps} />}
       />
     );
   }
@@ -4715,7 +5200,7 @@ export default function App() {
 
             <>
                 <section id="hero" className="eli5-hero">
-                  <div ref={heroStageRef} className="eli5-hero-stage">
+                  <div className="eli5-hero-stage">
                     <h1 className="eli5-sr-only">Explain It Like I&apos;m Five</h1>
                     <div className="eli5-hero__intro">
                       <RevealOnView
@@ -4730,44 +5215,38 @@ export default function App() {
                     </div>
 
                     <div className="eli5-hero__art">
-                      <div
-                        className={getLoadItemClass(
-                          [
-                            'eli5-hero__magnet-slot',
-                            useReferenceHeroArt ? 'eli5-hero__magnet-slot--art' : '',
-                          ].filter(Boolean).join(' '),
-                          hasEnteredLoadCue(LOAD_CUES.heroTitle),
-                          'eli5-load-item--hero-title',
-                        )}
-                        data-magnet-board="hero"
-                        data-layout-editing={isHeroLayoutEditing ? 'true' : undefined}
-                        aria-hidden="true"
-                        style={
-                          useReferenceHeroArt
-                            ? undefined
-                            : {
-                                height: heroTitleSlot.height ? `${heroTitleSlot.height}px` : undefined,
-                              }
-                        }
-                      >
-                        {useReferenceHeroArt ? (
+                      {useReferenceHeroArt ? (
+                        <div
+                          className={getLoadItemClass(
+                            'eli5-hero__magnet-slot eli5-hero__magnet-slot--art',
+                            hasEnteredLoadCue(LOAD_CUES.heroTitle),
+                            'eli5-load-item--hero-title',
+                          )}
+                          data-magnet-board="hero"
+                          aria-hidden="true"
+                        >
                           <img
                             className="eli5-hero__wordmark-art"
                             src="/assets/hero/hero-wordmark-reference.png"
                             alt=""
                           />
-                        ) : magnetSeed.length > 0 ? (
-                          <MagnetCanvas
-                            className={`eli5-magnet-layer${isHeroLayoutEditing ? ' is-layout-editing' : ''}`}
-                            magnets={magnetSeed}
-                            introEnabled={hasEnteredLoadCue(LOAD_CUES.heroTitle)}
-                            motionConfig={heroMagnetControls}
-                            localCoordinates
-                            layoutEditing={isHeroLayoutEditing}
-                            onLayoutCommit={handleHeroLayoutDraftCommit}
-                          />
-                        ) : null}
-                      </div>
+                        </div>
+                      ) : (
+                        <FloatingLettersCanvas
+                          boardRef={floatingLettersBoardRef}
+                          magnets={floatingLetterRenderMagnets}
+                          frameVariant={activeHeroLayoutVariant}
+                          layoutEditing={isHeroLayoutEditing}
+                          introEnabled={hasEnteredLoadCue(LOAD_CUES.heroTitle)}
+                          motionConfig={heroMagnetControls}
+                          onLayoutCommit={handleHeroLayoutDraftCommit}
+                          className={getLoadItemClass(
+                            'eli5-floating-letters eli5-floating-letters--hero',
+                            hasEnteredLoadCue(LOAD_CUES.heroTitle),
+                            'eli5-load-item--hero-title',
+                          )}
+                        />
+                      )}
                     </div>
 
                     <div
@@ -5285,6 +5764,14 @@ export default function App() {
             onClick={() => handleSetAppView(APP_VIEWS.depthLab)}
           >
             Open Depth Lab
+          </button>
+
+          <button
+            type="button"
+            className="eli5-control-launcher__button eli5-depth--2 eli5-control-launcher__button--secondary"
+            onClick={() => handleSetAppView(APP_VIEWS.floatingLetters)}
+          >
+            Open Floating Letters
           </button>
 
           <button

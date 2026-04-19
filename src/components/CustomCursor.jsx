@@ -1,12 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-
-const CURSOR_VARIANTS = {
-  default: { src: '/assets/cursors/default.png', hotX: 8, hotY: 7 },
-  pointer: { src: '/assets/cursors/pointer.png', hotX: 31, hotY: 7 },
-  text: { src: '/assets/cursors/text.png', hotX: 32, hotY: 32 },
-  grab: { src: '/assets/cursors/grab.png', hotX: 32, hotY: 31 },
-  grabbing: { src: '/assets/cursors/grabbing.png', hotX: 32, hotY: 31 },
-};
+import { CURSOR_VARIANTS } from '../publicAssetUrls.js';
 
 const INTERACTIVE_SELECTOR = [
   'a[href]',

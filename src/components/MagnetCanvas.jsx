@@ -545,19 +545,19 @@ export default function MagnetCanvas({
     }
 
     const { width, height } = getMagnetDimensions(magnet);
-    const insetBounds = getHeroDragInsetBounds(magnet.bounds, width, height);
-    const boundsWidth = Math.max(insetBounds.right - insetBounds.left, 1);
-    const boundsHeight = Math.max(insetBounds.bottom - insetBounds.top, 1);
+    const dragBounds = getHeroDragBounds(magnet.bounds, width, height);
+    const boundsWidth = Math.max(dragBounds.right - dragBounds.left, 1);
+    const boundsHeight = Math.max(dragBounds.bottom - dragBounds.top, 1);
 
     onLayoutCommit({
       [magnetId]: {
         cx: clamp(
-          (nextPosition.x + width / 2 - insetBounds.left) / boundsWidth,
+          (nextPosition.x + width / 2 - dragBounds.left) / boundsWidth,
           0,
           1,
         ),
         cy: clamp(
-          (nextPosition.y + height / 2 - insetBounds.top) / boundsHeight,
+          (nextPosition.y + height / 2 - dragBounds.top) / boundsHeight,
           0,
           1,
         ),
@@ -583,14 +583,14 @@ export default function MagnetCanvas({
     }
 
     const { width, height } = getMagnetDimensions(magnet);
-    const insetBounds = getHeroDragInsetBounds(magnet.bounds, width, height);
+    const dragBounds = getHeroDragBounds(magnet.bounds, width, height);
 
     dragStateRef.current = {
       dragId: getDragEventId(event),
       magnetId: magnet.id,
       width,
       height,
-      bounds: insetBounds,
+      bounds: dragBounds,
       offsetX: point.x - magnet.x,
       offsetY: point.y - magnet.y,
     };
@@ -963,23 +963,12 @@ function matchesDragEvent(event, dragId) {
   return touches.some((touch) => touch.identifier === touchId);
 }
 
-function getHeroDragInsetBounds(bounds, width, height) {
-  const boundsWidth = Math.max(bounds.right - bounds.left, width);
-  const boundsHeight = Math.max(bounds.bottom - bounds.top, height);
-  const insetX = Math.min(
-    Math.max(14, width * 0.08),
-    Math.max((boundsWidth - width) / 2, 0),
-  );
-  const insetY = Math.min(
-    Math.max(18, height * 0.12),
-    Math.max((boundsHeight - height) / 2, 0),
-  );
-
+function getHeroDragBounds(bounds, width, height) {
   return {
-    left: bounds.left + insetX,
-    top: bounds.top + insetY,
-    right: bounds.right - insetX,
-    bottom: bounds.bottom - insetY,
+    left: bounds.left,
+    top: bounds.top,
+    right: Math.max(bounds.right, bounds.left + width),
+    bottom: Math.max(bounds.bottom, bounds.top + height),
   };
 }
 

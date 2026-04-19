@@ -61,6 +61,21 @@ export function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
 }
 
+function getMagnetVisualScale(magnet) {
+  const referenceHeight = Number(magnet?.styleReferenceHeight);
+  const height = Number(magnet?.height);
+
+  if (!Number.isFinite(referenceHeight) || referenceHeight <= 0) {
+    return 1;
+  }
+
+  if (!Number.isFinite(height) || height <= 0) {
+    return 1;
+  }
+
+  return Math.max(height / referenceHeight, 0.01);
+}
+
 export function normalizeMagnetList(magnets = []) {
   return magnets.map((magnet, index) => normalizeMagnet(magnet, index));
 }
@@ -218,34 +233,35 @@ export function drawMagnet(ctx, magnet, scrollPosition, viewport) {
 
   const centerX = screenX + magnet.width / 2;
   const centerY = screenY + magnet.height / 2;
+  const visualScale = getMagnetVisualScale(magnet);
   const vibrance = magnet.vibrance ?? 1.18;
   const depth = magnet.depth ?? 1;
   const roundness = magnet.roundness ?? 1;
   const shadowOpacity = magnet.shadowOpacity ?? magnet.shadowStrength ?? 0.22;
-  const shadowOffset = magnet.shadowOffset ?? 1;
-  const shadowBlur = magnet.shadowBlur ?? magnet.shadowSoftness ?? 0.12;
+  const shadowOffset = (magnet.shadowOffset ?? 1) * visualScale;
+  const shadowBlur = (magnet.shadowBlur ?? magnet.shadowSoftness ?? 0.12) * visualScale;
   const shadowLayers = magnet.shadowLayers ?? 2;
   const highlightStrength = magnet.highlightStrength ?? 0.22;
   const faceContrast = magnet.faceContrast ?? 0.9;
   const innerLightOpacity = magnet.innerLightOpacity ?? 0.58;
-  const innerLightOffsetY = magnet.innerLightOffsetY ?? 1.6;
-  const innerLightBlur = magnet.innerLightBlur ?? 3;
+  const innerLightOffsetY = (magnet.innerLightOffsetY ?? 1.6) * visualScale;
+  const innerLightBlur = (magnet.innerLightBlur ?? 3) * visualScale;
   const innerShadeOpacity = magnet.innerShadeOpacity ?? 0.52;
-  const innerShadeOffsetX = magnet.innerShadeOffsetX ?? 1.8;
-  const innerShadeOffsetY = magnet.innerShadeOffsetY ?? 2.8;
-  const innerShadeBlur = magnet.innerShadeBlur ?? 4;
+  const innerShadeOffsetX = (magnet.innerShadeOffsetX ?? 1.8) * visualScale;
+  const innerShadeOffsetY = (magnet.innerShadeOffsetY ?? 2.8) * visualScale;
+  const innerShadeBlur = (magnet.innerShadeBlur ?? 4) * visualScale;
   const depthContrast = magnet.depthContrast ?? 0.82;
-  const depthOffsetX = magnet.depthOffsetX ?? 1.4;
-  const depthOffsetY = magnet.depthOffsetY ?? 6.6;
-  const depthSpread = magnet.depthSpread ?? 1;
+  const depthOffsetX = (magnet.depthOffsetX ?? 1.4) * visualScale;
+  const depthOffsetY = (magnet.depthOffsetY ?? 6.6) * visualScale;
+  const depthSpread = (magnet.depthSpread ?? 1) * visualScale;
   const groundShadow1Opacity = magnet.groundShadow1Opacity ?? 0.24;
-  const groundShadow1OffsetX = magnet.groundShadow1OffsetX ?? 4;
-  const groundShadow1OffsetY = magnet.groundShadow1OffsetY ?? 13;
-  const groundShadow1Blur = magnet.groundShadow1Blur ?? 14;
+  const groundShadow1OffsetX = (magnet.groundShadow1OffsetX ?? 4) * visualScale;
+  const groundShadow1OffsetY = (magnet.groundShadow1OffsetY ?? 13) * visualScale;
+  const groundShadow1Blur = (magnet.groundShadow1Blur ?? 14) * visualScale;
   const groundShadow2Opacity = magnet.groundShadow2Opacity ?? 0.14;
-  const groundShadow2OffsetX = magnet.groundShadow2OffsetX ?? 7;
-  const groundShadow2OffsetY = magnet.groundShadow2OffsetY ?? 26;
-  const groundShadow2Blur = magnet.groundShadow2Blur ?? 30;
+  const groundShadow2OffsetX = (magnet.groundShadow2OffsetX ?? 7) * visualScale;
+  const groundShadow2OffsetY = (magnet.groundShadow2OffsetY ?? 26) * visualScale;
+  const groundShadow2Blur = (magnet.groundShadow2Blur ?? 30) * visualScale;
   const baseColor = saturateColor(magnet.color, vibrance);
   const faceStyle = {
     baseColor,

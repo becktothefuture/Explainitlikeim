@@ -1,3 +1,5 @@
+import { applyPublicAssetVariables } from './publicAssetUrls.js';
+
 const FOUNDATIONS = {
   slate050: '#f8faf9',
   slate100: '#edf0ee',
@@ -1065,6 +1067,8 @@ export function applyThemeTokens(
   Object.entries(themeVars).forEach(([name, value]) => {
     root.style.setProperty(name, value);
   });
+
+  applyPublicAssetVariables(root);
 
   const themeMeta = root.ownerDocument.querySelector('meta[name="theme-color"]');
 
