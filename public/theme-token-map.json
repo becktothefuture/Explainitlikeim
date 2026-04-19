@@ -1,8 +1,13 @@
 {
   "--blue-500": "#325fff",
   "--blue-a300": "rgba(50, 95, 255, 0.34)",
+  "--cursor-default": "url('/assets/cursors/default.png') 8 7, default",
   "--cursor-glow-color": "rgba(210, 213, 211, 0.159)",
+  "--cursor-grab": "url('/assets/cursors/grab.png') 32 31, grab",
+  "--cursor-grabbing": "url('/assets/cursors/grabbing.png') 32 31, grabbing",
+  "--cursor-pointer": "url('/assets/cursors/pointer.png') 31 7, pointer",
   "--cursor-shadow-filter": "drop-shadow(0 3.807px 4.744px rgba(72, 55, 42, 0.266)) drop-shadow(0 10.727px 16.01px rgba(50, 39, 31, 0.173)) drop-shadow(0 17.994px 27.87px rgba(50, 39, 31, 0.087))",
+  "--cursor-text": "url('/assets/cursors/text.png') 32 32, text",
   "--eli5-depth-0-drop-shadow": "0px 3.499px 9.267px rgba(72, 55, 42, 0.002), 0px 12.546px 27.414px rgba(50, 39, 31, 0.004), 0px 29.952px 59.199px rgba(50, 39, 31, 0.002)",
   "--eli5-depth-0-light-edge": "inset 0px 0.8px 7.267px rgba(248, 250, 249, 0.028)",
   "--eli5-depth-0-light-gradient": "linear-gradient(180deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.05) 42%, rgba(255, 255, 255, 0) 100%)",

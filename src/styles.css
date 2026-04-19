@@ -13,11 +13,11 @@
   --enter-duration: 980ms;
   --enter-ease: cubic-bezier(0.18, 0.88, 0.24, 1);
   --enter-blur: 10px;
-  --cursor-default: url('/assets/cursors/default.png') 8 7, default;
-  --cursor-pointer: url('/assets/cursors/pointer.png') 31 7, pointer;
-  --cursor-text: url('/assets/cursors/text.png') 32 32, text;
-  --cursor-grab: url('/assets/cursors/grab.png') 32 31, grab;
-  --cursor-grabbing: url('/assets/cursors/grabbing.png') 32 31, grabbing;
+  --cursor-default: default;
+  --cursor-pointer: pointer;
+  --cursor-text: text;
+  --cursor-grab: grab;
+  --cursor-grabbing: grabbing;
 }
 
 .eli5-depth--inset {
@@ -61,21 +61,14 @@ html {
 body {
   margin: 0;
   position: relative;
-  padding-inline: clamp(14px, 2vw, 28px);
+  padding-inline: 0;
   color: var(--slate-900);
   font-family: var(--font-ui);
   cursor: var(--cursor-default);
   -webkit-user-select: none;
   user-select: none;
-  background: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--slate-200) 92%, white 8%) 0%,
-    color-mix(in srgb, var(--slate-200) 92%, white 8%) 15%,
-    #ffffff 15%,
-    #ffffff 85%,
-    color-mix(in srgb, var(--slate-200) 92%, white 8%) 85%,
-    color-mix(in srgb, var(--slate-200) 92%, white 8%) 100%
-  );
+  background:
+    radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 1) 52%, rgba(247, 246, 242, 0.94) 100%);
 }
 
 body:not(.eli5-control-window)::before {
@@ -85,7 +78,7 @@ body:not(.eli5-control-window)::before {
   pointer-events: none;
   z-index: 0;
   opacity: var(--page-noise-opacity, 0.038);
-  background-image: var(--page-noise-image, url('/assets/paper-noise.png'));
+  background-image: var(--page-noise-image, none);
   background-repeat: repeat;
   background-position: center top;
   background-size: var(--page-noise-size, 400px) var(--page-noise-size, 400px);
@@ -229,7 +222,7 @@ select {
   inset: 0;
   pointer-events: none;
   background: var(--slate-gradient-300);
-  opacity: 0.4;
+  opacity: 0.12;
 }
 
 .eli5-page::after {
@@ -238,7 +231,7 @@ select {
   inset: 0;
   pointer-events: none;
   box-shadow: var(--page-vignette);
-  opacity: 0.9;
+  opacity: 0.18;
 }
 
 .eli5-control-launcher,
@@ -1119,14 +1112,14 @@ html[data-debug-ui='true'] .eli5-control-dock {
 }
 
 .eli5-shell {
-  width: var(--shell);
+  width: min(100%, calc(100vw - 28px));
   margin: 0 auto;
-  padding: 18px 0 40px;
+  padding: 0 0 40px;
 }
 
 .eli5-surface {
   position: relative;
-  padding: 26px clamp(26px, 4vw, 64px) 88px;
+  padding: 10px 14px 88px;
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -1143,46 +1136,95 @@ html[data-debug-ui='true'] .eli5-control-dock {
   z-index: 1;
 }
 
-.eli5-header {
-  position: sticky;
-  top: 12px;
-  z-index: 64;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 20px;
-  flex-wrap: nowrap;
-  width: fit-content;
-  max-width: min(calc(100% - 18px), 940px);
+.eli5-hero-reference-desktop {
+  display: none;
+}
+
+.eli5-hero-reference-desktop__frame {
+  position: relative;
+  width: 100%;
   margin: 0 auto;
-  padding: 10px 14px;
-  border: 1px solid var(--slate-300);
-  border-radius: 22px;
-  background-color: var(--slate-050);
-  background-image: var(--eli5-depth-light-gradient-current, none), var(--slate-gradient-050);
-  box-shadow: var(--eli5-depth-shadow-stack, var(--shadow-header));
-  backdrop-filter: blur(12px);
+}
+
+.eli5-hero-reference-desktop__image {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.eli5-hero-reference-desktop__hotspots {
+  position: absolute;
+  inset: 0;
+}
+
+.eli5-hero-reference-desktop__hotspot {
+  position: absolute;
+  display: block;
+  border-radius: 999px;
+}
+
+.eli5-hero-reference-desktop__hotspot:focus-visible {
+  outline: 2px solid var(--blue-a300);
+  outline-offset: 3px;
+}
+
+.eli5-header {
+  position: relative;
+  top: auto;
+  z-index: 16;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: start;
+  width: min(100%, 1380px);
+  margin: 0 auto;
+  padding: 8px 6px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
 }
 
 .eli5-header::after {
   content: none;
 }
 
+.eli5-header__edge,
+.eli5-header__center {
+  display: flex;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.eli5-header__edge--start {
+  justify-content: flex-start;
+}
+
+.eli5-header__edge--end {
+  justify-content: flex-end;
+}
+
+.eli5-header__center {
+  justify-content: center;
+}
+
 .eli5-header__actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: flex-end;
+  gap: 0;
   flex-wrap: nowrap;
-  margin-left: 8px;
+  margin-left: 0;
 }
 
 .eli5-nav {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  gap: 14px;
+  justify-content: center;
+  gap: 36px;
   flex-wrap: nowrap;
   flex: 0 1 auto;
+  white-space: nowrap;
 }
 
 .eli5-nav a,
@@ -1202,14 +1244,14 @@ html[data-debug-ui='true'] .eli5-control-dock {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 30px;
-  padding-inline: 12px;
+  min-height: auto;
+  padding: 0;
   border: 0;
   border-radius: 0;
   background: transparent;
   box-shadow: none;
   color: var(--slate-700);
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 600;
   letter-spacing: -0.02em;
   line-height: 1.1;
@@ -1268,9 +1310,37 @@ html[data-debug-ui='true'] .eli5-control-dock {
 }
 
 .eli5-button--header {
-  min-height: 42px;
-  padding-inline: 16px;
-  font-size: 0.92rem;
+  min-height: 38px;
+  padding-inline: 18px;
+  font-size: 0.84rem;
+}
+
+.eli5-button--header-hint {
+  min-height: 38px;
+  padding-inline: 15px;
+  border-color: color-mix(in srgb, var(--slate-300) 84%, rgba(16, 18, 16, 0.06));
+  background-color: rgba(255, 255, 255, 0.96);
+  background-image: none;
+  box-shadow:
+    0 1px 2px rgba(16, 18, 16, 0.06),
+    0 6px 18px rgba(16, 18, 16, 0.08);
+  color: var(--slate-900);
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.eli5-button--nav-download {
+  min-height: 38px;
+  padding-inline: 18px;
+  border: 0;
+  background-color: #1250ff;
+  background-image: none;
+  box-shadow:
+    0 10px 22px rgba(18, 80, 255, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  color: var(--slate-050);
+  font-size: 0.84rem;
+  font-weight: 700;
 }
 
 .eli5-button--large {
@@ -1282,7 +1352,8 @@ html[data-debug-ui='true'] .eli5-control-dock {
 .eli5-hero {
   display: grid;
   justify-items: center;
-  padding: 22px 0 18px;
+  min-height: calc(100vh - 82px);
+  padding: 148px 0 18px;
 }
 
 .eli5-hero-stage {
@@ -1290,12 +1361,19 @@ html[data-debug-ui='true'] .eli5-control-dock {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: min(100%, 1220px);
-  min-height: clamp(420px, calc(100svh - 320px), 560px);
-  padding: 40px 0 12px;
+  justify-content: flex-start;
+  gap: 0;
+  width: min(100%, 1361px);
+  min-height: auto;
+  padding: 0 0 12px;
   margin-inline: auto;
+}
+
+.eli5-hero__intro,
+.eli5-hero__art {
+  display: flex;
+  justify-content: center;
+  width: 100%;
 }
 
 .eli5-hero__badge {
@@ -1331,20 +1409,36 @@ html[data-debug-ui='true'] .eli5-control-dock {
 .eli5-hero__notes {
   display: grid;
   justify-items: center;
-  gap: 12px;
-  margin-top: 0;
+  gap: 20px;
+  margin-top: 26px;
   text-align: center;
-  width: min(100%, 38rem);
+  width: min(100%, 35rem);
 }
 
 .eli5-hero__magnet-slot {
   position: relative;
-  width: 100%;
-  height: clamp(200px, 26vw, 300px);
+  width: min(100%, 1060px);
+  height: clamp(340px, 31vw, 430px);
   max-width: 100%;
   overflow: visible;
   isolation: isolate;
   pointer-events: none;
+}
+
+.eli5-hero__magnet-slot--art {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: min(100%, 998px);
+  height: auto;
+}
+
+.eli5-hero__wordmark-art {
+  display: block;
+  width: min(100%, 978px);
+  height: auto;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 
 .eli5-hero__magnet-slot::before {
@@ -1374,8 +1468,8 @@ html[data-debug-ui='true'] .eli5-control-dock {
 .eli5-hero__notes-copy {
   display: grid;
   justify-items: center;
-  gap: 10px;
-  max-width: 38rem;
+  gap: 8px;
+  max-width: 30rem;
   width: 100%;
 }
 
@@ -1394,21 +1488,26 @@ html[data-debug-ui='true'] .eli5-control-dock {
 .eli5-hero__summary {
   width: 100%;
   max-width: none;
-  color: var(--slate-700);
-  font-size: clamp(1.3rem, 1.9vw, 1.68rem);
+  color: var(--slate-900);
+  font-size: clamp(1.1rem, 1.62vw, 1.4rem);
   font-weight: 600;
   letter-spacing: -0.04em;
-  line-height: 1.24;
+  line-height: 1.18;
   text-align: center;
+}
+
+.eli5-hero__summary--lead {
+  margin-bottom: 12px;
 }
 
 .eli5-hero__detail {
   width: 100%;
-  max-width: 27.2rem;
+  max-width: 20.6rem;
   margin: 0;
   color: var(--slate-700);
-  font-size: clamp(0.98rem, 1.16vw, 1.06rem);
-  line-height: 1.56;
+  font-size: clamp(0.86rem, 0.98vw, 0.94rem);
+  font-weight: 500;
+  line-height: 1.3;
   text-align: center;
 }
 
@@ -1416,23 +1515,24 @@ html[data-debug-ui='true'] .eli5-control-dock {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px 16px;
+  gap: 8px 14px;
   flex-wrap: wrap;
-  max-width: 52rem;
-  padding-block: 12px;
+  max-width: 42rem;
+  padding-block: 8px 0;
   color: var(--slate-700);
-  font-size: 0.92rem;
+  font-size: 0.86rem;
   margin: 0;
 }
 
 .eli5-hero__compat-label {
   color: var(--slate-700);
+  font-weight: 500;
 }
 
 .eli5-hero__compat-item {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   color: var(--slate-700);
   font-weight: 500;
 }
@@ -1474,6 +1574,12 @@ html[data-debug-ui='true'] .eli5-control-dock {
   justify-content: center;
   gap: 12px;
   flex-wrap: wrap;
+}
+
+.eli5-button--hero-cta {
+  min-height: 38px;
+  padding-inline: 16px;
+  font-size: 0.84rem;
 }
 
 .eli5-section-break {
@@ -2578,25 +2684,109 @@ html[data-debug-ui='true'] .eli5-control-dock {
   }
 
   .eli5-shell {
-    padding: 24px 0 48px;
+    padding: 8px 0 48px;
   }
 
   .eli5-surface {
-    padding: 30px clamp(30px, 4vw, 72px) 100px;
+    padding: 10px 18px 100px;
+  }
+
+  .eli5-page--home-reference-desktop .eli5-shell {
+    padding-top: 0;
+  }
+
+  .eli5-page--home-reference-desktop .eli5-surface {
+    padding-top: 0;
+  }
+
+  .eli5-page--home-reference-desktop .eli5-custom-cursor {
+    display: none;
+  }
+
+  .eli5-page--home-reference-desktop .eli5-hero-reference-desktop {
+    display: block;
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
+    margin-right: calc(50% - 50vw);
+  }
+
+  .eli5-page--home-reference-desktop .eli5-hero-reference-desktop__frame {
+    width: min(100vw, 1425px);
+    aspect-ratio: 1425 / 1063;
+  }
+
+  .eli5-page--home-reference-desktop .eli5-hero-reference-desktop__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .eli5-page--home-reference-desktop .eli5-hero-reference-desktop__hotspot--helper {
+    left: 2.1%;
+    top: 2.4%;
+    width: 8.9%;
+    height: 4.8%;
+  }
+
+  .eli5-page--home-reference-desktop .eli5-hero-reference-desktop__hotspot--what {
+    left: 39.1%;
+    top: 2.45%;
+    width: 7.2%;
+    height: 2.8%;
+  }
+
+  .eli5-page--home-reference-desktop .eli5-hero-reference-desktop__hotspot--examples {
+    left: 47.3%;
+    top: 2.45%;
+    width: 5.9%;
+    height: 2.8%;
+  }
+
+  .eli5-page--home-reference-desktop .eli5-hero-reference-desktop__hotspot--science {
+    left: 54.7%;
+    top: 2.45%;
+    width: 6.6%;
+    height: 2.8%;
+  }
+
+  .eli5-page--home-reference-desktop .eli5-hero-reference-desktop__hotspot--download {
+    left: 89.4%;
+    top: 2.2%;
+    width: 8.2%;
+    height: 4.9%;
+  }
+
+  .eli5-page--home-reference-desktop .eli5-hero-reference-desktop__hotspot--cta-download {
+    left: 39.2%;
+    top: 76.3%;
+    width: 11.8%;
+    height: 4.4%;
+  }
+
+  .eli5-page--home-reference-desktop .eli5-hero-reference-desktop__hotspot--cta-examples {
+    left: 51.1%;
+    top: 76.3%;
+    width: 8.9%;
+    height: 4.4%;
+  }
+
+  .eli5-page--home-reference-desktop .eli5-header,
+  .eli5-page--home-reference-desktop .eli5-hero {
+    display: none;
   }
 
   .eli5-header {
-    max-width: min(calc(100% - 18px), 980px);
+    max-width: none;
   }
 
   .eli5-hero {
-    padding: 30px 0 22px;
+    padding: 148px 0 18px;
   }
 
   .eli5-hero-stage {
-    gap: 8px;
-    min-height: clamp(460px, calc(100svh - 300px), 620px);
-    padding: 48px 0 16px;
+    gap: 0;
+    min-height: auto;
+    padding: 0 0 12px;
   }
 
   .eli5-hero__badge {
@@ -2607,31 +2797,27 @@ html[data-debug-ui='true'] .eli5-control-dock {
   }
 
   .eli5-hero__notes {
-    width: min(100%, 40rem);
-    gap: 12px;
-  }
-
-  .eli5-hero__magnet-slot {
-    height: clamp(224px, 28vw, 340px);
+    width: min(100%, 35rem);
+    gap: 18px;
   }
 
   .eli5-hero__notes-copy {
-    max-width: 40rem;
+    max-width: 30rem;
   }
 
   .eli5-hero__summary {
-    font-size: clamp(1.45rem, 2.05vw, 1.82rem);
+    font-size: clamp(1.16rem, 1.72vw, 1.48rem);
   }
 
   .eli5-hero__detail {
-    max-width: 29rem;
-    font-size: clamp(1.02rem, 1.22vw, 1.12rem);
+    max-width: 24rem;
+    font-size: clamp(0.9rem, 1.04vw, 0.98rem);
   }
 
   .eli5-hero__compat {
-    max-width: 58rem;
-    padding-block: 14px;
-    font-size: 0.96rem;
+    max-width: 42rem;
+    padding-block: 8px 0;
+    font-size: 0.86rem;
   }
 
   .eli5-section-break {
@@ -2803,6 +2989,10 @@ html[data-debug-ui='true'] .eli5-control-dock {
     border-radius: 30px;
   }
 
+  .eli5-hero-reference-desktop {
+    display: none !important;
+  }
+
   .eli5-nav {
     gap: 14px;
   }
@@ -2818,13 +3008,20 @@ html[data-debug-ui='true'] .eli5-control-dock {
   }
 
   .eli5-header {
-    top: 8px;
-    width: fit-content;
-    max-width: calc(100% - 8px);
-    justify-content: flex-start;
-    flex-wrap: wrap;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    width: 100%;
+    max-width: none;
     gap: 10px 12px;
-    padding: 9px 12px;
+    padding: 0 0 18px;
+  }
+
+  .eli5-header__edge--start {
+    display: none;
+  }
+
+  .eli5-header__center {
+    justify-content: flex-start;
   }
 
   .eli5-header__actions {
@@ -2833,8 +3030,8 @@ html[data-debug-ui='true'] .eli5-control-dock {
   }
 
   .eli5-nav a {
-    font-size: 0.9rem;
-    padding-inline: 11px;
+    font-size: 0.84rem;
+    padding-inline: 0;
   }
 
   .eli5-hero__compat {

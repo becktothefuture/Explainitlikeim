@@ -4,6 +4,7 @@ import { createPortal, flushSync } from 'react-dom';
 import CustomCursor from './components/CustomCursor.jsx';
 import MagnetCanvas from './components/MagnetCanvas.jsx';
 import { clamp, getMagnetWidthForLabel } from './components/magnetUtils.js';
+import { CURSOR_VARIANTS } from './publicAssetUrls.js';
 import {
   applyThemeTokens,
   DEPTH_CONTROL_DEFAULTS,
@@ -98,16 +99,16 @@ const LOAD_TIMELINE = [
 const FINAL_LOAD_STAGE = LOAD_TIMELINE[LOAD_TIMELINE.length - 1]?.stage ?? 0;
 const HERO_TITLE_SLOT_PADDING_X = 28;
 const HERO_TITLE_SLOT_PADDING_Y = 24;
-const HERO_SLOT_MIN_HEIGHT = 238;
-const HERO_SLOT_ASPECT_RATIO = 2.35;
-const HERO_SLOT_HEIGHT_SCALE = 1.25;
+const HERO_SLOT_MIN_HEIGHT = 380;
+const HERO_SLOT_ASPECT_RATIO = 2.9;
+const HERO_SLOT_HEIGHT_SCALE = 1.02;
 const HERO_VISUAL_PAD_SCALE = 1.65;
 const HERO_VISUAL_PAD_BASE = 4 / HERO_VISUAL_PAD_SCALE;
 const HERO_VISUAL_PAD_MIN = 5 / HERO_VISUAL_PAD_SCALE;
 const HERO_SIZE_MIN = 72;
 const HERO_SIZE_MAX = 560;
 const HERO_LAYOUT_REFERENCE_SIZE = 269;
-const HERO_DEFAULT_SIZE = 342;
+const HERO_DEFAULT_SIZE = 270;
 const HERO_LAYOUT_VERTICAL_COMPRESSION = 0.4;
 const HERO_LAYOUT_MIGRATION_EXPANSION = 1.35;
 const HERO_AUTHORED_LETTER_GAP = -48;
@@ -115,27 +116,27 @@ const HERO_AUTHORED_WORD_GAP = 0.07;
 const HERO_AUTHORED_LINE_GAP = 48;
 
 const HERO_REFERENCE_LAYOUT = {
-  'hero-0-0-E': { cx: 0.105, cy: 0.258, rotation: -4.4 },
-  'hero-0-1-X': { cx: 0.207, cy: 0.226, rotation: -16.8 },
-  'hero-0-2-P': { cx: 0.331, cy: 0.224, rotation: -0.8 },
-  'hero-0-3-L': { cx: 0.438, cy: 0.234, rotation: -1.6 },
-  'hero-0-4-A': { cx: 0.546, cy: 0.222, rotation: 2.8 },
-  'hero-0-5-I': { cx: 0.624, cy: 0.236, rotation: -4.8 },
-  'hero-0-6-N': { cx: 0.704, cy: 0.226, rotation: -1.4 },
-  'hero-0-8-I': { cx: 0.806, cy: 0.23, rotation: 0.4 },
-  'hero-0-9-T': { cx: 0.891, cy: 0.206, rotation: -1.9 },
-  'hero-1-0-L': { cx: 0.287, cy: 0.544, rotation: 1.6 },
-  'hero-1-1-I': { cx: 0.373, cy: 0.524, rotation: 0.2 },
-  'hero-1-2-K': { cx: 0.453, cy: 0.503, rotation: 4.9 },
-  'hero-1-3-E': { cx: 0.553, cy: 0.516, rotation: -5.8 },
-  'hero-1-5-I': { cx: 0.647, cy: 0.486, rotation: 0.8 },
-  "hero-1-6-'": { cx: 0.687, cy: 0.44, rotation: 4.2 },
-  'hero-1-7-M': { cx: 0.769, cy: 0.531, rotation: 8.4 },
-  'hero-2-0-F': { cx: 0.347, cy: 0.784, rotation: 7.9 },
-  'hero-2-1-I': { cx: 0.43, cy: 0.756, rotation: -6.7 },
-  'hero-2-2-V': { cx: 0.505, cy: 0.741, rotation: 6.2 },
-  'hero-2-3-E': { cx: 0.608, cy: 0.773, rotation: -2.3 },
-  'hero-2-4-…': { cx: 0.772, cy: 0.845, rotation: -1.2 },
+  'hero-0-0-E': { cx: 0.109, cy: 0.207, rotation: -4.4 },
+  'hero-0-1-X': { cx: 0.215, cy: 0.235, rotation: -16.8 },
+  'hero-0-2-P': { cx: 0.326, cy: 0.183, rotation: -0.8 },
+  'hero-0-3-L': { cx: 0.421, cy: 0.205, rotation: -1.6 },
+  'hero-0-4-A': { cx: 0.518, cy: 0.202, rotation: 2.8 },
+  'hero-0-5-I': { cx: 0.594, cy: 0.182, rotation: -4.8 },
+  'hero-0-6-N': { cx: 0.68, cy: 0.181, rotation: -1.4 },
+  'hero-0-8-I': { cx: 0.822, cy: 0.239, rotation: 0.4 },
+  'hero-0-9-T': { cx: 0.889, cy: 0.183, rotation: -1.9 },
+  'hero-1-0-L': { cx: 0.277, cy: 0.534, rotation: 1.6 },
+  'hero-1-1-I': { cx: 0.339, cy: 0.538, rotation: 0.2 },
+  'hero-1-2-K': { cx: 0.418, cy: 0.529, rotation: 4.9 },
+  'hero-1-3-E': { cx: 0.519, cy: 0.501, rotation: -5.8 },
+  'hero-1-5-I': { cx: 0.684, cy: 0.491, rotation: 0.8 },
+  "hero-1-6-'": { cx: 0.731, cy: 0.399, rotation: 4.2 },
+  'hero-1-7-M': { cx: 0.823, cy: 0.519, rotation: 8.4 },
+  'hero-2-0-F': { cx: 0.383, cy: 0.853, rotation: 7.9 },
+  'hero-2-1-I': { cx: 0.454, cy: 0.853, rotation: -6.7 },
+  'hero-2-2-V': { cx: 0.533, cy: 0.814, rotation: 6.2 },
+  'hero-2-3-E': { cx: 0.642, cy: 0.819, rotation: -2.3 },
+  'hero-2-4-…': { cx: 0.776, cy: 0.9, rotation: -1.2 },
 };
 
 const HERO_MISALIGNED_LAYOUT_V5 = {
@@ -442,9 +443,9 @@ function getLoadItemClass(baseClassName, isEntered, variantClassName = '') {
 }
 
 const HERO_COPY = {
-  badge: 'a practical skill for AI agents',
+  helperLabel: 'How to use it?',
   summary: 'An AI skill for answers you can follow.',
-  detail: 'Add it to Codex, Claude Code, Cursor, or a similar AI setup. Ask one question. Get five versions of the answer, from simple to precise. No follow-up rewrite prompt required.',
+  detail: 'Ask one question. Get five versions of the answer, from simple to precise.',
   compatLabel: 'Use it with',
 };
 
@@ -2897,7 +2898,7 @@ function DepthLabView({
                   <div className="eli5-depth-lab__reference-row">
                     <div className="eli5-depth-lab__cursor-swatch eli5-depth--3" aria-hidden="true">
                       <span className="eli5-depth-lab__cursor-glow" />
-                      <img src="/assets/cursors/pointer.png" alt="" draggable="false" />
+                      <img src={CURSOR_VARIANTS.pointer.src} alt="" draggable="false" />
                     </div>
                   </div>
                 </LabCard>
@@ -4577,6 +4578,11 @@ export default function App() {
   const isControlPanelVisible = isInlineFallbackOpen || Boolean(controlPanelHost);
   const isDepthLabView = appView === APP_VIEWS.depthLab;
   const isTypographyLabView = appView === APP_VIEWS.typographyLab;
+  const showFloatingControls =
+    isDebugUIEnabled &&
+    typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).get('controls') === '1';
+  const useReferenceHeroArt = !showFloatingControls;
   const sharedPanelCaption =
     'Edit each depth class directly. Every level has its own drop shadow, light edge, shadow edge, and light gradient.';
   const sharedPanelProps = {
@@ -4613,11 +4619,43 @@ export default function App() {
   }
 
   return (
-    <div className="eli5-page" data-load-stage={loadStage}>
+    <div className="eli5-page eli5-page--home-reference-desktop" data-load-stage={loadStage}>
       <CustomCursor />
       <main className="eli5-main">
         <div className="eli5-shell">
           <div className="eli5-surface">
+            <section className="eli5-hero-reference-desktop" aria-label="Explain It Like I'm Five hero reference">
+              <div className="eli5-hero-reference-desktop__frame">
+                <img
+                  className="eli5-hero-reference-desktop__image"
+                  src="/assets/hero/hero-reference-desktop-full.png"
+                  alt=""
+                />
+                <div className="eli5-hero-reference-desktop__hotspots" aria-hidden="false">
+                  <a className="eli5-hero-reference-desktop__hotspot eli5-hero-reference-desktop__hotspot--helper" href="#install">
+                    <span className="eli5-sr-only">{HERO_COPY.helperLabel}</span>
+                  </a>
+                  <a className="eli5-hero-reference-desktop__hotspot eli5-hero-reference-desktop__hotspot--what" href="#how">
+                    <span className="eli5-sr-only">What it does</span>
+                  </a>
+                  <a className="eli5-hero-reference-desktop__hotspot eli5-hero-reference-desktop__hotspot--examples" href="#examples">
+                    <span className="eli5-sr-only">Examples</span>
+                  </a>
+                  <a className="eli5-hero-reference-desktop__hotspot eli5-hero-reference-desktop__hotspot--science" href="#science">
+                    <span className="eli5-sr-only">The science</span>
+                  </a>
+                  <DownloadLink className="eli5-hero-reference-desktop__hotspot eli5-hero-reference-desktop__hotspot--download">
+                    <span className="eli5-sr-only">Download</span>
+                  </DownloadLink>
+                  <DownloadLink className="eli5-hero-reference-desktop__hotspot eli5-hero-reference-desktop__hotspot--cta-download">
+                    <span className="eli5-sr-only">Download the skill</span>
+                  </DownloadLink>
+                  <a className="eli5-hero-reference-desktop__hotspot eli5-hero-reference-desktop__hotspot--cta-examples" href="#examples">
+                    <span className="eli5-sr-only">See Examples</span>
+                  </a>
+                </div>
+              </div>
+            </section>
             <header
               className={getLoadItemClass(
                 'eli5-header eli5-depth--2',
@@ -4625,16 +4663,33 @@ export default function App() {
                 'eli5-load-item--header',
               )}
             >
-              <nav className="eli5-nav" aria-label="Primary">
-                <a href="#how">What it does</a>
-                <a href="#examples">See output</a>
-                <a href="#install">Install</a>
-              </nav>
+              <div className="eli5-header__edge eli5-header__edge--start">
+                <a
+                  href="#install"
+                  className={getLoadItemClass(
+                    'eli5-button eli5-button--secondary eli5-button--header-hint eli5-depth--1',
+                    hasEnteredLoadCue(LOAD_CUES.heroBadge),
+                    'eli5-load-item--badge',
+                  )}
+                >
+                  {HERO_COPY.helperLabel}
+                </a>
+              </div>
 
-              <div className="eli5-header__actions">
-                <DownloadLink className="eli5-button eli5-button--primary eli5-button--header eli5-depth--1">
-                  Download
-                </DownloadLink>
+              <div className="eli5-header__center">
+                <nav className="eli5-nav" aria-label="Primary">
+                  <a href="#how">What it does</a>
+                  <a href="#examples">Examples</a>
+                  <a href="#science">The science</a>
+                </nav>
+              </div>
+
+              <div className="eli5-header__edge eli5-header__edge--end">
+                <div className="eli5-header__actions">
+                  <DownloadLink className="eli5-button eli5-button--header eli5-button--nav-download eli5-depth--1">
+                    Download
+                  </DownloadLink>
+                </div>
               </div>
             </header>
 
@@ -4642,41 +4697,57 @@ export default function App() {
                 <section id="hero" className="eli5-hero">
                   <div ref={heroStageRef} className="eli5-hero-stage">
                     <h1 className="eli5-sr-only">Explain It Like I&apos;m Five</h1>
-
-                    <div
-                      className={getLoadItemClass(
-                        'eli5-hero__badge eli5-hero__badge--printed eli5-depth--1',
-                        hasEnteredLoadCue(LOAD_CUES.heroBadge),
-                        'eli5-load-item--badge',
-                      )}
-                    >
-                      {HERO_COPY.badge}
+                    <div className="eli5-hero__intro">
+                      <RevealOnView
+                        as="p"
+                        active={hasEnteredLoadCue(LOAD_CUES.heroNotes)}
+                        className="eli5-hero__summary eli5-hero__summary--lead"
+                        delay={40}
+                        variantClassName="eli5-reveal--soft"
+                      >
+                        {HERO_COPY.summary}
+                      </RevealOnView>
                     </div>
 
-                    <div
-                      className={getLoadItemClass(
-                        'eli5-hero__magnet-slot',
-                        hasEnteredLoadCue(LOAD_CUES.heroTitle),
-                        'eli5-load-item--hero-title',
-                      )}
-                      data-magnet-board="hero"
-                      data-layout-editing={isHeroLayoutEditing ? 'true' : undefined}
-                      aria-hidden="true"
-                      style={{
-                        height: heroTitleSlot.height ? `${heroTitleSlot.height}px` : undefined,
-                      }}
-                    >
-                      {magnetSeed.length > 0 ? (
-                        <MagnetCanvas
-                          className={`eli5-magnet-layer${isHeroLayoutEditing ? ' is-layout-editing' : ''}`}
-                          magnets={magnetSeed}
-                          introEnabled={hasEnteredLoadCue(LOAD_CUES.heroTitle)}
-                          motionConfig={heroMagnetControls}
-                          localCoordinates
-                          layoutEditing={isHeroLayoutEditing}
-                          onLayoutCommit={handleHeroLayoutDraftCommit}
-                        />
-                      ) : null}
+                    <div className="eli5-hero__art">
+                      <div
+                        className={getLoadItemClass(
+                          [
+                            'eli5-hero__magnet-slot',
+                            useReferenceHeroArt ? 'eli5-hero__magnet-slot--art' : '',
+                          ].filter(Boolean).join(' '),
+                          hasEnteredLoadCue(LOAD_CUES.heroTitle),
+                          'eli5-load-item--hero-title',
+                        )}
+                        data-magnet-board="hero"
+                        data-layout-editing={isHeroLayoutEditing ? 'true' : undefined}
+                        aria-hidden="true"
+                        style={
+                          useReferenceHeroArt
+                            ? undefined
+                            : {
+                                height: heroTitleSlot.height ? `${heroTitleSlot.height}px` : undefined,
+                              }
+                        }
+                      >
+                        {useReferenceHeroArt ? (
+                          <img
+                            className="eli5-hero__wordmark-art"
+                            src="/assets/hero/hero-wordmark-reference.png"
+                            alt=""
+                          />
+                        ) : magnetSeed.length > 0 ? (
+                          <MagnetCanvas
+                            className={`eli5-magnet-layer${isHeroLayoutEditing ? ' is-layout-editing' : ''}`}
+                            magnets={magnetSeed}
+                            introEnabled={hasEnteredLoadCue(LOAD_CUES.heroTitle)}
+                            motionConfig={heroMagnetControls}
+                            localCoordinates
+                            layoutEditing={isHeroLayoutEditing}
+                            onLayoutCommit={handleHeroLayoutDraftCommit}
+                          />
+                        ) : null}
+                      </div>
                     </div>
 
                     <div
@@ -4690,15 +4761,6 @@ export default function App() {
                         <RevealOnView
                           as="p"
                           active={hasEnteredLoadCue(LOAD_CUES.heroNotes)}
-                          className="eli5-hero__summary"
-                          delay={40}
-                          variantClassName="eli5-reveal--soft"
-                        >
-                          {HERO_COPY.summary}
-                        </RevealOnView>
-                        <RevealOnView
-                          as="p"
-                          active={hasEnteredLoadCue(LOAD_CUES.heroNotes)}
                           className="eli5-hero__detail"
                           delay={170}
                           variantClassName="eli5-reveal--soft"
@@ -4707,12 +4769,35 @@ export default function App() {
                         </RevealOnView>
                       </div>
 
+                      <div className="eli5-hero__actions">
+                        <RevealOnView
+                          active={hasEnteredLoadCue(LOAD_CUES.heroNotes)}
+                          className="eli5-hero__action-reveal"
+                          delay={320}
+                          variantClassName="eli5-reveal--soft"
+                        >
+                          <DownloadLink className="eli5-button eli5-button--primary eli5-button--hero-cta eli5-depth--1">
+                            Download the skill
+                          </DownloadLink>
+                        </RevealOnView>
+                        <RevealOnView
+                          active={hasEnteredLoadCue(LOAD_CUES.heroNotes)}
+                          className="eli5-hero__action-reveal"
+                          delay={440}
+                          variantClassName="eli5-reveal--soft"
+                        >
+                          <a className="eli5-button eli5-button--secondary eli5-button--hero-cta eli5-depth--1" href="#examples">
+                            See Examples
+                          </a>
+                        </RevealOnView>
+                      </div>
+
                       <div className="eli5-hero__compat" aria-label="Supported tools">
                         <RevealOnView
                           as="span"
                           active={hasEnteredLoadCue(LOAD_CUES.heroNotes)}
                           className="eli5-hero__compat-label"
-                          delay={280}
+                          delay={520}
                           variantClassName="eli5-reveal--soft"
                         >
                           {HERO_COPY.compatLabel}
@@ -4723,7 +4808,7 @@ export default function App() {
                             key={tool.key}
                             active={hasEnteredLoadCue(LOAD_CUES.heroNotes)}
                             className="eli5-hero__compat-item"
-                            delay={360 + index * 80}
+                            delay={600 + index * 80}
                             variantClassName="eli5-reveal--pill"
                           >
                             <span className={`eli5-tool-logo eli5-tool-logo--${tool.key}`} aria-hidden="true">
@@ -4732,29 +4817,6 @@ export default function App() {
                             <span>{tool.label}</span>
                           </RevealOnView>
                         ))}
-                      </div>
-
-                      <div className="eli5-hero__actions">
-                        <RevealOnView
-                          active={hasEnteredLoadCue(LOAD_CUES.heroNotes)}
-                          className="eli5-hero__action-reveal"
-                          delay={560}
-                          variantClassName="eli5-reveal--soft"
-                        >
-                          <DownloadLink className="eli5-button eli5-button--primary eli5-depth--1">
-                            Download the skill
-                          </DownloadLink>
-                        </RevealOnView>
-                        <RevealOnView
-                          active={hasEnteredLoadCue(LOAD_CUES.heroNotes)}
-                          className="eli5-hero__action-reveal"
-                          delay={680}
-                          variantClassName="eli5-reveal--soft"
-                        >
-                          <a className="eli5-button eli5-button--secondary eli5-depth--1" href="#examples">
-                            See the output
-                          </a>
-                        </RevealOnView>
                       </div>
                     </div>
                   </div>
@@ -5181,7 +5243,7 @@ export default function App() {
           </div>
         </div>
       </main>
-      {isDebugUIEnabled ? (
+      {showFloatingControls ? (
         <div
           className={getLoadItemClass(
             'eli5-control-launcher',
@@ -5215,7 +5277,7 @@ export default function App() {
         </div>
       ) : null}
 
-      {isDebugUIEnabled && isInlineFallbackOpen ? (
+      {showFloatingControls && isInlineFallbackOpen ? (
         <div
           className={getLoadItemClass(
             'eli5-control-dock',
