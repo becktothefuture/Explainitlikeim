@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Iterable
 
 try:
-    from PIL import Image
+    from PIL import Image, ImageEnhance
 except ImportError as exc:  # pragma: no cover
     raise SystemExit(
         "Pillow is required to build cursors. Install it with `python3 -m pip install pillow`."
@@ -27,6 +27,7 @@ OUTPUT_ORDER = (
     ("grabbing", 2, 1),
 )
 CANVAS_SIZE = 64
+SATURATION_MULTIPLIER = 0.82
 TARGET_BOXES = {
     "default": (40, 40),
     "pointer": (34, 38),
@@ -329,6 +330,14 @@ def remove_small_islands(image: Image.Image, min_area: int) -> Image.Image:
     return image
 
 
+def reduce_saturation(image: Image.Image, multiplier: float) -> Image.Image:
+    alpha = image.getchannel("A")
+    rgb = image.convert("RGB")
+    toned = ImageEnhance.Color(rgb).enhance(multiplier).convert("RGBA")
+    toned.putalpha(alpha)
+    return toned
+
+
 def place_on_canvas(image: Image.Image, name: str) -> Image.Image:
     target_width, target_height = TARGET_BOXES[name]
     placement_mode, offset = PLACEMENT[name]
@@ -361,7 +370,8 @@ def build_cursors(input_path: Path, out_dir: Path) -> None:
         bound = bounds[(row * 3) + column]
         cell = source.crop(bound)
         cleaned = remove_background(cell)
-        output = place_on_canvas(cleaned, name)
+        toned = reduce_saturation(cleaned, SATURATION_MULTIPLIER)
+        output = place_on_canvas(toned, name)
         output.save(out_dir / f"{name}.png", optimize=True, compress_level=9)
 
     print(f"Built {len(OUTPUT_ORDER)} cursor assets from {input_path}")

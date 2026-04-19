@@ -1,12 +1,13 @@
 const FOUNDATIONS = {
-  slate050: '#fbfcfd',
-  slate100: '#eff3f7',
-  slate200: '#dde5ec',
-  slate300: '#c3ceda',
-  slate500: '#8e9aa8',
-  slate700: '#586575',
-  slate900: '#182335',
-  slate950: '#121a26',
+  slate050: '#f8faf9',
+  slate100: '#edf0ee',
+  slate200: '#dbe0dc',
+  slate300: '#c3c9c4',
+  slate500: '#8c938d',
+  slate700: '#59615c',
+  slate900: '#191d1b',
+  slate950: '#0f1210',
+  violet500: '#736d96',
   blue500: '#325fff',
   blueA300: 'rgba(50, 95, 255, 0.34)',
 };
@@ -24,22 +25,22 @@ const COLORS = {
   lineStrong: FOUNDATIONS.slate300,
   blue: FOUNDATIONS.blue500,
   onDark: FOUNDATIONS.slate050,
-  buttonDarkTop: '#28364b',
-  buttonDarkBottom: '#17222f',
+  buttonDarkTop: '#212622',
+  buttonDarkBottom: '#111411',
   brandCodex: FOUNDATIONS.slate900,
   brandClaude: '#de7755',
   brandCursor: FOUNDATIONS.slate900,
   mediaBg: FOUNDATIONS.slate950,
-  magnetCoral: '#ff5d54',
-  magnetAmber: '#ffbf24',
-  magnetMint: '#18cd80',
-  magnetBlue: '#2f68ff',
-  magnetOrange: '#ff8b2b',
-  magnetViolet: '#7d58ff',
-  dividerGreen: '#18cd80',
-  dividerRed: '#ff5d54',
-  magnetTextLight: '#fffaf7',
-  magnetTextDark: '#14202d',
+  magnetCoral: '#ff3628',
+  magnetAmber: '#ffbc00',
+  magnetMint: '#00cf73',
+  magnetBlue: '#0d4eff',
+  magnetOrange: '#ff6d00',
+  magnetViolet: '#6530ff',
+  dividerGreen: '#00cf73',
+  dividerRed: '#ff3628',
+  magnetTextLight: '#fcfbf7',
+  magnetTextDark: '#141715',
   magnetShadow: '#48372a',
   magnetShadowSoft: '#32271f',
   magnetSpecular: '#fffdf7',
@@ -47,12 +48,12 @@ const COLORS = {
 };
 
 export const MAGNET_COLORS = [
-  mixHex(COLORS.magnetCoral, '#000000', 0.1),
-  mixHex(COLORS.magnetAmber, '#000000', 0.1),
-  mixHex(COLORS.magnetMint, '#000000', 0.1),
-  mixHex(COLORS.magnetBlue, '#000000', 0.1),
-  mixHex(COLORS.magnetOrange, '#000000', 0.1),
-  mixHex(COLORS.magnetViolet, '#000000', 0.1),
+  mixHex(COLORS.magnetCoral, '#000000', 0.03),
+  mixHex(COLORS.magnetAmber, '#000000', 0.03),
+  mixHex(COLORS.magnetMint, '#000000', 0.03),
+  mixHex(COLORS.magnetBlue, '#000000', 0.03),
+  mixHex(COLORS.magnetOrange, '#000000', 0.03),
+  mixHex(COLORS.magnetViolet, '#000000', 0.03),
 ];
 
 export const EXAMPLE_TAB_COLORS = [
@@ -80,6 +81,7 @@ export const MAGNET_RENDER_THEME = {
 };
 
 export const LEVEL_CONTROL_STORAGE_KEY = 'eli5-scene-depth-controls-v3';
+export const DEPTH_CONTROL_STORAGE_KEY = 'eli5-depth-token-controls-v1';
 
 export const LEVEL_CONTROL_DEFAULTS = {
   sceneLevelStep: 1,
@@ -94,6 +96,29 @@ export const LEVEL_CONTROL_DEFAULTS = {
   scenePaperNoiseScale: 1,
 };
 
+export const DEPTH_CONTROL_DEFAULTS = {
+  depthInsetDropShadow: '0 0 0 rgba(0, 0, 0, 0)',
+  depthInsetLightEdge: 'inset 0px -1.215px 1.582px rgba(248, 250, 249, 0.109), inset 0px -2.7px 5.897px rgba(248, 250, 249, 0.132)',
+  depthInsetShadowEdge: 'inset 0px 1.08px 1.726px rgba(72, 55, 42, 0.198), inset 0px 2.7px 6.329px rgba(50, 39, 31, 0.107)',
+  depthInsetLightGradient: 'linear-gradient(180deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.08) 38%, rgba(255, 255, 255, 0) 100%)',
+  depth0DropShadow: '0px 3.499px 9.267px rgba(72, 55, 42, 0.002), 0px 12.546px 27.414px rgba(50, 39, 31, 0.004), 0px 29.952px 59.199px rgba(50, 39, 31, 0.002)',
+  depth0LightEdge: 'inset 0px 0.8px 7.267px rgba(248, 250, 249, 0.028)',
+  depth0ShadowEdge: 'inset 0px -3.2px 14.108px rgba(89, 97, 92, 0.024)',
+  depth0LightGradient: 'linear-gradient(180deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.05) 42%, rgba(255, 255, 255, 0) 100%)',
+  depth1DropShadow: '0px 1.008px 4.005px rgba(72, 55, 42, 0.193), 0px 4.89px 14.799px rgba(50, 39, 31, 0.041), 0px 10.59px 29.577px rgba(50, 39, 31, 0.016)',
+  depth1LightEdge: 'inset 0px 0.8px 5.779px rgba(248, 250, 249, 0.06)',
+  depth1ShadowEdge: 'inset 0px -3.2px 10.899px rgba(89, 97, 92, 0.063)',
+  depth1LightGradient: 'linear-gradient(180deg, rgba(255, 255, 255, 0.24) 0%, rgba(255, 255, 255, 0.07) 38%, rgba(255, 255, 255, 0) 100%)',
+  depth2DropShadow: '0px 6.579px 29.27px rgba(72, 55, 42, 0.081), 0px 34.199px 101.624px rgba(50, 39, 31, 0.06), 0px 88.447px 233.919px rgba(50, 39, 31, 0.044)',
+  depth2LightEdge: 'inset 0px 0.8px 10.163px rgba(248, 250, 249, 0.072)',
+  depth2ShadowEdge: 'inset 0px -3.2px 18.613px rgba(89, 97, 92, 0.076)',
+  depth2LightGradient: 'linear-gradient(180deg, rgba(255, 255, 255, 0.26) 0%, rgba(255, 255, 255, 0.08) 34%, rgba(255, 255, 255, 0) 100%)',
+  depth3DropShadow: '0px 7.627px 33.496px rgba(72, 55, 42, 0.085), 0px 38.678px 115.607px rgba(50, 39, 31, 0.065), 0px 100.03px 263.213px rgba(50, 39, 31, 0.047)',
+  depth3LightEdge: 'inset 0px 0.8px 10.357px rgba(248, 250, 249, 0.072)',
+  depth3ShadowEdge: 'inset 0px -3.2px 17.107px rgba(89, 97, 92, 0.076)',
+  depth3LightGradient: 'linear-gradient(180deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.09) 32%, rgba(255, 255, 255, 0) 100%)',
+};
+
 const STATIC_THEME_VARS = {
   '--slate-050': FOUNDATIONS.slate050,
   '--slate-100': FOUNDATIONS.slate100,
@@ -103,8 +128,11 @@ const STATIC_THEME_VARS = {
   '--slate-700': FOUNDATIONS.slate700,
   '--slate-900': FOUNDATIONS.slate900,
   '--slate-950': FOUNDATIONS.slate950,
+  '--violet-500': FOUNDATIONS.violet500,
   '--blue-500': FOUNDATIONS.blue500,
   '--blue-a300': FOUNDATIONS.blueA300,
+  '--skill-pill-fill': rgba(COLORS.magnetViolet, 0.14),
+  '--skill-pill-ink': COLORS.magnetViolet,
   '--external-claude-500': COLORS.brandClaude,
   '--magnet-coral': COLORS.magnetCoral,
   '--magnet-amber': COLORS.magnetAmber,
@@ -113,18 +141,18 @@ const STATIC_THEME_VARS = {
   '--magnet-orange': COLORS.magnetOrange,
   '--magnet-violet': COLORS.magnetViolet,
   '--slate-surface': rgba(COLORS.paperStrong, 0.86),
-  '--slate-gradient-100': 'linear-gradient(180deg, rgba(250, 251, 252, 1) 0%, rgba(239, 243, 247, 1) 100%)',
-  '--slate-gradient-050': 'linear-gradient(180deg, rgba(246, 249, 251, 1) 0%, rgba(235, 239, 244, 0.98) 100%)',
-  '--signal-gradient-violet': 'linear-gradient(180deg, rgba(140, 105, 255, 0.2), rgba(140, 105, 255, 0.1))',
-  '--slate-gradient-900': 'linear-gradient(180deg, #28364b 0%, #17222f 100%)',
+  '--slate-gradient-100': 'linear-gradient(180deg, rgba(252, 252, 249, 1) 0%, rgba(241, 241, 236, 1) 100%)',
+  '--slate-gradient-050': 'linear-gradient(180deg, rgba(247, 247, 243, 1) 0%, rgba(236, 236, 231, 0.98) 100%)',
+  '--signal-gradient-violet': `linear-gradient(180deg, ${rgba(COLORS.magnetViolet, 0.24)} 0%, ${rgba(COLORS.magnetViolet, 0.12)} 100%)`,
+  '--slate-gradient-900': 'linear-gradient(180deg, #242822 0%, #121511 100%)',
   '--signal-gradient-gold': COLORS.magnetAmber,
   '--slate-highlight': 'rgba(255, 255, 255, 0.52)',
-  '--slate-gradient-200': `radial-gradient(circle at 14% 0%, ${rgba(mixHex(COLORS.inkSoft, COLORS.paper, 0.72), 0.1)} 0%, transparent 26%), radial-gradient(circle at 82% 8%, ${rgba(mixHex(COLORS.blue, COLORS.paper, 0.8), 0.08)} 0%, transparent 30%), radial-gradient(circle at 50% 116%, ${rgba(mixHex(COLORS.mediaBg, COLORS.bg, 0.54), 0.08)} 0%, transparent 38%), linear-gradient(180deg, ${COLORS.paper} 0%, ${COLORS.bg} 100%)`,
-  '--slate-gradient-300': `radial-gradient(circle at 20% 12%, rgba(255, 255, 255, 0.14) 0, transparent 22%), radial-gradient(circle at 78% 18%, ${rgba(mixHex(COLORS.bg, COLORS.mediaBg, 0.26), 0.04)} 0, transparent 28%)`,
+  '--slate-gradient-200': `radial-gradient(circle at 16% 0%, ${rgba(mixHex(COLORS.paperStrong, COLORS.bg, 0.22), 0.2)} 0%, transparent 28%), radial-gradient(circle at 80% 12%, ${rgba(mixHex(COLORS.inkSoft, COLORS.paper, 0.84), 0.06)} 0%, transparent 28%), radial-gradient(circle at 50% 116%, ${rgba(mixHex(COLORS.mediaBg, COLORS.bg, 0.6), 0.06)} 0%, transparent 38%), linear-gradient(180deg, ${COLORS.paper} 0%, ${COLORS.bg} 100%)`,
+  '--slate-gradient-300': `radial-gradient(circle at 20% 12%, rgba(255, 255, 255, 0.12) 0, transparent 22%), radial-gradient(circle at 78% 18%, ${rgba(mixHex(COLORS.bg, COLORS.mediaBg, 0.2), 0.035)} 0, transparent 28%)`,
   '--page-noise-image': "url('/assets/paper-noise.png')",
-  '--page-vignette': 'inset 0 24px 100px rgba(255, 255, 255, 0.22), inset 0 -56px 136px rgba(24, 35, 53, 0.08)',
-  '--slate-veil': 'rgba(88, 101, 117, 0.054)',
-  '--slate-gradient-overlay': `radial-gradient(circle at 18% 10%, rgba(251, 252, 253, 0.227) 0%, transparent 34%), repeating-linear-gradient(0deg, rgba(50, 39, 31, 0.02) 0, rgba(50, 39, 31, 0.02) 1px, transparent 1px, transparent 20px), repeating-linear-gradient(90deg, rgba(251, 252, 253, 0.046) 0, rgba(251, 252, 253, 0.046) 1px, transparent 1px, transparent 30px)`,
+  '--page-vignette': 'inset 0 24px 100px rgba(255, 255, 255, 0.18), inset 0 -56px 136px rgba(16, 18, 16, 0.07)',
+  '--slate-veil': 'rgba(93, 96, 89, 0.05)',
+  '--slate-gradient-overlay': `radial-gradient(circle at 18% 10%, rgba(252, 252, 249, 0.2) 0%, transparent 34%), repeating-linear-gradient(0deg, rgba(16, 18, 16, 0.014) 0, rgba(16, 18, 16, 0.014) 1px, transparent 1px, transparent 20px), repeating-linear-gradient(90deg, rgba(252, 252, 249, 0.04) 0, rgba(252, 252, 249, 0.04) 1px, transparent 1px, transparent 30px)`,
   '--slate-gradient-sheen': 'linear-gradient(180deg, rgba(255, 255, 255, 0.24) 0%, rgba(255, 255, 255, 0.05) 38%)',
   '--headline-shadow': 'none',
   '--transparent': 'transparent',
@@ -277,6 +305,39 @@ export function loadLevelControls() {
     return sanitizeLevelControls(JSON.parse(raw));
   } catch {
     return LEVEL_CONTROL_DEFAULTS;
+  }
+}
+
+export function sanitizeDepthControls(controls = {}) {
+  return Object.fromEntries(
+    Object.entries(DEPTH_CONTROL_DEFAULTS).map(([key, fallback]) => {
+      const value = controls[key];
+
+      if (typeof value !== 'string') {
+        return [key, fallback];
+      }
+
+      const trimmed = value.trim();
+      return [key, trimmed || fallback];
+    }),
+  );
+}
+
+export function loadDepthControls() {
+  if (typeof window === 'undefined') {
+    return DEPTH_CONTROL_DEFAULTS;
+  }
+
+  try {
+    const raw = window.localStorage.getItem(DEPTH_CONTROL_STORAGE_KEY);
+
+    if (!raw) {
+      return DEPTH_CONTROL_DEFAULTS;
+    }
+
+    return sanitizeDepthControls(JSON.parse(raw));
+  } catch {
+    return DEPTH_CONTROL_DEFAULTS;
   }
 }
 
@@ -708,6 +769,66 @@ function buildModularGradients(levelMinus1, level0, level1, level2) {
   };
 }
 
+function buildDepthShadowStack(...parts) {
+  const shadowParts = parts
+    .map((part) => (typeof part === 'string' ? part.trim() : ''))
+    .filter((part) => part && part.toLowerCase() !== 'none');
+
+  return shadowParts.join(', ') || 'none';
+}
+
+function buildDepthThemeVars(depthControls = DEPTH_CONTROL_DEFAULTS) {
+  const controls = sanitizeDepthControls(depthControls);
+
+  return {
+    '--eli5-depth-inset-drop-shadow': controls.depthInsetDropShadow,
+    '--eli5-depth-inset-light-edge': controls.depthInsetLightEdge,
+    '--eli5-depth-inset-shadow-edge': controls.depthInsetShadowEdge,
+    '--eli5-depth-inset-light-gradient': controls.depthInsetLightGradient,
+    '--eli5-depth-inset-shadow-stack': buildDepthShadowStack(
+      controls.depthInsetDropShadow,
+      controls.depthInsetLightEdge,
+      controls.depthInsetShadowEdge,
+    ),
+    '--eli5-depth-0-drop-shadow': controls.depth0DropShadow,
+    '--eli5-depth-0-light-edge': controls.depth0LightEdge,
+    '--eli5-depth-0-shadow-edge': controls.depth0ShadowEdge,
+    '--eli5-depth-0-light-gradient': controls.depth0LightGradient,
+    '--eli5-depth-0-shadow-stack': buildDepthShadowStack(
+      controls.depth0DropShadow,
+      controls.depth0LightEdge,
+      controls.depth0ShadowEdge,
+    ),
+    '--eli5-depth-1-drop-shadow': controls.depth1DropShadow,
+    '--eli5-depth-1-light-edge': controls.depth1LightEdge,
+    '--eli5-depth-1-shadow-edge': controls.depth1ShadowEdge,
+    '--eli5-depth-1-light-gradient': controls.depth1LightGradient,
+    '--eli5-depth-1-shadow-stack': buildDepthShadowStack(
+      controls.depth1DropShadow,
+      controls.depth1LightEdge,
+      controls.depth1ShadowEdge,
+    ),
+    '--eli5-depth-2-drop-shadow': controls.depth2DropShadow,
+    '--eli5-depth-2-light-edge': controls.depth2LightEdge,
+    '--eli5-depth-2-shadow-edge': controls.depth2ShadowEdge,
+    '--eli5-depth-2-light-gradient': controls.depth2LightGradient,
+    '--eli5-depth-2-shadow-stack': buildDepthShadowStack(
+      controls.depth2DropShadow,
+      controls.depth2LightEdge,
+      controls.depth2ShadowEdge,
+    ),
+    '--eli5-depth-3-drop-shadow': controls.depth3DropShadow,
+    '--eli5-depth-3-light-edge': controls.depth3LightEdge,
+    '--eli5-depth-3-shadow-edge': controls.depth3ShadowEdge,
+    '--eli5-depth-3-light-gradient': controls.depth3LightGradient,
+    '--eli5-depth-3-shadow-stack': buildDepthShadowStack(
+      controls.depth3DropShadow,
+      controls.depth3LightEdge,
+      controls.depth3ShadowEdge,
+    ),
+  };
+}
+
 function buildThemeVars(levelControls = LEVEL_CONTROL_DEFAULTS) {
   const controls = sanitizeLevelControls(levelControls);
   const levelMinus1 = getLevelControlFactors(controls, 'levelMinus1');
@@ -926,7 +1047,10 @@ function buildThemeVars(levelControls = LEVEL_CONTROL_DEFAULTS) {
 
 export function applyThemeTokens(
   root = typeof document !== 'undefined' ? document.documentElement : null,
-  { levelControls = LEVEL_CONTROL_DEFAULTS } = {},
+  {
+    levelControls = LEVEL_CONTROL_DEFAULTS,
+    depthControls = DEPTH_CONTROL_DEFAULTS,
+  } = {},
 ) {
   if (!root) {
     return;
@@ -935,6 +1059,7 @@ export function applyThemeTokens(
   const themeVars = {
     ...STATIC_THEME_VARS,
     ...buildThemeVars(levelControls),
+    ...buildDepthThemeVars(depthControls),
   };
 
   Object.entries(themeVars).forEach(([name, value]) => {

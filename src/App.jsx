@@ -6,14 +6,13 @@ import MagnetCanvas from './components/MagnetCanvas.jsx';
 import { clamp, getMagnetWidthForLabel } from './components/magnetUtils.js';
 import {
   applyThemeTokens,
-  getPageNoiseOpacity,
-  getPageNoiseSize,
+  DEPTH_CONTROL_DEFAULTS,
+  DEPTH_CONTROL_STORAGE_KEY,
   getLevelControlFactors,
+  loadDepthControls,
   LEVEL_CONTROL_DEFAULTS,
-  LEVEL_CONTROL_STORAGE_KEY,
-  loadLevelControls,
   MAGNET_COLORS,
-  sanitizeLevelControls,
+  sanitizeDepthControls,
   SECTION_BREAK_COLORS,
 } from './theme.js';
 
@@ -58,6 +57,7 @@ const CONTROL_PANEL_SECTION_STORAGE_KEY = 'eli5-control-panel-sections-v1';
 const APP_VIEWS = {
   home: 'home',
   depthLab: 'depth-lab',
+  typographyLab: 'typography-lab',
 };
 const LOAD_CUES = {
   header: 1,
@@ -115,6 +115,30 @@ const HERO_AUTHORED_WORD_GAP = 0.07;
 const HERO_AUTHORED_LINE_GAP = 48;
 
 const HERO_REFERENCE_LAYOUT = {
+  'hero-0-0-E': { cx: 0.105, cy: 0.258, rotation: -4.4 },
+  'hero-0-1-X': { cx: 0.207, cy: 0.226, rotation: -16.8 },
+  'hero-0-2-P': { cx: 0.331, cy: 0.224, rotation: -0.8 },
+  'hero-0-3-L': { cx: 0.438, cy: 0.234, rotation: -1.6 },
+  'hero-0-4-A': { cx: 0.546, cy: 0.222, rotation: 2.8 },
+  'hero-0-5-I': { cx: 0.624, cy: 0.236, rotation: -4.8 },
+  'hero-0-6-N': { cx: 0.704, cy: 0.226, rotation: -1.4 },
+  'hero-0-8-I': { cx: 0.806, cy: 0.23, rotation: 0.4 },
+  'hero-0-9-T': { cx: 0.891, cy: 0.206, rotation: -1.9 },
+  'hero-1-0-L': { cx: 0.287, cy: 0.544, rotation: 1.6 },
+  'hero-1-1-I': { cx: 0.373, cy: 0.524, rotation: 0.2 },
+  'hero-1-2-K': { cx: 0.453, cy: 0.503, rotation: 4.9 },
+  'hero-1-3-E': { cx: 0.553, cy: 0.516, rotation: -5.8 },
+  'hero-1-5-I': { cx: 0.647, cy: 0.486, rotation: 0.8 },
+  "hero-1-6-'": { cx: 0.687, cy: 0.44, rotation: 4.2 },
+  'hero-1-7-M': { cx: 0.769, cy: 0.531, rotation: 8.4 },
+  'hero-2-0-F': { cx: 0.347, cy: 0.784, rotation: 7.9 },
+  'hero-2-1-I': { cx: 0.43, cy: 0.756, rotation: -6.7 },
+  'hero-2-2-V': { cx: 0.505, cy: 0.741, rotation: 6.2 },
+  'hero-2-3-E': { cx: 0.608, cy: 0.773, rotation: -2.3 },
+  'hero-2-4-…': { cx: 0.772, cy: 0.845, rotation: -1.2 },
+};
+
+const HERO_MISALIGNED_LAYOUT_V5 = {
   'hero-0-0-E': { cx: 0.09063788679884617, cy: 0.215293138154343, rotation: -4.4 },
   'hero-0-1-X': { cx: 0.20003328441280635, cy: 0.25373733993552533, rotation: -16.8 },
   'hero-0-2-P': { cx: 0.31180379703034633, cy: 0.1911313421766937, rotation: -0.8 },
@@ -252,40 +276,72 @@ const HERO_CONTROL_SECTIONS = [
 ];
 const HERO_CONTROL_FIELDS = HERO_CONTROL_SECTIONS.flatMap((section) => section.fields);
 const HERO_CONTROL_KEYS = new Set(HERO_CONTROL_FIELDS.map((field) => field.key));
-const LEVEL_CONTROL_SECTIONS = [
+const DEPTH_CONTROL_SECTIONS = [
   {
-    id: 'scene-geometry',
-    title: 'Scene Geometry',
+    id: 'depth-inset',
+    title: 'Inset',
+    detail: 'Use `.eli5-depth--inset` for recessed fields and shells.',
+    defaultCollapsed: true,
     fields: [
-      { key: 'sceneLevelStep', label: 'Level Step', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
-      { key: 'sceneInsetDepth', label: 'Inset Depth', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
+      { key: 'depthInsetDropShadow', label: 'Drop Shadow', type: 'token', token: '--eli5-depth-inset-drop-shadow' },
+      { key: 'depthInsetLightEdge', label: 'Light Edge', type: 'token', token: '--eli5-depth-inset-light-edge' },
+      { key: 'depthInsetShadowEdge', label: 'Shadow Edge', type: 'token', token: '--eli5-depth-inset-shadow-edge' },
+      { key: 'depthInsetLightGradient', label: 'Light Gradient', type: 'token', token: '--eli5-depth-inset-light-gradient' },
     ],
   },
   {
-    id: 'light-rig',
-    title: 'Light Rig',
+    id: 'depth-0',
+    title: 'Depth 0',
+    detail: 'Use `.eli5-depth--0` for page-plane cards and calmer surfaces.',
+    defaultCollapsed: true,
     fields: [
-      { key: 'sceneSunStrength', label: 'Sun Strength', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
-      { key: 'sceneSunSoftness', label: 'Sun Softness', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
-      { key: 'sceneAmbientFill', label: 'Ambient Fill', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
-      { key: 'sceneShadowDensity', label: 'Shadow Density', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
+      { key: 'depth0DropShadow', label: 'Drop Shadow', type: 'token', token: '--eli5-depth-0-drop-shadow' },
+      { key: 'depth0LightEdge', label: 'Light Edge', type: 'token', token: '--eli5-depth-0-light-edge' },
+      { key: 'depth0ShadowEdge', label: 'Shadow Edge', type: 'token', token: '--eli5-depth-0-shadow-edge' },
+      { key: 'depth0LightGradient', label: 'Light Gradient', type: 'token', token: '--eli5-depth-0-light-gradient' },
     ],
   },
   {
-    id: 'material',
-    title: 'Material',
+    id: 'depth-1',
+    title: 'Depth 1',
+    detail: 'Use `.eli5-depth--1` for default buttons, pills, and tabs.',
+    defaultCollapsed: true,
     fields: [
-      { key: 'sceneEdgeRelief', label: 'Edge Relief', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
-      { key: 'sceneSurfaceContrast', label: 'Surface Contrast', min: 0, max: 2.4, step: 0.01, format: (value) => value.toFixed(2) },
-      { key: 'scenePaperNoise', label: 'Paper Noise', min: 0, max: 2.4, step: 0.01, format: (value) => `${Math.round(getPageNoiseOpacity({ scenePaperNoise: value }) * 100)}%` },
-      { key: 'scenePaperNoiseScale', label: 'Noise Tile', min: 0, max: 2.4, step: 0.01, format: (value) => `${Math.round(getPageNoiseSize({ scenePaperNoiseScale: value }))}px` },
+      { key: 'depth1DropShadow', label: 'Drop Shadow', type: 'token', token: '--eli5-depth-1-drop-shadow' },
+      { key: 'depth1LightEdge', label: 'Light Edge', type: 'token', token: '--eli5-depth-1-light-edge' },
+      { key: 'depth1ShadowEdge', label: 'Shadow Edge', type: 'token', token: '--eli5-depth-1-shadow-edge' },
+      { key: 'depth1LightGradient', label: 'Light Gradient', type: 'token', token: '--eli5-depth-1-light-gradient' },
+    ],
+  },
+  {
+    id: 'depth-2',
+    title: 'Depth 2',
+    detail: 'Use `.eli5-depth--2` for floating chrome and active controls.',
+    defaultCollapsed: true,
+    fields: [
+      { key: 'depth2DropShadow', label: 'Drop Shadow', type: 'token', token: '--eli5-depth-2-drop-shadow' },
+      { key: 'depth2LightEdge', label: 'Light Edge', type: 'token', token: '--eli5-depth-2-light-edge' },
+      { key: 'depth2ShadowEdge', label: 'Shadow Edge', type: 'token', token: '--eli5-depth-2-shadow-edge' },
+      { key: 'depth2LightGradient', label: 'Light Gradient', type: 'token', token: '--eli5-depth-2-light-gradient' },
+    ],
+  },
+  {
+    id: 'depth-3',
+    title: 'Depth 3',
+    detail: 'Use `.eli5-depth--3` for the furthest lifted layer.',
+    defaultCollapsed: true,
+    fields: [
+      { key: 'depth3DropShadow', label: 'Drop Shadow', type: 'token', token: '--eli5-depth-3-drop-shadow' },
+      { key: 'depth3LightEdge', label: 'Light Edge', type: 'token', token: '--eli5-depth-3-light-edge' },
+      { key: 'depth3ShadowEdge', label: 'Shadow Edge', type: 'token', token: '--eli5-depth-3-shadow-edge' },
+      { key: 'depth3LightGradient', label: 'Light Gradient', type: 'token', token: '--eli5-depth-3-light-gradient' },
     ],
   },
 ];
-const LEVEL_CONTROL_KEYS = new Set(Object.keys(LEVEL_CONTROL_DEFAULTS));
+const DEPTH_CONTROL_KEYS = new Set(Object.keys(DEPTH_CONTROL_DEFAULTS));
 const ALL_CONTROL_PANEL_SECTIONS = [
   ...HERO_CONTROL_SECTIONS,
-  ...LEVEL_CONTROL_SECTIONS,
+  ...DEPTH_CONTROL_SECTIONS,
 ];
 
 function getDefaultControlPanelSectionState() {
@@ -336,7 +392,14 @@ function readAppView() {
   }
 
   const view = new URLSearchParams(window.location.search).get('view');
-  return view === APP_VIEWS.depthLab ? APP_VIEWS.depthLab : APP_VIEWS.home;
+
+  switch (view) {
+    case APP_VIEWS.depthLab:
+    case APP_VIEWS.typographyLab:
+      return view;
+    default:
+      return APP_VIEWS.home;
+  }
 }
 
 function writeAppView(nextView) {
@@ -375,35 +438,34 @@ function getLoadItemClass(baseClassName, isEntered, variantClassName = '') {
 }
 
 const HERO_COPY = {
-  badge: 'Skill for AI agents',
+  badge: 'a practical skill for AI agents',
   summary: 'An AI skill for answers you can follow.',
-  detail: 'Install it in any AI agent. Ask one question. Get five versions of the answer, from simple to precise. Less waffle. More point.',
+  detail: 'Add it to Codex, Claude Code, Cursor, or a similar AI setup. Ask one question. Get five versions of the answer, from simple to precise. No follow-up rewrite prompt required.',
   compatLabel: 'Use it with',
 };
 
 const HOW_BENEFITS = [
   {
-    title: 'You get the version your brain wanted first.',
+    title: 'Start with the simple version.',
     copy:
-      'The first pass gives you the shape of the answer quickly, before the denser language books a meeting room.',
+      'The first pass gets you oriented fast, before the denser language shows up.',
     art: '/assets/how/how-benefit-start.png',
   },
   {
-    title: 'The proper detail still shows up.',
+    title: 'The detail is still there when you want it.',
     copy:
-      'Each pass adds back the real terms, mechanism, and caveats, so the useful detail stays intact instead of wandering off into waffle.',
+      'Each pass adds back the terms, mechanism, and caveats, so the answer stays useful instead of getting watered down.',
     art: '/assets/how/how-benefit-detail.png',
   },
   {
     title: 'It works on code, docs, papers, plans, and odd questions.',
     copy:
-      'Anything that is correct but annoyingly dense gets easier when the answer arrives in steps instead of one long slab with lanyard energy.',
+      'Anything that is correct but annoyingly dense gets easier when the answer arrives in steps instead of one long slab.',
     art: '/assets/how/how-benefit-anywhere.png',
   },
   {
-    title: 'It saves your next prompt for something better.',
-    copy:
-      'You spend less time asking for a rewrite and more time deciding what to do with the answer, instead of writing the prompt equivalent of a polite follow-up email.',
+    title: 'It saves you from asking twice.',
+    copy: 'You spend less time asking for a rewrite and more time using the answer.',
     art: '/assets/how/how-benefit-reprompt.png',
   },
 ];
@@ -815,7 +877,7 @@ const INSTALL_STEPS = [
     artScale: 1.08,
   },
   {
-    title: 'Add it to your agent.',
+    title: 'Add it to your AI setup.',
     copy: 'Use it in Codex, Claude Code, Cursor, or a similar AI setup.',
     image: './assets/install/install-step-2.png',
     alt: 'A chat window splitting into cleaner answer layers.',
@@ -1033,31 +1095,7 @@ function migrateLegacyHeroMagnetControls(controls = {}, sourceKey = '') {
 }
 
 function loadHeroMagnetControls() {
-  if (typeof window === 'undefined') {
-    return HERO_MAGNET_DEFAULTS;
-  }
-
-  try {
-    const raw = window.localStorage.getItem(HERO_CONTROL_STORAGE_KEY);
-
-    if (raw) {
-      return sanitizeHeroMagnetControls(JSON.parse(raw));
-    }
-
-    for (const storageKey of HERO_LEGACY_CONTROL_STORAGE_KEYS) {
-      const legacyRaw = window.localStorage.getItem(storageKey);
-
-      if (!legacyRaw) {
-        continue;
-      }
-
-      return migrateLegacyHeroMagnetControls(JSON.parse(legacyRaw), storageKey);
-    }
-
-    return HERO_MAGNET_DEFAULTS;
-  } catch {
-    return HERO_MAGNET_DEFAULTS;
-  }
+  return HERO_MAGNET_DEFAULTS;
 }
 
 function sanitizeHeroLayout(layout = {}) {
@@ -1148,6 +1186,39 @@ function expandHeroLayoutVertical(layout = {}, factor = HERO_LAYOUT_MIGRATION_EX
   return scaleHeroLayoutVertical(layout, factor);
 }
 
+function areHeroLayoutsEquivalent(layoutA = {}, layoutB = {}, epsilon = 0.001) {
+  const sanitizedLayoutA = sanitizeHeroLayout(layoutA);
+  const sanitizedLayoutB = sanitizeHeroLayout(layoutB);
+  const layoutAKeys = Object.keys(sanitizedLayoutA);
+  const layoutBKeys = Object.keys(sanitizedLayoutB);
+
+  if (layoutAKeys.length !== layoutBKeys.length) {
+    return false;
+  }
+
+  return layoutAKeys.every((key) => {
+    const valueA = sanitizedLayoutA[key];
+    const valueB = sanitizedLayoutB[key];
+
+    if (!valueA || !valueB) {
+      return false;
+    }
+
+    return ['x', 'y', 'cx', 'cy', 'rotation'].every((property) => {
+      const propertyA = valueA[property];
+      const propertyB = valueB[property];
+
+      if (!Number.isFinite(propertyA) && !Number.isFinite(propertyB)) {
+        return true;
+      }
+
+      return Number.isFinite(propertyA) &&
+        Number.isFinite(propertyB) &&
+        Math.abs(propertyA - propertyB) <= epsilon;
+    });
+  });
+}
+
 function getReferenceHeroLayout() {
   return sanitizeHeroLayout(HERO_REFERENCE_LAYOUT);
 }
@@ -1164,35 +1235,7 @@ function getHeroLayoutRenderExpansion(heroMagnetControls = HERO_MAGNET_DEFAULTS)
 }
 
 function loadHeroLayout() {
-  const fallbackLayout = getReferenceHeroLayout();
-
-  if (typeof window === 'undefined') {
-    return fallbackLayout;
-  }
-
-  try {
-    const raw = window.localStorage.getItem(HERO_LAYOUT_STORAGE_KEY);
-
-    if (raw) {
-      const parsed = sanitizeHeroLayout(JSON.parse(raw));
-      return Object.keys(parsed).length > 0 ? parsed : fallbackLayout;
-    }
-
-    for (const storageKey of HERO_LAYOUT_STORAGE_DEPRECATED_KEYS) {
-      const legacyRaw = window.localStorage.getItem(storageKey);
-
-      if (!legacyRaw) {
-        continue;
-      }
-
-      const migratedLayout = expandHeroLayoutVertical(JSON.parse(legacyRaw));
-      return Object.keys(migratedLayout).length > 0 ? migratedLayout : fallbackLayout;
-    }
-
-    return fallbackLayout;
-  } catch {
-    return fallbackLayout;
-  }
+  return getReferenceHeroLayout();
 }
 
 function createPhraseMagnets({
@@ -2450,12 +2493,15 @@ function RevealOnView({
 
 function ensureHeroControlWindowHost(
   popupWindow,
-  levelControls = LEVEL_CONTROL_DEFAULTS,
+  depthControls = DEPTH_CONTROL_DEFAULTS,
 ) {
   const { document: popupDocument } = popupWindow;
 
   popupDocument.title = HERO_CONTROL_WINDOW_TITLE;
-  applyThemeTokens(popupDocument.documentElement, { levelControls });
+  applyThemeTokens(popupDocument.documentElement, {
+    levelControls: LEVEL_CONTROL_DEFAULTS,
+    depthControls,
+  });
 
   if (!popupDocument.querySelector('meta[name="viewport"]')) {
     const viewportMeta = popupDocument.createElement('meta');
@@ -2542,18 +2588,18 @@ function ControlPanelSurface({
   onClose,
 }) {
   return (
-    <aside className="eli5-control-panel" aria-label="Site control panel">
+    <aside className="eli5-control-panel eli5-depth--2" aria-label="Site control panel">
       <div className="eli5-control-panel__header">
         <div>
           <p className="eli5-control-panel__eyebrow">{eyebrow}</p>
           <h2>{title}</h2>
           <p className="eli5-control-panel__caption">{caption}</p>
-      </div>
+        </div>
 
-      <div className="eli5-control-panel__actions">
-        <button
-          type="button"
-          className="eli5-control-panel__reset"
+        <div className="eli5-control-panel__actions">
+          <button
+            type="button"
+            className="eli5-control-panel__reset eli5-depth--1"
             onClick={onReset}
           >
             Reset
@@ -2562,7 +2608,7 @@ function ControlPanelSurface({
           {onClose ? (
             <button
               type="button"
-              className="eli5-control-panel__close"
+              className="eli5-control-panel__close eli5-depth--1"
               onClick={onClose}
             >
               Close
@@ -2584,14 +2630,14 @@ function ControlPanelSurface({
               <>
                 <button
                   type="button"
-                  className="eli5-control-panel__close"
+                  className="eli5-control-panel__close eli5-depth--1"
                   onClick={onSaveLayoutEdit}
                 >
                   Save Layout
                 </button>
                 <button
                   type="button"
-                  className="eli5-control-panel__reset"
+                  className="eli5-control-panel__reset eli5-depth--1"
                   onClick={onCancelLayoutEdit}
                 >
                   Cancel Edit
@@ -2601,14 +2647,14 @@ function ControlPanelSurface({
               <>
                 <button
                   type="button"
-                  className="eli5-control-panel__close"
+                  className="eli5-control-panel__close eli5-depth--1"
                   onClick={onStartLayoutEdit}
                 >
                   Edit Layout
                 </button>
                 <button
                   type="button"
-                  className="eli5-control-panel__reset"
+                  className="eli5-control-panel__reset eli5-depth--1"
                   onClick={onResetLayout}
                 >
                   Use Reference
@@ -2641,23 +2687,43 @@ function ControlPanelSurface({
                 </span>
               </button>
 
+              {!isCollapsed && section.detail ? (
+                <p className="eli5-control-section__detail">{section.detail}</p>
+              ) : null}
+
               {!isCollapsed ? (
                 <div className="eli5-control-panel__rows">
                   {section.fields.map((field) => (
-                    <label key={field.key} className="eli5-control-row">
-                      <span className="eli5-control-row__top">
-                        <span>{field.label}</span>
-                        <span>{field.format(controls[field.key])}</span>
-                      </span>
-                      <input
-                        type="range"
-                        min={field.min}
-                        max={field.max}
-                        step={field.step}
-                        value={controls[field.key]}
-                        onChange={(event) => onChange(field.key, Number(event.target.value))}
-                      />
-                    </label>
+                    field.type === 'token' ? (
+                      <label key={field.key} className="eli5-control-row eli5-control-row--token">
+                        <span className="eli5-control-row__top">
+                          <span>{field.label}</span>
+                          <code className="eli5-control-row__token-name">{field.token}</code>
+                        </span>
+                        <textarea
+                          className="eli5-control-row__textarea"
+                          value={controls[field.key]}
+                          rows={3}
+                          spellCheck="false"
+                          onChange={(event) => onChange(field.key, event.target.value)}
+                        />
+                      </label>
+                    ) : (
+                      <label key={field.key} className="eli5-control-row">
+                        <span className="eli5-control-row__top">
+                          <span>{field.label}</span>
+                          <span>{field.format(controls[field.key])}</span>
+                        </span>
+                        <input
+                          type="range"
+                          min={field.min}
+                          max={field.max}
+                          step={field.step}
+                          value={controls[field.key]}
+                          onChange={(event) => onChange(field.key, Number(event.target.value))}
+                        />
+                      </label>
+                    )
                   ))}
                 </div>
               ) : null}
@@ -2669,7 +2735,7 @@ function ControlPanelSurface({
   );
 }
 
-function DepthLabCard({
+function LabCard({
   level,
   title,
   detail,
@@ -2677,7 +2743,7 @@ function DepthLabCard({
   children,
 }) {
   return (
-    <article className={`eli5-depth-lab__card eli5-depth-lab__card--${tone}`}>
+    <article className={`eli5-depth-lab__card eli5-depth--0 eli5-depth-lab__card--${tone}`}>
       <div className="eli5-depth-lab__card-copy">
         <p className="eli5-depth-lab__card-level">{level}</p>
         <h2>{title}</h2>
@@ -2694,6 +2760,7 @@ function DepthLabCard({
 function DepthLabView({
   isControlPanelVisible,
   onToggleControlPanel,
+  onOpenTypographyLab,
   panelSurface,
   onReturnHome,
 }) {
@@ -2708,14 +2775,14 @@ function DepthLabView({
               <p className="eli5-depth-lab__eyebrow">Depth Lab</p>
               <h1>Test the page depth stack without poking the whole landing page.</h1>
               <p>
-                The grid shows the inset field, the page plane, buttons and pills, floating chrome, and the cursor. The controls on the right tune one shared depth scene for the whole site.
+                The grid shows the inset field, the page plane, buttons and pills, floating chrome, and the cursor. The controls on the right edit the actual tokens for each depth class.
               </p>
             </div>
 
             <div className="eli5-depth-lab__topbar-actions">
               <button
                 type="button"
-                className="eli5-button eli5-button--secondary"
+                className="eli5-button eli5-button--secondary eli5-depth--1"
                 onClick={onToggleControlPanel}
               >
                 {isControlPanelVisible ? 'Hide config panel' : 'Show config panel'}
@@ -2723,7 +2790,15 @@ function DepthLabView({
 
               <button
                 type="button"
-                className="eli5-button eli5-button--secondary"
+                className="eli5-button eli5-button--secondary eli5-depth--1"
+                onClick={onOpenTypographyLab}
+              >
+                Open Typography Lab
+              </button>
+
+              <button
+                type="button"
+                className="eli5-button eli5-button--secondary eli5-depth--1"
                 onClick={onReturnHome}
               >
                 Back to landing page
@@ -2734,92 +2809,92 @@ function DepthLabView({
           <div className="eli5-depth-lab__layout">
             <section className="eli5-depth-lab__stage" aria-label="Depth preview grid">
               <div className="eli5-depth-lab__grid">
-                <DepthLabCard
+                <LabCard
                   level="Level -1"
                   title="Intrusion"
                   detail="This should read as pushed into the page. Shadow above. Light below."
                   tone="inset"
                 >
-                  <div className="eli5-prompt-field__shell eli5-depth-lab__field-demo">
+                  <div className="eli5-prompt-field__shell eli5-depth-lab__field-demo eli5-depth--inset">
                     <span className="eli5-prompt-field__skill eli5-prompt-field__skill--printed">Skills for AI agents</span>
                     <span className="eli5-depth-lab__field-copy">Inset form field</span>
                   </div>
-                </DepthLabCard>
+                </LabCard>
 
-                <DepthLabCard
+                <LabCard
                   level="Level 0"
                   title="Printed on the page"
                   detail="No lift. No recess. Just content sitting on the paper."
                   tone="page"
                 >
-                  <div className="eli5-depth-lab__page-demo">
+                  <div className="eli5-depth-lab__page-demo eli5-depth--0">
                     <p className="eli5-depth-lab__page-kicker">Level 0 copy</p>
                     <h3>Printed surface</h3>
                     <p>
                       This is the page plane. It should feel calm and almost shadowless.
                     </p>
                   </div>
-                </DepthLabCard>
+                </LabCard>
 
-                <DepthLabCard
+                <LabCard
                   level="Level 1"
                   title="Buttons"
                   detail="Closer to the page, so the contact shadow should be sharper and more anchored."
                   tone="button"
                 >
                   <div className="eli5-depth-lab__button-row">
-                    <button type="button" className="eli5-button eli5-button--primary">
+                    <button type="button" className="eli5-button eli5-button--primary eli5-depth--1">
                       Primary
                     </button>
-                    <button type="button" className="eli5-button eli5-button--secondary">
+                    <button type="button" className="eli5-button eli5-button--secondary eli5-depth--1">
                       Secondary
                     </button>
                   </div>
-                </DepthLabCard>
+                </LabCard>
 
-                <DepthLabCard
+                <LabCard
                   level="Level 1"
                   title="Pill / Tab"
                   detail="Same level as the buttons, but on a smaller footprint so it is easier to judge the edge."
                   tone="pill"
                 >
                   <div className="eli5-depth-lab__pill-row">
-                    <span className="eli5-depth-lab__pill-sample">What it does</span>
-                    <span className="eli5-depth-lab__pill-sample eli5-depth-lab__pill-sample--active">See output</span>
+                    <span className="eli5-depth-lab__pill-sample eli5-depth--1">What it does</span>
+                    <span className="eli5-depth-lab__pill-sample eli5-depth-lab__pill-sample--active eli5-depth--2">See output</span>
                   </div>
-                </DepthLabCard>
+                </LabCard>
 
-                <DepthLabCard
+                <LabCard
                   level="Level 2"
                   title="Floating menu"
                   detail="This sits furthest from the page, so the shadow can travel more and blur more."
                   tone="menu"
                 >
-                  <div className="eli5-depth-lab__menu-demo">
+                  <div className="eli5-depth-lab__menu-demo eli5-depth--2">
                     <div className="eli5-depth-lab__menu-links" aria-hidden="true">
                       <span>What it does</span>
                       <span>See output</span>
                       <span>Install</span>
                     </div>
-                    <button type="button" className="eli5-button eli5-button--primary eli5-button--header">
+                    <button type="button" className="eli5-button eli5-button--primary eli5-button--header eli5-depth--1">
                       Download
                     </button>
                   </div>
-                </DepthLabCard>
+                </LabCard>
 
-                <DepthLabCard
+                <LabCard
                   level="Level 3"
                   title="Cursor reference"
-                  detail="Using the cursor as the level-3 reference for now. It stays on the top layer and reacts to the same scene-derived level-3 material."
+                  detail="Use this as the level-3 reference for now. The swatch sits on the top layer so you can judge the strongest lift next to the cursor art."
                   tone="reference"
                 >
                   <div className="eli5-depth-lab__reference-row">
-                    <div className="eli5-depth-lab__cursor-swatch" aria-hidden="true">
+                    <div className="eli5-depth-lab__cursor-swatch eli5-depth--3" aria-hidden="true">
                       <span className="eli5-depth-lab__cursor-glow" />
                       <img src="/assets/cursors/pointer.png" alt="" draggable="false" />
                     </div>
                   </div>
-                </DepthLabCard>
+                </LabCard>
               </div>
             </section>
 
@@ -2827,16 +2902,16 @@ function DepthLabView({
               {isControlPanelVisible ? (
                 panelSurface
               ) : (
-                <aside className="eli5-depth-lab__panel-placeholder" aria-label="Config panel placeholder">
+                <aside className="eli5-depth-lab__panel-placeholder eli5-depth--0" aria-label="Config panel placeholder">
                   <p className="eli5-depth-lab__eyebrow">Main config panel</p>
                   <h2>Use the same panel here.</h2>
                   <p>
-                    Open the shared config panel in this rail, then collapse the hero groups while you tune depth, light, and material across the chrome.
+                    Open the shared config panel in this rail, then edit the drop shadow, light edge, shadow edge, and light gradient for each depth class directly.
                   </p>
 
                   <button
                     type="button"
-                    className="eli5-button eli5-button--secondary"
+                    className="eli5-button eli5-button--secondary eli5-depth--1"
                     onClick={onToggleControlPanel}
                   >
                     Open config panel
@@ -2844,6 +2919,576 @@ function DepthLabView({
                 </aside>
               )}
             </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+function TypographyLabSection({
+  eyebrow,
+  title,
+  detail,
+  children,
+}) {
+  return (
+    <section className="eli5-typography-lab__section">
+      <header className="eli5-typography-lab__section-header">
+        <p className="eli5-depth-lab__eyebrow">{eyebrow}</p>
+        <h2>{title}</h2>
+        <p>{detail}</p>
+      </header>
+
+      {children}
+    </section>
+  );
+}
+
+function TypographyLabCard({
+  eyebrow,
+  title,
+  detail,
+  selector,
+  wide = false,
+  children,
+}) {
+  return (
+    <article
+      className={[
+        'eli5-depth-lab__card',
+        'eli5-typography-lab__card',
+        wide ? 'eli5-typography-lab__card--wide' : '',
+      ].filter(Boolean).join(' ')}
+    >
+      <div className="eli5-depth-lab__card-copy">
+        <p className="eli5-depth-lab__card-level">{eyebrow}</p>
+        <h2>{title}</h2>
+        <p>{detail}</p>
+        {selector ? (
+          <code className="eli5-typography-lab__selector">{selector}</code>
+        ) : null}
+      </div>
+
+      <div className="eli5-depth-lab__card-demo eli5-typography-lab__card-demo">
+        {children}
+      </div>
+    </article>
+  );
+}
+
+function TypographyLabView({
+  onOpenDepthLab,
+  onReturnHome,
+}) {
+  const preventDemoNavigation = (event) => {
+    event.preventDefault();
+  };
+
+  return (
+    <div className="eli5-page eli5-page--typography-lab">
+      <CustomCursor />
+
+      <main className="eli5-main eli5-main--depth-lab">
+        <div className="eli5-depth-lab eli5-typography-lab">
+          <div className="eli5-depth-lab__topbar">
+            <div className="eli5-depth-lab__intro">
+              <p className="eli5-depth-lab__eyebrow">Typography Lab</p>
+              <h1>Check every live text style without hunting through the landing page.</h1>
+              <p>
+                These specimens use the site&apos;s actual classes, in the colors they normally show
+                up in, so you can judge the real type system instead of a decorative fake one.
+              </p>
+            </div>
+
+            <div className="eli5-depth-lab__topbar-actions">
+              <button
+                type="button"
+                className="eli5-button eli5-button--secondary eli5-depth--1"
+                onClick={onOpenDepthLab}
+              >
+                Open Depth Lab
+              </button>
+
+              <button
+                type="button"
+                className="eli5-button eli5-button--secondary eli5-depth--1"
+                onClick={onReturnHome}
+              >
+                Back to landing page
+              </button>
+            </div>
+          </div>
+
+          <div className="eli5-typography-lab__stack">
+            <TypographyLabSection
+              eyebrow="Families"
+              title="The site uses two font families."
+              detail="One handles the readable UI. The other is reserved for the hero magnets, because one dramatic exception is enough."
+            >
+              <div className="eli5-typography-lab__grid">
+                <TypographyLabCard
+                  eyebrow="Family"
+                  title="UI / body"
+                  detail="This is the working voice for navigation, headings, body copy, prompts, examples, and CTAs."
+                  selector="--font-ui"
+                >
+                  <div className="eli5-typography-lab__demo">
+                    <p className="eli5-typography-lab__family-note">Outfit</p>
+                    <p className="eli5-typography-lab__family-sample eli5-typography-lab__family-sample--body">
+                      A clear sentence beats a grand speech.
+                    </p>
+                    <p className="eli5-hero__detail">
+                      It stays readable at almost every size on the site and does not start showing
+                      off halfway through the job.
+                    </p>
+                  </div>
+                </TypographyLabCard>
+
+                <TypographyLabCard
+                  eyebrow="Family"
+                  title="Hero magnet lettering"
+                  detail="Used for the hero letters only. The headline gets to be louder than the rest of the site."
+                  selector="--font-magnet"
+                >
+                  <div className="eli5-typography-lab__demo">
+                    <p className="eli5-typography-lab__family-note">Fredoka</p>
+                    <p className="eli5-typography-lab__family-sample eli5-typography-lab__family-sample--magnet">
+                      {"EXPLAIN IT LIKE I'M FIVE".split('').map((character, index) => (
+                        <span
+                          key={`magnet-sample-${index}`}
+                          style={{
+                            color:
+                              character === ' '
+                                ? 'transparent'
+                                : MAGNET_COLORS[index % MAGNET_COLORS.length],
+                          }}
+                        >
+                          {character === ' ' ? '\u00A0' : character}
+                        </span>
+                      ))}
+                    </p>
+                    <p className="eli5-hero__detail">
+                      Bright, chunky, and deliberately not invited to the body copy.
+                    </p>
+                  </div>
+                </TypographyLabCard>
+              </div>
+            </TypographyLabSection>
+
+            <TypographyLabSection
+              eyebrow="Chrome"
+              title="Navigation, actions, and control labels stay crisp and compact."
+              detail="These are the styles you keep clicking, so they need to read fast before they try to look pretty."
+            >
+              <div className="eli5-typography-lab__grid">
+                <TypographyLabCard
+                  eyebrow="Navigation"
+                  title="Primary nav and example tabs"
+                  detail="Pill labels use a tighter weight and smaller size than the big content headings."
+                  selector=".eli5-nav a, .eli5-example-tab"
+                >
+                  <div className="eli5-typography-lab__demo">
+                    <nav className="eli5-nav eli5-typography-lab__nav-preview" aria-label="Navigation type sample">
+                      <a href="#type-nav" onClick={preventDemoNavigation}>What it does</a>
+                      <a href="#type-nav" className="is-active" onClick={preventDemoNavigation}>See output</a>
+                      <a href="#type-nav" onClick={preventDemoNavigation}>Install</a>
+                    </nav>
+
+                    <div className="eli5-typography-lab__row">
+                      <button
+                        type="button"
+                        className="eli5-example-tab eli5-depth--1"
+                        style={{ '--example-tab-color': 'var(--magnet-orange)' }}
+                      >
+                        Inflation
+                      </button>
+                      <button
+                        type="button"
+                        className="eli5-example-tab is-active eli5-depth--2"
+                        style={{ '--example-tab-color': 'var(--magnet-violet)' }}
+                      >
+                        Banking
+                      </button>
+                    </div>
+                  </div>
+                </TypographyLabCard>
+
+                <TypographyLabCard
+                  eyebrow="Actions"
+                  title="Buttons"
+                  detail="Primary, secondary, and header buttons share one type base, then change only by context."
+                  selector=".eli5-button"
+                >
+                  <div className="eli5-typography-lab__demo">
+                    <div className="eli5-typography-lab__row">
+                      <button type="button" className="eli5-button eli5-button--primary eli5-depth--1">Download the skill</button>
+                      <button type="button" className="eli5-button eli5-button--secondary eli5-depth--1">See the output</button>
+                    </div>
+                    <div className="eli5-typography-lab__row">
+                      <button type="button" className="eli5-button eli5-button--primary eli5-button--header eli5-depth--1">Download</button>
+                      <button type="button" className="eli5-button eli5-button--secondary eli5-button--header eli5-depth--1">See output</button>
+                    </div>
+                  </div>
+                </TypographyLabCard>
+
+                <TypographyLabCard
+                  eyebrow="Panel"
+                  title="Control panel copy"
+                  detail="The control panel keeps its labels practical: quiet eyebrow, strong title, plain caption, compact row labels."
+                  selector=".eli5-control-panel*"
+                  wide
+                >
+                  <div className="eli5-typography-lab__panel-preview">
+                    <aside className="eli5-control-panel eli5-depth--2" aria-label="Control panel type specimen">
+                      <div className="eli5-control-panel__header">
+                        <div>
+                          <p className="eli5-control-panel__eyebrow">Linked control panel</p>
+                          <h2>Live page controls</h2>
+                          <p className="eli5-control-panel__caption">
+                            Edit each depth class directly. Every level has its own drop shadow, light edge, shadow edge, and light gradient.
+                          </p>
+                        </div>
+
+                        <div className="eli5-control-panel__actions">
+                          <button type="button" className="eli5-control-panel__reset eli5-depth--1">Reset</button>
+                          <button type="button" className="eli5-control-panel__close eli5-depth--1">Close</button>
+                        </div>
+                      </div>
+
+                      <div className="eli5-control-panel__layout-tools">
+                        <p className="eli5-control-panel__layout-caption">
+                          Use Edit Layout to drag the hero letters into place, then save that composition as the new default.
+                        </p>
+
+                        <div className="eli5-control-panel__layout-actions">
+                          <button type="button" className="eli5-control-panel__close eli5-depth--1">Edit Layout</button>
+                          <button type="button" className="eli5-control-panel__reset eli5-depth--1">Use Reference</button>
+                        </div>
+                      </div>
+
+                      <section className="eli5-control-section">
+                        <button type="button" className="eli5-control-section__toggle" aria-expanded="true">
+                          <span>Depth 1</span>
+                          <span className="eli5-control-section__toggle-state">Hide</span>
+                        </button>
+
+                        <div className="eli5-control-panel__rows">
+                          <label className="eli5-control-row eli5-control-row--token">
+                            <span className="eli5-control-row__top">
+                              <span>Drop Shadow</span>
+                              <code className="eli5-control-row__token-name">--eli5-depth-1-drop-shadow</code>
+                            </span>
+                            <textarea
+                              className="eli5-control-row__textarea"
+                              rows={3}
+                              defaultValue="0px 1px 4px rgba(72, 55, 42, 0.19), 0px 5px 15px rgba(50, 39, 31, 0.04)"
+                            />
+                          </label>
+                        </div>
+                      </section>
+                    </aside>
+                  </div>
+                </TypographyLabCard>
+              </div>
+            </TypographyLabSection>
+
+            <TypographyLabSection
+              eyebrow="Content"
+              title="The content stack moves from loud headings to calmer body copy."
+              detail="Big statements pull attention. Supporting text settles down quickly so the page still reads like help instead of theatre."
+            >
+              <div className="eli5-typography-lab__grid">
+                <TypographyLabCard
+                  eyebrow="Hero"
+                  title="Hero badge, summary, detail, and compatibility line"
+                  detail="The hero uses one printed badge, one stronger summary line, one calmer detail line, and a compact compatibility row."
+                  selector=".eli5-hero__badge, .eli5-hero__summary, .eli5-hero__detail, .eli5-hero__compat"
+                  wide
+                >
+                  <div className="eli5-typography-lab__demo eli5-typography-lab__hero-preview">
+                    <div className="eli5-hero__badge eli5-hero__badge--printed eli5-depth--1">Skill for AI agents</div>
+
+                    <div className="eli5-hero__notes">
+                      <div className="eli5-hero__notes-copy">
+                        <p className="eli5-hero__summary">An AI skill for answers you can follow.</p>
+                        <p className="eli5-hero__detail">
+                          Install it in any AI agent. Ask one question. Get five versions of the
+                          answer, from simple to precise.
+                        </p>
+                      </div>
+
+                      <div className="eli5-hero__compat" aria-label="Supported tools">
+                        <span className="eli5-hero__compat-label">Works in</span>
+                        {COMPAT_TOOLS.map((tool) => (
+                          <span key={tool.key} className="eli5-hero__compat-item">
+                            <span className={`eli5-tool-logo eli5-tool-logo--${tool.key}`} aria-hidden="true">
+                              <ToolLogo toolKey={tool.key} />
+                            </span>
+                            <span>{tool.label}</span>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </TypographyLabCard>
+
+                <TypographyLabCard
+                  eyebrow="Prompts"
+                  title="Prompt field labels"
+                  detail="Labels stay quiet. The prompt itself gets the stronger weight."
+                  selector=".eli5-prompt-field*"
+                >
+                  <div className="eli5-prompt-field">
+                    <p className="eli5-prompt-field__label">What you ask</p>
+                    <div className="eli5-prompt-field__shell eli5-depth--inset">
+                      <span className="eli5-prompt-field__skill eli5-prompt-field__skill--printed">Skills for AI agents</span>
+                      <span className="eli5-prompt-field__text">Explain inflation like I&apos;m five</span>
+                      <span className="eli5-prompt-field__cursor" aria-hidden="true" />
+                    </div>
+                  </div>
+                </TypographyLabCard>
+
+                <TypographyLabCard
+                  eyebrow="Headings"
+                  title="Section heading and intro copy"
+                  detail="The main section headline gets the largest UI type. The paragraph underneath does the explaining."
+                  selector=".eli5-section-heading h2, .eli5-section-heading p"
+                >
+                  <div className="eli5-section-heading eli5-typography-lab__section-heading-sample">
+                    <h2>What this skill does</h2>
+                    <p>
+                      You ask one question and get the answer in five passes, starting simple and
+                      building toward the fuller version as you keep reading.
+                    </p>
+                  </div>
+                </TypographyLabCard>
+
+                <TypographyLabCard
+                  eyebrow="Supporting copy"
+                  title="Benefit cards and use-case labels"
+                  detail="These carry the explanatory load, so they stay readable first and decorative second."
+                  selector=".eli5-how-benefit*, .eli5-how__use-cases*"
+                >
+                  <div className="eli5-typography-lab__demo">
+                    <article className="eli5-how-benefit">
+                      <div className="eli5-how-benefit__copy">
+                        <h3>People can start simple and keep going.</h3>
+                        <p>
+                          The first version gets them oriented. The later ones add the proper detail
+                          without forcing a second explanation request.
+                        </p>
+                      </div>
+                    </article>
+
+                    <div className="eli5-how__use-cases">
+                      <p className="eli5-how__use-cases-label">Great for</p>
+                      <div className="eli5-how__use-cases-list">
+                        <span className="eli5-how__use-case">Docs</span>
+                        <span className="eli5-how__use-case">Meetings</span>
+                        <span className="eli5-how__use-case">Teaching</span>
+                      </div>
+                    </div>
+                  </div>
+                </TypographyLabCard>
+
+                <TypographyLabCard
+                  eyebrow="Media"
+                  title="Sticky media summary"
+                  detail="The media card uses a stronger mid-size line so the ask/write contrast still reads under motion and video."
+                  selector=".eli5-gif-card__summary-text"
+                >
+                  <div className="eli5-gif-card__frame eli5-typography-lab__gif-preview eli5-depth--0">
+                    <div className="eli5-gif-card__summary" aria-label="What the skill outputs">
+                      <div className="eli5-gif-card__summary-row">
+                        <p className="eli5-gif-card__summary-text eli5-gif-card__summary-text--ask">
+                          Ask one question.
+                        </p>
+                        <div className="eli5-gif-card__summary-icon" aria-hidden="true">
+                          <svg
+                            className="eli5-gif-card__summary-icon-svg"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.8"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M6 12h12" />
+                            <path d="m13 7 5 5-5 5" />
+                          </svg>
+                        </div>
+                        <p className="eli5-gif-card__summary-text eli5-gif-card__summary-text--write">
+                          Get five clearer versions back.
+                        </p>
+                      </div>
+
+                      <button type="button" className="eli5-button eli5-button--secondary eli5-gif-card__summary-action eli5-depth--1">
+                        See the output
+                      </button>
+                    </div>
+                  </div>
+                </TypographyLabCard>
+              </div>
+            </TypographyLabSection>
+
+            <TypographyLabSection
+              eyebrow="Examples and proof"
+              title="Examples, citations, and install steps keep the hierarchy obvious."
+              detail="Small labels guide the scan. Titles stay distinct. Proof copy should read quickly without turning into tiny grey dust."
+            >
+              <div className="eli5-typography-lab__grid">
+                <TypographyLabCard
+                  eyebrow="Examples"
+                  title="Example prompt and output"
+                  detail="Blue labels flag the example system. The body copy does the actual explaining."
+                  selector=".eli5-example-thread*, .eli5-example-output*"
+                  wide
+                >
+                  <div className="eli5-typography-lab__example-preview">
+                    <div className="eli5-example-thread">
+                      <p className="eli5-example-thread__category">Example prompt</p>
+
+                      <div className="eli5-prompt-field eli5-example-thread__prompt">
+                        <div className="eli5-prompt-field__shell eli5-depth--inset">
+                          <span className="eli5-prompt-field__skill eli5-prompt-field__skill--printed">Explain It Like I&apos;m Five</span>
+                          <span className="eli5-prompt-field__text">Why do we have a surplus?</span>
+                          <span className="eli5-prompt-field__cursor" aria-hidden="true" />
+                        </div>
+                      </div>
+
+                      <div className="eli5-example-output">
+                        <p className="eli5-example-output__entry">
+                          <span className="eli5-example-output__label">5:</span>{' '}
+                          More came in than went out.
+                        </p>
+                        <p className="eli5-example-output__separator" aria-hidden="true">---------------</p>
+                        <p className="eli5-example-output__entry">
+                          <span className="eli5-example-output__label">12:</span>{' '}
+                          A surplus means income or supply was higher than spending or demand for that period.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </TypographyLabCard>
+
+                <TypographyLabCard
+                  eyebrow="Install"
+                  title="Install steps"
+                  detail="Step labels stay pale. The title does the directing. The body handles the plain-English instruction."
+                  selector=".eli5-install-step*"
+                >
+                  <article className="eli5-install-step">
+                    <div className="eli5-install-step__copy">
+                      <p className="eli5-install-step__index">Step 1</p>
+                      <h3>Drop the skill file into your agent setup.</h3>
+                      <p>
+                        Codex, Claude Code, Cursor, and similar agents can load it from Markdown.
+                      </p>
+                    </div>
+                  </article>
+                </TypographyLabCard>
+
+                <TypographyLabCard
+                  eyebrow="References"
+                  title="Science cards and source lines"
+                  detail="Sources run in a lighter horizontal row so they stay visible without pulling focus from the point."
+                  selector=".eli5-science-point*"
+                >
+                  <article className="eli5-science-point eli5-depth--0">
+                    <div>
+                      <h3>Keep the citation readable.</h3>
+                      <p>
+                        The point card uses a muted heading, a steady body size, and a very small
+                        source treatment so the evidence stays visible without taking over the room.
+                      </p>
+
+                      <div className="eli5-science-point__sources">
+                        <div className="eli5-science-point__source-list">
+                          <a
+                            className="eli5-science-point__source"
+                            href="#source-1"
+                            onClick={preventDemoNavigation}
+                          >
+                            <span>Clark and Mayer</span>
+                            <span>eLearning and the Science of Instruction</span>
+                          </a>
+                          <a
+                            className="eli5-science-point__source"
+                            href="#source-2"
+                            onClick={preventDemoNavigation}
+                          >
+                            <span>Plain Language Action</span>
+                            <span>Short sentences and structured information</span>
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  </article>
+                </TypographyLabCard>
+              </div>
+            </TypographyLabSection>
+
+            <TypographyLabSection
+              eyebrow="Endgame"
+              title="The CTA goes bigger, but it still explains itself."
+              detail="This block stays direct: what it is, where it works, and one clean action."
+            >
+              <div className="eli5-typography-lab__grid">
+                <TypographyLabCard
+                  eyebrow="CTA"
+                  title="End-of-page call to action"
+                  detail="Simple headline, short body copy, and a formal footer with clear navigation."
+                  selector=".eli5-cta*, .eli5-site-footer*"
+                  wide
+                >
+                  <div className="eli5-typography-lab__cta-preview">
+                    <div className="eli5-cta eli5-depth--2">
+                      <h2>Get clearer answers.</h2>
+                      <p className="eli5-cta__support">One question in. Five clearer versions out.</p>
+                      <p className="eli5-cta__body">
+                        Explain It Like I&apos;m Five is a Markdown skill for AI agents. It rewrites
+                        one answer into five levels and works in Codex, Claude Code, Cursor, and similar tools.
+                      </p>
+                      <button
+                        type="button"
+                        className="eli5-button eli5-button--primary eli5-button--large eli5-button--cta-download eli5-depth--1"
+                      >
+                        Download the skill
+                      </button>
+                    </div>
+
+                    <footer className="eli5-site-footer eli5-site-footer--preview eli5-depth--0" aria-label="Preview footer">
+                      <div className="eli5-site-footer__brand">
+                        <p className="eli5-site-footer__title">Explain It Like I&apos;m Five</p>
+                        <p className="eli5-site-footer__summary">
+                          Markdown skill for AI agents with five explanation levels.
+                        </p>
+                      </div>
+                      <div className="eli5-site-footer__links">
+                        <div className="eli5-site-footer__column">
+                          <p className="eli5-site-footer__heading">Product</p>
+                          <a href="#footer-how" onClick={preventDemoNavigation}>What it does</a>
+                          <a href="#footer-output" onClick={preventDemoNavigation}>See output</a>
+                          <a href="#footer-install" onClick={preventDemoNavigation}>How to install</a>
+                        </div>
+                        <div className="eli5-site-footer__column">
+                          <p className="eli5-site-footer__heading">Works with</p>
+                          <span>Codex</span>
+                          <span>Claude Code</span>
+                          <span>Cursor</span>
+                        </div>
+                        <div className="eli5-site-footer__column">
+                          <p className="eli5-site-footer__heading">Resources</p>
+                          <a href="#footer-download" onClick={preventDemoNavigation}>Download skill</a>
+                          <a href="#footer-coffee" onClick={preventDemoNavigation}>Buy me a coffee</a>
+                        </div>
+                      </div>
+                    </footer>
+                  </div>
+                </TypographyLabCard>
+              </div>
+            </TypographyLabSection>
           </div>
         </div>
       </main>
@@ -2881,7 +3526,7 @@ function TypedPromptField({
       {label ? <span className="eli5-prompt-field__label">{label}</span> : null}
 
       <div
-        className="eli5-prompt-field__shell"
+        className="eli5-prompt-field__shell eli5-depth--inset"
         aria-label={ariaLabel ?? `${skill} ${prompt}`}
       >
         <span className="eli5-prompt-field__skill">{skill}</span>
@@ -3204,7 +3849,7 @@ function ExampleTopicTabs({
                   tabIndex={isActive && phase === 'idle' && isWithinVisibleRange ? 0 : -1}
                   aria-selected={isActive}
                   aria-controls={`example-panel-${example.slug}`}
-                  className={`eli5-example-tab${isActive ? ' is-active' : ''}${isResetting ? ' is-resetting' : ''}`}
+                  className={`eli5-example-tab ${isActive ? 'eli5-depth--2 is-active' : 'eli5-depth--1'}${isResetting ? ' is-resetting' : ''}`}
                   style={{
                     '--example-tab-color': exampleColor,
                     '--example-tab-tilt': `${visualState.tilt}deg`,
@@ -3228,7 +3873,7 @@ function ExampleTopicTabs({
       <div className="eli5-example-tabs__controls" aria-label="Scroll topics">
         <button
           type="button"
-          className="eli5-example-tabs__chevron"
+          className="eli5-example-tabs__chevron eli5-depth--2"
           onClick={() => queueStep(-1)}
           aria-label="Show previous topic"
         >
@@ -3237,7 +3882,7 @@ function ExampleTopicTabs({
 
         <button
           type="button"
-          className="eli5-example-tabs__chevron eli5-example-tabs__chevron--down"
+          className="eli5-example-tabs__chevron eli5-depth--2 eli5-example-tabs__chevron--down"
           onClick={() => queueStep(1)}
           aria-label="Show next topic"
         >
@@ -3363,7 +4008,7 @@ function ScrollScrubMedia({
       style={{ '--eli5-gif-sticky-top': `${topVh}vh` }}
     >
       <div ref={contentRef} className="eli5-sticky-ease">
-        <div className="eli5-gif-card__frame">
+        <div className="eli5-gif-card__frame eli5-depth--0">
           <video
             ref={videoRef}
             className="eli5-gif-card__media"
@@ -3378,7 +4023,7 @@ function ScrollScrubMedia({
           <div className="eli5-gif-card__summary" aria-label="What the skill outputs">
             <div className="eli5-gif-card__summary-row">
               <p className="eli5-gif-card__summary-text eli5-gif-card__summary-text--ask">
-                You ask one question
+                Ask one question
               </p>
 
               <div className="eli5-gif-card__summary-icon" aria-hidden="true">
@@ -3406,12 +4051,12 @@ function ScrollScrubMedia({
               </div>
 
               <p className="eli5-gif-card__summary-text eli5-gif-card__summary-text--write">
-                The skill writes five explanation levels
+                Get five clearer versions back
               </p>
             </div>
 
             <a
-              className="eli5-button eli5-button--secondary eli5-gif-card__summary-action"
+              className="eli5-button eli5-button--secondary eli5-gif-card__summary-action eli5-depth--1"
               href="#install"
             >
               How to install
@@ -3436,8 +4081,8 @@ export default function App() {
   const [heroMagnetControls, setHeroMagnetControls] = useState(() =>
     loadHeroMagnetControls(),
   );
-  const [levelControls, setLevelControls] = useState(() =>
-    loadLevelControls(),
+  const [depthControls, setDepthControls] = useState(() =>
+    loadDepthControls(),
   );
   const [heroSavedLayout, setHeroSavedLayout] = useState(() =>
     loadHeroLayout(),
@@ -3453,6 +4098,7 @@ export default function App() {
   const [isInlineFallbackOpen, setIsInlineFallbackOpen] = useState(false);
   const [loadStage, setLoadStage] = useState(() => getInitialLoadStage());
   const [magnetSeed, setMagnetSeed] = useState([]);
+  const levelControls = LEVEL_CONTROL_DEFAULTS;
   const activeHeroLayout = isHeroLayoutEditing
     ? heroDraftLayout
     : heroSavedLayout;
@@ -3600,22 +4246,25 @@ export default function App() {
       return;
     }
 
-    applyThemeTokens(document.documentElement, { levelControls });
+    applyThemeTokens(document.documentElement, {
+      levelControls,
+      depthControls,
+    });
 
     if (controlPanelWindowRef.current && !controlPanelWindowRef.current.closed) {
-      applyThemeTokens(controlPanelWindowRef.current.document.documentElement, { levelControls });
+      applyThemeTokens(controlPanelWindowRef.current.document.documentElement, {
+        levelControls,
+        depthControls,
+      });
     }
-  }, [levelControls]);
+  }, [depthControls, levelControls]);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
       return;
     }
 
-    window.localStorage.setItem(
-      HERO_CONTROL_STORAGE_KEY,
-      JSON.stringify(heroMagnetControls),
-    );
+    window.localStorage.removeItem(HERO_CONTROL_STORAGE_KEY);
 
     HERO_CONTROL_STORAGE_DEPRECATED_KEYS.forEach((storageKey) => {
       window.localStorage.removeItem(storageKey);
@@ -3628,10 +4277,10 @@ export default function App() {
     }
 
     window.localStorage.setItem(
-      LEVEL_CONTROL_STORAGE_KEY,
-      JSON.stringify(levelControls),
+      DEPTH_CONTROL_STORAGE_KEY,
+      JSON.stringify(depthControls),
     );
-  }, [levelControls]);
+  }, [depthControls]);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -3649,18 +4298,7 @@ export default function App() {
       return;
     }
 
-    if (Object.keys(heroSavedLayout).length === 0) {
-      window.localStorage.removeItem(HERO_LAYOUT_STORAGE_KEY);
-      HERO_LAYOUT_STORAGE_DEPRECATED_KEYS.forEach((storageKey) => {
-        window.localStorage.removeItem(storageKey);
-      });
-      return;
-    }
-
-    window.localStorage.setItem(
-      HERO_LAYOUT_STORAGE_KEY,
-      JSON.stringify(heroSavedLayout),
-    );
+    window.localStorage.removeItem(HERO_LAYOUT_STORAGE_KEY);
 
     HERO_LAYOUT_STORAGE_DEPRECATED_KEYS.forEach((storageKey) => {
       window.localStorage.removeItem(storageKey);
@@ -3680,7 +4318,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (appView !== APP_VIEWS.depthLab) {
+    if (appView === APP_VIEWS.home) {
       return;
     }
 
@@ -3692,13 +4330,13 @@ export default function App() {
 
     controlPanelWindowRef.current = null;
     setControlPanelHost(null);
-    setIsInlineFallbackOpen(shouldKeepPanelOpen);
+    setIsInlineFallbackOpen(appView === APP_VIEWS.depthLab ? shouldKeepPanelOpen : false);
   }, [appView, controlPanelHost, isInlineFallbackOpen]);
 
   const handlePanelControlChange = useEffectEvent((key, value) => {
-    if (LEVEL_CONTROL_KEYS.has(key)) {
-      setLevelControls((current) =>
-        sanitizeLevelControls({
+    if (DEPTH_CONTROL_KEYS.has(key)) {
+      setDepthControls((current) =>
+        sanitizeDepthControls({
           ...current,
           [key]: value,
         }),
@@ -3716,7 +4354,7 @@ export default function App() {
 
   const handlePanelControlReset = useEffectEvent(() => {
     setHeroMagnetControls(HERO_MAGNET_DEFAULTS);
-    setLevelControls(LEVEL_CONTROL_DEFAULTS);
+    setDepthControls(DEPTH_CONTROL_DEFAULTS);
   });
 
   const handleToggleControlSection = useEffectEvent((sectionId) => {
@@ -3786,6 +4424,10 @@ export default function App() {
       return;
     }
 
+    if (appView === APP_VIEWS.typographyLab) {
+      return;
+    }
+
     if (isHeroLayoutEditing) {
       setIsInlineFallbackOpen(true);
       return;
@@ -3808,7 +4450,7 @@ export default function App() {
 
     setIsInlineFallbackOpen(false);
     controlPanelWindowRef.current = popupWindow;
-    const nextHost = ensureHeroControlWindowHost(popupWindow, levelControls);
+    const nextHost = ensureHeroControlWindowHost(popupWindow, depthControls);
     setControlPanelHost(nextHost);
     popupWindow.focus();
   });
@@ -3816,6 +4458,10 @@ export default function App() {
   const toggleControlPanelVisibility = useEffectEvent(() => {
     if (appView === APP_VIEWS.depthLab) {
       setIsInlineFallbackOpen((current) => !current);
+      return;
+    }
+
+    if (appView === APP_VIEWS.typographyLab) {
       return;
     }
 
@@ -3883,17 +4529,18 @@ export default function App() {
     EXAMPLES.find((example) => example.slug === activeExampleSlug) ?? EXAMPLES[0];
   const panelControls = {
     ...heroMagnetControls,
-    ...levelControls,
+    ...depthControls,
   };
   const panelSections = [
     ...HERO_CONTROL_SECTIONS,
-    ...LEVEL_CONTROL_SECTIONS,
+    ...DEPTH_CONTROL_SECTIONS,
   ];
   const hasEnteredLoadCue = (cue) => loadStage >= cue;
   const isControlPanelVisible = isInlineFallbackOpen || Boolean(controlPanelHost);
   const isDepthLabView = appView === APP_VIEWS.depthLab;
+  const isTypographyLabView = appView === APP_VIEWS.typographyLab;
   const sharedPanelCaption =
-    'One shared light rig drives the page depth system. Sun, ambient fill, and material relief update the whole scene while layout and motion still drive the hero letters live.';
+    'Edit each depth class directly. Every level has its own drop shadow, light edge, shadow edge, and light gradient.';
   const sharedPanelProps = {
     eyebrow: 'Linked control panel',
     title: 'Live page controls',
@@ -3911,7 +4558,17 @@ export default function App() {
       <DepthLabView
         isControlPanelVisible={isInlineFallbackOpen}
         onToggleControlPanel={toggleControlPanelVisibility}
+        onOpenTypographyLab={() => handleSetAppView(APP_VIEWS.typographyLab)}
         panelSurface={<ControlPanelSurface {...sharedPanelProps} />}
+        onReturnHome={() => handleSetAppView(APP_VIEWS.home)}
+      />
+    );
+  }
+
+  if (isTypographyLabView) {
+    return (
+      <TypographyLabView
+        onOpenDepthLab={() => handleSetAppView(APP_VIEWS.depthLab)}
         onReturnHome={() => handleSetAppView(APP_VIEWS.home)}
       />
     );
@@ -3925,7 +4582,7 @@ export default function App() {
           <div className="eli5-surface">
             <header
               className={getLoadItemClass(
-                'eli5-header',
+                'eli5-header eli5-depth--2',
                 hasEnteredLoadCue(LOAD_CUES.header),
                 'eli5-load-item--header',
               )}
@@ -3937,12 +4594,9 @@ export default function App() {
               </nav>
 
               <div className="eli5-header__actions">
-                <DownloadLink className="eli5-button eli5-button--primary eli5-button--header">
+                <DownloadLink className="eli5-button eli5-button--primary eli5-button--header eli5-depth--1">
                   Download
                 </DownloadLink>
-                <SupportLink className="eli5-button eli5-button--coffee eli5-button--header">
-                  Buy me a coffee
-                </SupportLink>
               </div>
             </header>
 
@@ -3953,7 +4607,7 @@ export default function App() {
 
                     <div
                       className={getLoadItemClass(
-                        'eli5-hero__badge eli5-hero__badge--printed',
+                        'eli5-hero__badge eli5-hero__badge--printed eli5-depth--1',
                         hasEnteredLoadCue(LOAD_CUES.heroBadge),
                         'eli5-load-item--badge',
                       )}
@@ -4049,7 +4703,7 @@ export default function App() {
                           delay={560}
                           variantClassName="eli5-reveal--soft"
                         >
-                          <DownloadLink className="eli5-button eli5-button--primary">
+                          <DownloadLink className="eli5-button eli5-button--primary eli5-depth--1">
                             Download the skill
                           </DownloadLink>
                         </RevealOnView>
@@ -4059,7 +4713,7 @@ export default function App() {
                           delay={680}
                           variantClassName="eli5-reveal--soft"
                         >
-                          <a className="eli5-button eli5-button--secondary" href="#examples">
+                          <a className="eli5-button eli5-button--secondary eli5-depth--1" href="#examples">
                             See the output
                           </a>
                         </RevealOnView>
@@ -4099,7 +4753,7 @@ export default function App() {
                       >
                         <h2>What this skill does</h2>
                         <p className="eli5-how__lede">
-                          You ask one question and get the answer in five passes, starting with the quick shape first and building toward the fuller version as you keep reading. Much less &ldquo;can we circle back on that&rdquo; energy.
+                          The skill rewrites one answer in five levels. You get the simple version first, then the fuller version right underneath.
                         </p>
 
                         <TypedPromptField
@@ -4187,7 +4841,7 @@ export default function App() {
                     variantClassName="eli5-reveal--soft"
                   >
                     <h2>See the output.</h2>
-                    <p>Pick a topic. The prompt stays short. The answer gets rewritten at ages 5, 7, 9, 12, and 16, without needing a second explanation meeting.</p>
+                    <p>Pick a topic. The prompt stays short. The skill rewrites the answer at ages 5, 7, 9, 12, and 16.</p>
                   </RevealOnView>
 
                   <RevealOnView
@@ -4269,7 +4923,7 @@ export default function App() {
                     variantClassName="eli5-reveal--soft"
                   >
                     <h2>Add the skill in three short steps.</h2>
-                    <p>This is a Markdown skill file for AI agents. Download it, add it to Codex, Claude Code, Cursor, or a similar setup, and ask your question as usual. No onboarding committee required.</p>
+                    <p>This is a Markdown skill file for AI agents. Download it, add it to Codex, Claude Code, Cursor, or a similar AI setup, and ask your question as usual. That&apos;s the whole setup.</p>
                   </RevealOnView>
 
                   <div className="eli5-install-grid">
@@ -4333,7 +4987,7 @@ export default function App() {
                     variantClassName="eli5-reveal--soft"
                   >
                     <h2>Why this format works.</h2>
-                    <p>The tone is cheeky. The method is not. Research on plain language, segmentation, scaffolding, and relevant humor points in the same direction: people stay oriented longer when explanations arrive in smaller, better-signposted chunks instead of one big verbal performance.</p>
+                    <p>The tone is cheeky. The method is not. Research on plain language, segmentation, scaffolding, and relevant humor points the same way: people understand more when explanations arrive in smaller, clearer steps.</p>
                   </RevealOnView>
 
                   <div className="eli5-science-grid">
@@ -4342,7 +4996,7 @@ export default function App() {
                         as="article"
                         key={item.title}
                         active={hasEnteredLoadCue(LOAD_CUES.science)}
-                        className="eli5-science-point"
+                        className="eli5-science-point eli5-depth--0"
                         delay={220 + index * 120}
                         variantClassName="eli5-reveal--card"
                       >
@@ -4350,7 +5004,6 @@ export default function App() {
                           <h3>{item.title}</h3>
                           <p>{item.copy}</p>
                           <div className="eli5-science-point__sources">
-                            <p className="eli5-science-point__sources-label">Sources</p>
                             <div className="eli5-science-point__source-list">
                               {item.sourceIds.map((sourceId) => {
                               const source = SCIENCE_SOURCE_MAP[sourceId];
@@ -4402,13 +5055,30 @@ export default function App() {
                   )}
                 >
                   <div className="eli5-cta-end">
-                    <div className="eli5-cta">
-                      <h2>Make the answer make sense.</h2>
+                    <div className="eli5-cta eli5-depth--2">
+                      <RevealOnView
+                        as="div"
+                        active={hasEnteredLoadCue(LOAD_CUES.download)}
+                        className="eli5-hero__compat eli5-cta__compat"
+                        delay={40}
+                        variantClassName="eli5-reveal--soft"
+                      >
+                        <span className="eli5-hero__compat-label">{HERO_COPY.compatLabel}</span>
+                        {COMPAT_TOOLS.map((tool) => (
+                          <span key={`cta-${tool.key}`} className="eli5-hero__compat-item">
+                            <span className={`eli5-tool-logo eli5-tool-logo--${tool.key}`} aria-hidden="true">
+                              <ToolLogo toolKey={tool.key} />
+                            </span>
+                            <span>{tool.label}</span>
+                          </span>
+                        ))}
+                      </RevealOnView>
+                      <h2>Get clearer answers.</h2>
                       <RevealOnView
                         as="p"
                         active={hasEnteredLoadCue(LOAD_CUES.download)}
                         className="eli5-cta__support"
-                        delay={100}
+                        delay={140}
                         variantClassName="eli5-reveal--soft"
                       >
                         One question in. Five clearer versions out.
@@ -4417,59 +5087,55 @@ export default function App() {
                         as="p"
                         active={hasEnteredLoadCue(LOAD_CUES.download)}
                         className="eli5-cta__body"
-                        delay={220}
+                        delay={260}
                         variantClassName="eli5-reveal--soft"
                       >
-                        Explain It Like I&apos;m Five is a Markdown skill file for AI agents. Add it
-                        once, then use it whenever an answer starts sounding polished, confident, and a
-                        little bit impossible to follow.
+                        Explain It Like I&apos;m Five is a Markdown skill for AI agents. It rewrites
+                        one answer into five levels and works in Codex, Claude Code, Cursor, and similar tools.
                       </RevealOnView>
-                      <ul className="eli5-cta__proof" aria-label="Why this skill helps">
-                        <RevealOnView
-                          as="li"
-                          active={hasEnteredLoadCue(LOAD_CUES.download)}
-                          delay={330}
-                          variantClassName="eli5-reveal--pill"
-                        >
-                          One question
-                        </RevealOnView>
-                        <RevealOnView
-                          as="li"
-                          active={hasEnteredLoadCue(LOAD_CUES.download)}
-                          delay={430}
-                          variantClassName="eli5-reveal--pill"
-                        >
-                          Five levels
-                        </RevealOnView>
-                        <RevealOnView
-                          as="li"
-                          active={hasEnteredLoadCue(LOAD_CUES.download)}
-                          delay={530}
-                          variantClassName="eli5-reveal--pill"
-                        >
-                          Works in Codex, Claude Code, Cursor, and similar agents
-                        </RevealOnView>
-                      </ul>
                       <RevealOnView
                         active={hasEnteredLoadCue(LOAD_CUES.download)}
                         delay={680}
                         variantClassName="eli5-reveal--soft"
                       >
-                        <DownloadLink className="eli5-button eli5-button--primary eli5-button--large eli5-button--cta-download">
+                        <DownloadLink className="eli5-button eli5-button--primary eli5-button--large eli5-button--cta-download eli5-depth--1">
                           Download the skill
                         </DownloadLink>
                       </RevealOnView>
                     </div>
                     <RevealOnView
+                      as="footer"
                       active={hasEnteredLoadCue(LOAD_CUES.download)}
-                      className="eli5-cta-footer"
+                      className="eli5-site-footer eli5-depth--0"
                       delay={820}
                       variantClassName="eli5-reveal--soft"
+                      aria-label="Site footer"
                     >
-                      <p>Markdown skill file for AI agents</p>
-                      <SupportLink className="eli5-cta-footer__link">
-                        If it helped, buy me a coffee
-                      </SupportLink>
+                      <div className="eli5-site-footer__brand">
+                        <p className="eli5-site-footer__title">Explain It Like I&apos;m Five</p>
+                        <p className="eli5-site-footer__summary">
+                          Markdown skill for AI agents. One question in, five clearer versions out.
+                        </p>
+                      </div>
+                      <div className="eli5-site-footer__links">
+                        <div className="eli5-site-footer__column">
+                          <p className="eli5-site-footer__heading">Product</p>
+                          <a href="#how">What it does</a>
+                          <a href="#examples">See output</a>
+                          <a href="#install">How to install</a>
+                        </div>
+                        <div className="eli5-site-footer__column">
+                          <p className="eli5-site-footer__heading">Works with</p>
+                          <span>Codex</span>
+                          <span>Claude Code</span>
+                          <span>Cursor</span>
+                        </div>
+                        <div className="eli5-site-footer__column">
+                          <p className="eli5-site-footer__heading">Resources</p>
+                          <DownloadLink className="eli5-site-footer__link">Download skill</DownloadLink>
+                          <SupportLink className="eli5-site-footer__link">Buy me a coffee</SupportLink>
+                        </div>
+                      </div>
                     </RevealOnView>
                   </div>
                 </section>
@@ -4486,7 +5152,7 @@ export default function App() {
       >
         <button
           type="button"
-          className="eli5-control-launcher__button"
+          className="eli5-control-launcher__button eli5-depth--2"
           onClick={toggleControlPanelVisibility}
         >
           {isControlPanelVisible ? 'Hide Control Panel (/)' : 'Show Control Panel (/)'}
@@ -4494,10 +5160,18 @@ export default function App() {
 
         <button
           type="button"
-          className="eli5-control-launcher__button eli5-control-launcher__button--secondary"
+          className="eli5-control-launcher__button eli5-depth--2 eli5-control-launcher__button--secondary"
           onClick={() => handleSetAppView(APP_VIEWS.depthLab)}
         >
           Open Depth Lab
+        </button>
+
+        <button
+          type="button"
+          className="eli5-control-launcher__button eli5-depth--2 eli5-control-launcher__button--secondary"
+          onClick={() => handleSetAppView(APP_VIEWS.typographyLab)}
+        >
+          Open Typography Lab
         </button>
       </div>
 

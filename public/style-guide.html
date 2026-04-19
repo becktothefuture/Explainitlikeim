@@ -6,12 +6,12 @@
     <title>Explain It Like I'm Five · Brand Color Guide</title>
     <style>
       :root {
-        --board-bg: #dfe4ea;
-        --board-shell: rgba(240, 244, 249, 0.9);
-        --board-card: rgba(251, 253, 255, 0.84);
-        --board-ink: #1b273a;
-        --board-muted: rgba(61, 73, 89, 0.64);
-        --board-line: rgba(67, 84, 105, 0.14);
+        --board-bg: #dde2de;
+        --board-shell: rgba(242, 245, 242, 0.92);
+        --board-card: rgba(249, 250, 248, 0.9);
+        --board-ink: #171a18;
+        --board-muted: rgba(74, 78, 74, 0.66);
+        --board-line: rgba(25, 29, 27, 0.12);
       }
 
       * {
@@ -27,14 +27,14 @@
       }
 
       body {
-        font-family: 'Outfit', 'Inter', 'Segoe UI', sans-serif;
+        font-family: 'Futura', 'Avenir Next', 'Century Gothic', 'Outfit', sans-serif;
         color: var(--board-ink);
         background:
-          radial-gradient(circle at 84% 10%, rgba(50, 95, 255, 0.08), transparent 22%),
-          radial-gradient(circle at 16% 84%, rgba(85, 96, 106, 0.08), transparent 24%),
-          repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.16) 0, rgba(255, 255, 255, 0.16) 1px, transparent 1px, transparent 28px),
-          repeating-linear-gradient(90deg, rgba(98, 111, 128, 0.04) 0, rgba(98, 111, 128, 0.04) 1px, transparent 1px, transparent 36px),
-          linear-gradient(180deg, #edf1f6 0%, var(--board-bg) 100%);
+          radial-gradient(circle at 84% 10%, rgba(255, 255, 255, 0.16), transparent 22%),
+          radial-gradient(circle at 16% 84%, rgba(25, 29, 27, 0.05), transparent 24%),
+          repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.14) 0, rgba(255, 255, 255, 0.14) 1px, transparent 1px, transparent 28px),
+          repeating-linear-gradient(90deg, rgba(25, 29, 27, 0.03) 0, rgba(25, 29, 27, 0.03) 1px, transparent 1px, transparent 36px),
+          linear-gradient(180deg, #e8ece8 0%, var(--board-bg) 100%);
         padding: clamp(10px, 1vw, 14px);
       }
 
@@ -43,7 +43,7 @@
         border: 1px solid rgba(255, 255, 255, 0.72);
         border-radius: 26px;
         background: var(--board-shell);
-        box-shadow: 0 14px 36px rgba(24, 35, 53, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.85);
+        box-shadow: 0 14px 36px rgba(28, 31, 29, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.85);
         backdrop-filter: blur(10px);
         display: grid;
         grid-template-rows: auto 1fr;
@@ -158,6 +158,30 @@
         grid-template-columns: repeat(4, minmax(0, 1fr));
       }
 
+      .neutral-stack {
+        display: grid;
+        gap: 6px;
+      }
+
+      .neutral-strip {
+        min-width: 0;
+      }
+
+      .neutral-strip__chip {
+        width: 100%;
+        height: 24px;
+        border-radius: 9px;
+        border: 1px solid rgba(0, 0, 0, 0.12);
+        display: flex;
+        align-items: center;
+        padding: 0 10px;
+        font-size: 0.66rem;
+        line-height: 1;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        white-space: nowrap;
+      }
+
       .token-grid--brand {
         grid-template-columns: repeat(4, minmax(0, 1fr));
       }
@@ -268,9 +292,9 @@
           <div class="section-header">
             <p class="eyebrow">Neutrals</p>
             <h2>Ink, background, and structure</h2>
-            <p>One cool slate spectrum, arranged from the lightest paper value down to the deepest support surface.</p>
+            <p>One cool slate spectrum, stacked from the deepest support tone at the top down to the lightest paper value.</p>
           </div>
-          <div class="token-grid token-grid--surfaces" id="neutrals-grid"></div>
+          <div class="neutral-stack" id="neutrals-grid"></div>
         </section>
 
         <section class="panel section section--brand">
@@ -286,7 +310,7 @@
           <div class="section-header">
             <p class="eyebrow">Signals &amp; Action Cues</p>
             <h2>Accent and interface guidance</h2>
-            <p>Focus, action blue, and the cursor cue. Structural neutrals now stay in the slate family.</p>
+            <p>Focus, action blue, the printed skill-pill tint, and the cursor cue. Structural neutrals now stay in the slate family.</p>
           </div>
           <div class="token-grid token-grid--interface" id="signals-grid"></div>
         </section>
@@ -332,7 +356,7 @@
           '--magnet-violet',
           '--external-claude-500',
         ],
-        signals: ['--blue-a300', '--blue-500', '--cursor-glow-color'],
+        signals: ['--blue-a300', '--blue-500', '--violet-500', '--skill-pill-fill', '--skill-pill-ink', '--cursor-glow-color'],
       };
       const GRADIENT_GROUPS = ['--slate-gradient-050', '--slate-gradient-100', '--slate-gradient-200', '--slate-gradient-300', '--slate-gradient-900', '--slate-gradient-sheen', '--slate-gradient-overlay', '--signal-gradient-gold', '--signal-gradient-violet'];
 
@@ -433,11 +457,15 @@
 
         const match = normalized.match(/^rgba?\(([^)]+)\)$/);
         if (match) {
-          const [r = 0, g = 0, b = 0] = match[1]
-            .split(',')
-            .slice(0, 3)
-            .map((part) => Number.parseFloat(part.trim()));
-          return { r, g, b };
+          const parts = match[1].split(',').map((part) => Number.parseFloat(part.trim()));
+          const [rawR = 0, rawG = 0, rawB = 0, alpha = 1] = parts;
+          const base = { r: 249, g: 250, b: 248 };
+          const mix = Number.isFinite(alpha) ? Math.max(0, Math.min(alpha, 1)) : 1;
+          return {
+            r: Math.round(rawR * mix + base.r * (1 - mix)),
+            g: Math.round(rawG * mix + base.g * (1 - mix)),
+            b: Math.round(rawB * mix + base.b * (1 - mix)),
+          };
         }
 
         if (normalized === 'white') return { r: 255, g: 255, b: 255 };
@@ -472,6 +500,14 @@
         });
       }
 
+      function sortByDarkness(entries) {
+        return [...entries].sort((a, b) => {
+          const luminanceDelta = getLuminance(a.value) - getLuminance(b.value);
+          if (Math.abs(luminanceDelta) > 0.0001) return luminanceDelta;
+          return a.name.localeCompare(b.name);
+        });
+      }
+
       function shortLabel(tokenName) {
         return tokenName
           .replace(/^--/, '')
@@ -479,11 +515,31 @@
           .replace(/\b\w/g, (char) => char.toUpperCase());
       }
 
+      function neutralLabel(tokenName) {
+        const scaleMatch = tokenName.match(/^--slate-(\d{3}|\d{2,3})$/i);
+        if (scaleMatch) return `Slate ${scaleMatch[1]}`;
+        return shortLabel(tokenName);
+      }
+
+      function getReadableTextColor(value) {
+        return getLuminance(value) <= 0.24 ? 'rgba(248, 250, 249, 0.96)' : 'rgba(25, 29, 27, 0.92)';
+      }
+
       function renderTokenRow(entry) {
         return `
           <article class="token-row" title="${escapeHtml(entry.name)}">
             <div class="token-chip" style="background:${escapeHtml(entry.value)}"></div>
             <div class="token-label">${escapeHtml(shortLabel(entry.name))}</div>
+          </article>
+        `;
+      }
+
+      function renderNeutralStrip(entry) {
+        return `
+          <article class="neutral-strip" title="${escapeHtml(entry.name)}">
+            <div class="neutral-strip__chip" style="background:${escapeHtml(entry.value)}; color:${escapeHtml(getReadableTextColor(entry.value))}">
+              ${escapeHtml(neutralLabel(entry.name))}
+            </div>
           </article>
         `;
       }
@@ -519,7 +575,7 @@
         const tokenMap = await loadTokenMap();
         readTokenEntries(tokenMap);
 
-        neutralsGridEl.innerHTML = sortByLightness(pickEntries(tokenMap, COLOR_GROUPS.neutrals)).map(renderTokenRow).join('');
+        neutralsGridEl.innerHTML = sortByDarkness(pickEntries(tokenMap, COLOR_GROUPS.neutrals)).map(renderNeutralStrip).join('');
         brandGridEl.innerHTML = pickEntries(tokenMap, COLOR_GROUPS.brand).map(renderBrandTile).join('');
         signalsGridEl.innerHTML = sortByLightness(pickEntries(tokenMap, COLOR_GROUPS.signals)).map(renderTokenRow).join('');
         gradientColumnsEl.innerHTML = pickEntries(tokenMap, GRADIENT_GROUPS).map(renderGradientItem).join('');

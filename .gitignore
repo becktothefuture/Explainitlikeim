@@ -4,3 +4,7 @@ dist
 .playwright-cli
 output
 .codex
+.cursor
+tmp
+__pycache__/
+*.pyc
