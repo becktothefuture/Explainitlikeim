@@ -15,6 +15,7 @@ import {
   sanitizeDepthControls,
   SECTION_BREAK_COLORS,
 } from './theme.js';
+import { FLOATING_LETTER_BUILD_SNAPSHOT } from './generated/floatingLettersBuildSnapshot.js';
 
 const DOWNLOAD_HREF = './downloads/explain-it-like-im-5.md';
 const DOWNLOAD_FILENAME = 'explain-it-like-im-5.md';
@@ -54,6 +55,7 @@ const HERO_LAYOUT_STORAGE_DEPRECATED_KEYS = [
 ];
 const FLOATING_LETTERS_LAYOUT_STORAGE_KEY = 'eli5-floating-letters-layouts-v5';
 const FLOATING_LETTER_STYLE_STORAGE_KEY = 'eli5-floating-letter-style-controls-v2';
+const FLOATING_LETTER_AUTHORING_SNAPSHOT_DOWNLOAD_NAME = 'floating-letters-authoring-snapshot.json';
 const FLOATING_LETTER_STYLE_STORAGE_DEPRECATED_KEYS = [
   'eli5-floating-letter-style-controls-v1',
 ];
@@ -82,7 +84,7 @@ const FLOATING_LETTERS_FRAME_PADDING = Object.freeze({
 });
 const FLOATING_LETTERS_DESKTOP_ASPECT_RATIO = 16 / 9;
 const FLOATING_LETTERS_MOBILE_ASPECT_RATIO = 4 / 3;
-const FLOATING_LETTERS_MOBILE_BREAKPOINT = 720;
+const FLOATING_LETTERS_MOBILE_BREAKPOINT = 980;
 const HERO_CONTROL_WINDOW_NAME = 'eli5-hero-control-panel';
 const HERO_CONTROL_WINDOW_TITLE = "Config Panel for Explain It Like I'm Five";
 const CONTROL_PANEL_SECTION_STORAGE_KEY = 'eli5-control-panel-sections-v1';
@@ -92,6 +94,7 @@ const APP_VIEWS = {
   floatingLetters: 'floating-letters',
   typographyLab: 'typography-lab',
 };
+const DEBUG_UI_ENABLED = import.meta.env.DEV || import.meta.env.VITE_ENABLE_DEBUG_UI === 'true';
 const LOAD_CUES = {
   header: 1,
   heroBadge: 2,
@@ -236,6 +239,8 @@ const FLOATING_LETTERS_CANVAS_PRESETS = Object.freeze({
     fallbackMaxWidth: 608,
   },
 });
+const FLOATING_LETTER_STYLE_REFERENCE_HEIGHT =
+  FLOATING_LETTERS_CANVAS_PRESETS[FLOATING_LETTERS_LAYOUT_VARIANTS.desktop].letterSize;
 
 const HERO_MISALIGNED_LAYOUT_V5 = {
   'hero-0-0-E': { cx: 0.09063788679884617, cy: 0.215293138154343, rotation: -4.4 },
@@ -287,15 +292,15 @@ const BOARD_LAYOUTS = {
 const HERO_MAGNET_DEFAULTS = {
   size: HERO_DEFAULT_SIZE,
   floatRangeX: 1.14,
-  floatRangeY: 1.18,
-  floatSpeed: 1.24,
-  floatRotate: 1.34,
-  hoverSink: 0.58,
+  floatRangeY: 1.65,
+  floatSpeed: 2.21,
+  floatRotate: 2.29,
+  hoverSink: 1.1,
   hoverLean: 2.36,
-  bounceLift: 1.52,
+  bounceLift: 2.38,
   bounceTwist: 2.08,
-  bounceSpeed: 0.46,
-  bounceDamping: 1.22,
+  bounceSpeed: 0.17,
+  bounceDamping: 2.02,
   stickyEaseBand: 196,
   stickyEaseEnterStrength: 1.36,
   stickyEaseReleaseStrength: 1.24,
@@ -322,7 +327,7 @@ const HERO_MAGNET_DEFAULTS = {
   groundShadow2Blur: 7,
 };
 
-const FLOATING_LETTER_STYLE_DEFAULTS = Object.freeze({
+const FLOATING_LETTER_STYLE_FALLBACKS = Object.freeze({
   styleReferenceScale: 1.07,
   innerLight: 1.4,
   innerLightSize: 1.68,
@@ -330,8 +335,20 @@ const FLOATING_LETTER_STYLE_DEFAULTS = Object.freeze({
   innerShadeSize: 1.03,
   depthOffsetX: 6,
   depthOffsetY: 6.6,
-  groundShadow1: 0.95,
-  groundShadow2: 1.04,
+  groundShadow: 1.04,
+  groundShadowSaturation: 1,
+});
+const FLOATING_LETTER_BUILD_SNAPSHOT_STYLE_CONTROLS =
+  FLOATING_LETTER_BUILD_SNAPSHOT?.styleControls ?? {};
+const FLOATING_LETTER_BUILD_SNAPSHOT_MOTION_CONTROLS =
+  FLOATING_LETTER_BUILD_SNAPSHOT?.motionControls ?? null;
+const FLOATING_LETTER_BUILD_SNAPSHOT_VISUAL_PROPS =
+  FLOATING_LETTER_BUILD_SNAPSHOT?.visualProps ?? null;
+const FLOATING_LETTER_BUILD_SNAPSHOT_LAYOUTS =
+  FLOATING_LETTER_BUILD_SNAPSHOT?.layouts ?? null;
+const FLOATING_LETTER_STYLE_DEFAULTS = Object.freeze({
+  ...FLOATING_LETTER_STYLE_FALLBACKS,
+  ...FLOATING_LETTER_BUILD_SNAPSHOT_STYLE_CONTROLS,
 });
 
 const HERO_CONTROL_SECTIONS = [
@@ -389,13 +406,13 @@ const FLOATING_LETTER_STYLE_SECTIONS = [
   {
     id: 'floating-style-depth',
     title: 'Depth',
-    detail: 'Depth stays practical: X, Y, and two ground-shadow layers.',
+    detail: 'Depth stays practical: X, Y, and one ground shadow with a saturation control.',
     defaultCollapsed: false,
     fields: [
       { key: 'depthOffsetX', label: 'Depth X', min: 0, max: 16, step: 0.1, format: (value) => value.toFixed(1) },
       { key: 'depthOffsetY', label: 'Depth Y', min: 0, max: 16, step: 0.1, format: (value) => value.toFixed(1) },
-      { key: 'groundShadow1', label: 'Shadow 1', min: 0, max: 2.5, step: 0.01, format: (value) => value.toFixed(2) },
-      { key: 'groundShadow2', label: 'Shadow 2', min: 0, max: 2.5, step: 0.01, format: (value) => value.toFixed(2) },
+      { key: 'groundShadow', label: 'Ground Shadow', min: 0, max: 2.5, step: 0.01, format: (value) => value.toFixed(2) },
+      { key: 'groundShadowSaturation', label: 'Shadow Saturation', min: 0, max: 1.5, step: 0.01, format: (value) => value.toFixed(2) },
     ],
   },
 ];
@@ -1173,6 +1190,34 @@ function getFiniteNumber(value, fallback) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+function isFloatingLettersAuthoringEnabled() {
+  if (typeof window === 'undefined' || !DEBUG_UI_ENABLED) {
+    return false;
+  }
+
+  return new URLSearchParams(window.location.search).get('controls') === '1';
+}
+
+function downloadJsonFile(filename, payload) {
+  if (typeof document === 'undefined') {
+    return;
+  }
+
+  const blob = new Blob([`${JSON.stringify(payload, null, 2)}\n`], {
+    type: 'application/json',
+  });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  window.setTimeout(() => {
+    URL.revokeObjectURL(url);
+  }, 0);
+}
+
 function sanitizeHeroMagnetControls(controls = {}) {
   return {
     size: Math.round(clamp(getFiniteNumber(controls.size, HERO_MAGNET_DEFAULTS.size), HERO_SIZE_MIN, HERO_SIZE_MAX)),
@@ -1236,8 +1281,13 @@ function migrateLegacyHeroMagnetControls(controls = {}, sourceKey = '') {
 }
 
 function loadHeroMagnetControls() {
-  if (typeof window === 'undefined') {
-    return HERO_MAGNET_DEFAULTS;
+  const bakedMotionControls =
+    FLOATING_LETTER_BUILD_SNAPSHOT_MOTION_CONTROLS
+      ? sanitizeHeroMagnetControls(FLOATING_LETTER_BUILD_SNAPSHOT_MOTION_CONTROLS)
+      : HERO_MAGNET_DEFAULTS;
+
+  if (typeof window === 'undefined' || !isFloatingLettersAuthoringEnabled()) {
+    return bakedMotionControls;
   }
 
   const currentControls = window.localStorage.getItem(HERO_CONTROL_STORAGE_KEY);
@@ -1246,7 +1296,7 @@ function loadHeroMagnetControls() {
     try {
       return sanitizeHeroMagnetControls(JSON.parse(currentControls));
     } catch {
-      return HERO_MAGNET_DEFAULTS;
+      return bakedMotionControls;
     }
   }
 
@@ -1260,18 +1310,29 @@ function loadHeroMagnetControls() {
     try {
       return migrateLegacyHeroMagnetControls(JSON.parse(legacyControls), storageKey);
     } catch {
-      return HERO_MAGNET_DEFAULTS;
+      return bakedMotionControls;
     }
   }
 
-  return HERO_MAGNET_DEFAULTS;
+  return bakedMotionControls;
 }
 
 function sanitizeFloatingLetterStyleControls(controls = {}) {
-  const legacyGroundShadow = clamp(
-    getFiniteNumber(controls.groundShadow, FLOATING_LETTER_STYLE_DEFAULTS.groundShadow1),
+  const groundShadow = clamp(
+    getFiniteNumber(
+      controls.groundShadow,
+      getFiniteNumber(controls.groundShadow2, FLOATING_LETTER_STYLE_DEFAULTS.groundShadow),
+    ),
     0,
     2.5,
+  );
+  const groundShadowSaturation = clamp(
+    getFiniteNumber(
+      controls.groundShadowSaturation,
+      FLOATING_LETTER_STYLE_DEFAULTS.groundShadowSaturation,
+    ),
+    0,
+    1.5,
   );
 
   return {
@@ -1310,21 +1371,13 @@ function sanitizeFloatingLetterStyleControls(controls = {}) {
       0,
       16,
     ),
-    groundShadow1: clamp(
-      getFiniteNumber(controls.groundShadow1, legacyGroundShadow),
-      0,
-      2.5,
-    ),
-    groundShadow2: clamp(
-      getFiniteNumber(controls.groundShadow2, legacyGroundShadow * 0.92),
-      0,
-      2.5,
-    ),
+    groundShadow,
+    groundShadowSaturation,
   };
 }
 
 function loadFloatingLetterStyleControls() {
-  if (typeof window === 'undefined') {
+  if (typeof window === 'undefined' || !isFloatingLettersAuthoringEnabled()) {
     return FLOATING_LETTER_STYLE_DEFAULTS;
   }
 
@@ -1800,8 +1853,12 @@ function loadHeroLayout() {
 }
 
 function loadFloatingLettersLayouts() {
-  if (typeof window === 'undefined') {
-    return getReferenceFloatingLettersLayouts();
+  const bakedLayouts = FLOATING_LETTER_BUILD_SNAPSHOT_LAYOUTS
+    ? sanitizeFloatingLettersLayouts(FLOATING_LETTER_BUILD_SNAPSHOT_LAYOUTS)
+    : getReferenceFloatingLettersLayouts();
+
+  if (typeof window === 'undefined' || !isFloatingLettersAuthoringEnabled()) {
+    return bakedLayouts;
   }
 
   try {
@@ -1821,10 +1878,18 @@ function loadFloatingLettersLayouts() {
       return sanitizeFloatingLettersLayouts(JSON.parse(legacyRaw));
     }
   } catch {
-    return getReferenceFloatingLettersLayouts();
+    return bakedLayouts;
   }
 
-  return getReferenceFloatingLettersLayouts();
+  return bakedLayouts;
+}
+
+function getFloatingLettersAuthoringSnapshot(styleControls, layouts, motionControls) {
+  return {
+    motionControls: sanitizeHeroMagnetControls(motionControls),
+    styleControls: sanitizeFloatingLetterStyleControls(styleControls),
+    layouts: sanitizeFloatingLettersLayouts(layouts),
+  };
 }
 
 function getFloatingLettersViewportVariant(viewportWidth) {
@@ -2904,8 +2969,8 @@ function buildFloatingLettersVisualProps(
   const lightReach = controls.innerLightSize;
   const shadeAmount = controls.innerShade;
   const shadeReach = controls.innerShadeSize;
-  const shadow1Amount = controls.groundShadow1;
-  const shadow2Amount = controls.groundShadow2;
+  const shadowAmount = controls.groundShadow;
+  const shadowSaturation = controls.groundShadowSaturation;
 
   return {
     styleReferenceHeight: referenceHeight * controls.styleReferenceScale,
@@ -2940,27 +3005,20 @@ function buildFloatingLettersVisualProps(
     depthOffsetX: controls.depthOffsetX,
     depthOffsetY: controls.depthOffsetY,
     depthSpread: HERO_MAGNET_DEFAULTS.depthSpread,
-    groundShadow1Opacity: clamp(
-      0.22 * shadow1Amount,
-      0,
-      1,
-    ),
-    groundShadow1OffsetX: 1.8,
-    groundShadow1OffsetY: 8.6,
-    groundShadow1Blur: clamp(
-      2.8 * (0.86 + shadow1Amount * 0.24),
-      0,
-      40,
-    ),
+    groundShadow1Opacity: 0,
+    groundShadow1OffsetX: 0,
+    groundShadow1OffsetY: 0,
+    groundShadow1Blur: 0,
     groundShadow2Opacity: clamp(
-      0.18 * shadow2Amount,
+      0.18 * shadowAmount,
       0,
       1,
     ),
+    groundShadowSaturation: shadowSaturation,
     groundShadow2OffsetX: 3.4,
     groundShadow2OffsetY: 19.4,
     groundShadow2Blur: clamp(
-      6.8 * (0.84 + shadow2Amount * 0.28),
+      6.8 * (0.84 + shadowAmount * 0.28),
       0,
       72,
     ),
@@ -4638,7 +4696,7 @@ function FloatingLettersView({
 }
 
 export default function App() {
-  const isDebugUIEnabled = import.meta.env.DEV || import.meta.env.VITE_ENABLE_DEBUG_UI === 'true';
+  const isDebugUIEnabled = DEBUG_UI_ENABLED;
   const floatingLettersBoardRef = useRef(null);
   const playfieldBoardRef = useRef(null);
   const howSectionRef = useRef(null);
@@ -4678,6 +4736,7 @@ export default function App() {
 
   const levelControls = LEVEL_CONTROL_DEFAULTS;
   const isFloatingLettersView = appView === APP_VIEWS.floatingLetters;
+  const isFloatingLettersAuthoring = isFloatingLettersAuthoringEnabled();
   const liveHeroLayoutVariant = isFloatingLettersView
     ? floatingLettersPreviewVariant
     : responsiveHeroLayoutVariant;
@@ -4685,10 +4744,13 @@ export default function App() {
   const activeHeroLayout = isHeroLayoutEditing
     ? heroDraftLayouts[activeHeroLayoutVariant]
     : heroSavedLayouts[liveHeroLayoutVariant];
-  const floatingLetterVisualProps = buildFloatingLettersVisualProps(
-    getFloatingLettersCanvasPreset(activeHeroLayoutVariant).letterSize,
-    floatingLetterStyleControls,
-  );
+  const floatingLetterVisualProps =
+    !isFloatingLettersAuthoring && FLOATING_LETTER_BUILD_SNAPSHOT_VISUAL_PROPS
+      ? FLOATING_LETTER_BUILD_SNAPSHOT_VISUAL_PROPS
+      : buildFloatingLettersVisualProps(
+        FLOATING_LETTER_STYLE_REFERENCE_HEIGHT,
+        floatingLetterStyleControls,
+      );
   const floatingLetterRenderMagnets = magnetSeed.map((magnet) => ({
     ...magnet,
     ...floatingLetterVisualProps,
@@ -4855,7 +4917,7 @@ export default function App() {
   }, [heroMagnetControls]);
 
   useEffect(() => {
-    if (typeof window === 'undefined') {
+    if (typeof window === 'undefined' || !isFloatingLettersAuthoring) {
       return;
     }
 
@@ -4867,7 +4929,7 @@ export default function App() {
     FLOATING_LETTER_STYLE_STORAGE_DEPRECATED_KEYS.forEach((storageKey) => {
       window.localStorage.removeItem(storageKey);
     });
-  }, [floatingLetterStyleControls]);
+  }, [floatingLetterStyleControls, isFloatingLettersAuthoring]);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -4892,7 +4954,7 @@ export default function App() {
   }, [collapsedControlSections]);
 
   useEffect(() => {
-    if (typeof window === 'undefined') {
+    if (typeof window === 'undefined' || !isFloatingLettersAuthoring) {
       return;
     }
 
@@ -4910,7 +4972,39 @@ export default function App() {
     HERO_LAYOUT_STORAGE_DEPRECATED_KEYS.forEach((storageKey) => {
       window.localStorage.removeItem(storageKey);
     });
-  }, [heroSavedLayouts]);
+  }, [heroSavedLayouts, isFloatingLettersAuthoring]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !isFloatingLettersAuthoring) {
+      return undefined;
+    }
+
+    const exportSnapshot = () =>
+      getFloatingLettersAuthoringSnapshot(
+        floatingLetterStyleControls,
+        heroSavedLayouts,
+        heroMagnetControls,
+      );
+    const downloadSnapshot = () => {
+      downloadJsonFile(
+        FLOATING_LETTER_AUTHORING_SNAPSHOT_DOWNLOAD_NAME,
+        exportSnapshot(),
+      );
+    };
+
+    window.__ELI5_EXPORT_FLOATING_LETTERS_BUILD_SNAPSHOT__ = exportSnapshot;
+    window.__ELI5_DOWNLOAD_FLOATING_LETTERS_BUILD_SNAPSHOT__ = downloadSnapshot;
+
+    return () => {
+      delete window.__ELI5_EXPORT_FLOATING_LETTERS_BUILD_SNAPSHOT__;
+      delete window.__ELI5_DOWNLOAD_FLOATING_LETTERS_BUILD_SNAPSHOT__;
+    };
+  }, [
+    heroMagnetControls,
+    floatingLetterStyleControls,
+    heroSavedLayouts,
+    isFloatingLettersAuthoring,
+  ]);
 
   useEffect(() => {
     if (typeof document === 'undefined') {
@@ -5253,15 +5347,11 @@ export default function App() {
   const isDepthLabView = appView === APP_VIEWS.depthLab;
   const isFloatingLettersLabView = appView === APP_VIEWS.floatingLetters;
   const isTypographyLabView = appView === APP_VIEWS.typographyLab;
-  const showFloatingControls =
-    isDebugUIEnabled &&
-    typeof window !== 'undefined' &&
-    new URLSearchParams(window.location.search).get('controls') === '1';
-  const useReferenceHeroArt = !showFloatingControls;
+  const showFloatingControls = isDebugUIEnabled && isFloatingLettersAuthoring;
   const sharedPanelCaption =
     'Edit each depth class directly. Every level has its own drop shadow, light edge, shadow edge, and light gradient.';
   const floatingLettersPanelCaption =
-    'Adjust motion plus the body controls that matter: reference height, inner light and shade amount and reach, depth offset, and a two-layer ground shadow.';
+    'Adjust motion plus the body controls that matter: reference height, inner light and shade amount and reach, depth offset, and ground shadow amount and saturation.';
   const sharedPanelProps = {
     eyebrow: 'Linked control panel',
     title: 'Live page controls',
@@ -5348,43 +5438,11 @@ export default function App() {
   }
 
   return (
-    <div className="eli5-page eli5-page--home-reference-desktop" data-load-stage={loadStage}>
+    <div className="eli5-page" data-load-stage={loadStage}>
       <CustomCursor />
       <main className="eli5-main">
         <div className="eli5-shell">
           <div className="eli5-surface">
-            <section className="eli5-hero-reference-desktop" aria-label="Explain It Like I'm Five hero reference">
-              <div className="eli5-hero-reference-desktop__frame">
-                <img
-                  className="eli5-hero-reference-desktop__image"
-                  src="/assets/hero/hero-reference-desktop-full.png"
-                  alt=""
-                />
-                <div className="eli5-hero-reference-desktop__hotspots" aria-hidden="false">
-                  <a className="eli5-hero-reference-desktop__hotspot eli5-hero-reference-desktop__hotspot--helper" href="#install">
-                    <span className="eli5-sr-only">{HERO_COPY.helperLabel}</span>
-                  </a>
-                  <a className="eli5-hero-reference-desktop__hotspot eli5-hero-reference-desktop__hotspot--what" href="#how">
-                    <span className="eli5-sr-only">What it does</span>
-                  </a>
-                  <a className="eli5-hero-reference-desktop__hotspot eli5-hero-reference-desktop__hotspot--examples" href="#examples">
-                    <span className="eli5-sr-only">Examples</span>
-                  </a>
-                  <a className="eli5-hero-reference-desktop__hotspot eli5-hero-reference-desktop__hotspot--science" href="#science">
-                    <span className="eli5-sr-only">The science</span>
-                  </a>
-                  <DownloadLink className="eli5-hero-reference-desktop__hotspot eli5-hero-reference-desktop__hotspot--download">
-                    <span className="eli5-sr-only">Download</span>
-                  </DownloadLink>
-                  <DownloadLink className="eli5-hero-reference-desktop__hotspot eli5-hero-reference-desktop__hotspot--cta-download">
-                    <span className="eli5-sr-only">Download the skill</span>
-                  </DownloadLink>
-                  <a className="eli5-hero-reference-desktop__hotspot eli5-hero-reference-desktop__hotspot--cta-examples" href="#examples">
-                    <span className="eli5-sr-only">See Examples</span>
-                  </a>
-                </div>
-              </div>
-            </section>
             <header
               className={getLoadItemClass(
                 'eli5-header eli5-depth--2',
@@ -5439,38 +5497,20 @@ export default function App() {
                     </div>
 
                     <div className="eli5-hero__art">
-                      {useReferenceHeroArt ? (
-                        <div
-                          className={getLoadItemClass(
-                            'eli5-hero__magnet-slot eli5-hero__magnet-slot--art',
-                            hasEnteredLoadCue(LOAD_CUES.heroTitle),
-                            'eli5-load-item--hero-title',
-                          )}
-                          data-magnet-board="hero"
-                          aria-hidden="true"
-                        >
-                          <img
-                            className="eli5-hero__wordmark-art"
-                            src="/assets/hero/hero-wordmark-reference.png"
-                            alt=""
-                          />
-                        </div>
-                      ) : (
-                        <FloatingLettersCanvas
-                          boardRef={floatingLettersBoardRef}
-                          magnets={floatingLetterRenderMagnets}
-                          frameVariant={activeHeroLayoutVariant}
-                          layoutEditing={isHeroLayoutEditing}
-                          introEnabled={hasEnteredLoadCue(LOAD_CUES.heroTitle)}
-                          motionConfig={heroMagnetControls}
-                          onLayoutCommit={handleHeroLayoutDraftCommit}
-                          className={getLoadItemClass(
-                            'eli5-floating-letters eli5-floating-letters--hero',
-                            hasEnteredLoadCue(LOAD_CUES.heroTitle),
-                            'eli5-load-item--hero-title',
-                          )}
-                        />
-                      )}
+                      <FloatingLettersCanvas
+                        boardRef={floatingLettersBoardRef}
+                        magnets={floatingLetterRenderMagnets}
+                        frameVariant={activeHeroLayoutVariant}
+                        layoutEditing={isHeroLayoutEditing}
+                        introEnabled={hasEnteredLoadCue(LOAD_CUES.heroTitle)}
+                        motionConfig={heroMagnetControls}
+                        onLayoutCommit={handleHeroLayoutDraftCommit}
+                        className={getLoadItemClass(
+                          'eli5-floating-letters eli5-floating-letters--hero',
+                          hasEnteredLoadCue(LOAD_CUES.heroTitle),
+                          'eli5-load-item--hero-title',
+                        )}
+                      />
                     </div>
 
                     <div
@@ -6016,21 +6056,14 @@ export default function App() {
             'eli5-load-item--floating-ui',
           )}
         >
-          <ControlPanelSurface
-            {...sharedPanelProps}
-            isLayoutEditing={isHeroLayoutEditing}
-            onStartLayoutEdit={handleStartHeroLayoutEdit}
-            onSaveLayoutEdit={handleSaveHeroLayoutEdit}
-            onCancelLayoutEdit={handleCancelHeroLayoutEdit}
-            onResetLayout={handleResetHeroLayout}
-          />
+          {floatingLettersPanelSurface}
         </div>
       ) : null}
 
-      {isDebugUIEnabled && controlPanelHost
+      {showFloatingControls && controlPanelHost
         ? createPortal(
             <ControlPanelSurface
-              {...sharedPanelProps}
+              {...floatingLettersPanelProps}
               isLayoutEditing={isHeroLayoutEditing}
               onStartLayoutEdit={handleStartHeroLayoutEdit}
               onSaveLayoutEdit={handleSaveHeroLayoutEdit}

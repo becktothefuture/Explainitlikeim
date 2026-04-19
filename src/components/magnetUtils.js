@@ -298,6 +298,7 @@ export function drawMagnet(ctx, magnet, scrollPosition, viewport) {
   const groundShadow1OffsetY = (magnet.groundShadow1OffsetY ?? 13) * visualScale;
   const groundShadow1Blur = (magnet.groundShadow1Blur ?? 14) * visualScale;
   const groundShadow2Opacity = magnet.groundShadow2Opacity ?? 0.14;
+  const groundShadowSaturation = magnet.groundShadowSaturation ?? 1;
   const groundShadow2OffsetX = (magnet.groundShadow2OffsetX ?? 7) * visualScale;
   const groundShadow2OffsetY = (magnet.groundShadow2OffsetY ?? 26) * visualScale;
   const groundShadow2Blur = (magnet.groundShadow2Blur ?? 30) * visualScale;
@@ -328,6 +329,7 @@ export function drawMagnet(ctx, magnet, scrollPosition, viewport) {
     groundShadow1OffsetY,
     groundShadow1Blur,
     groundShadow2Opacity,
+    groundShadowSaturation,
     groundShadow2OffsetX,
     groundShadow2OffsetY,
     groundShadow2Blur,
@@ -434,6 +436,10 @@ function buildLetterSprite(
   canvasCtx.lineJoin = 'round';
   canvasCtx.miterLimit = 2;
   canvasCtx.font = scaledLayout.font;
+  const groundShadow2Fill = toAlphaColor(
+    getGroundShadowBounceColor(style.baseColor, style.groundShadowSaturation),
+    style.groundShadow2Opacity,
+  );
   drawOffsetGlyphLayer(canvasCtx, maskCanvas, width, height, {
     fill: toAlphaColor(MAGNET_RENDER_THEME.shadow, style.groundShadow1Opacity),
     offsetX: scaledGroundShadow1OffsetX,
@@ -441,7 +447,7 @@ function buildLetterSprite(
     blur: scaledGroundShadow1Blur,
   });
   drawOffsetGlyphLayer(canvasCtx, maskCanvas, width, height, {
-    fill: toAlphaColor(MAGNET_RENDER_THEME.shadowSoft, style.groundShadow2Opacity),
+    fill: groundShadow2Fill,
     offsetX: scaledGroundShadow2OffsetX,
     offsetY: scaledGroundShadow2OffsetY,
     blur: scaledGroundShadow2Blur,
@@ -568,6 +574,10 @@ function buildShapeSprite(magnet, style) {
   canvasCtx.clearRect(0, 0, width, height);
   canvasCtx.imageSmoothingEnabled = true;
   canvasCtx.imageSmoothingQuality = 'high';
+  const groundShadow2Fill = toAlphaColor(
+    getGroundShadowBounceColor(style.baseColor, style.groundShadowSaturation),
+    style.groundShadow2Opacity,
+  );
   drawOffsetGlyphLayer(canvasCtx, maskCanvas, width, height, {
     fill: toAlphaColor(MAGNET_RENDER_THEME.shadow, style.groundShadow1Opacity),
     offsetX: scaledGroundShadow1OffsetX,
@@ -575,7 +585,7 @@ function buildShapeSprite(magnet, style) {
     blur: scaledGroundShadow1Blur,
   });
   drawOffsetGlyphLayer(canvasCtx, maskCanvas, width, height, {
-    fill: toAlphaColor(MAGNET_RENDER_THEME.shadowSoft, style.groundShadow2Opacity),
+    fill: groundShadow2Fill,
     offsetX: scaledGroundShadow2OffsetX,
     offsetY: scaledGroundShadow2OffsetY,
     blur: scaledGroundShadow2Blur,
@@ -762,6 +772,7 @@ function getLetterSpriteCacheKey(magnet, layout, style) {
     getCacheKeyNumber(style.groundShadow1OffsetY),
     getCacheKeyNumber(style.groundShadow1Blur),
     getCacheKeyNumber(style.groundShadow2Opacity),
+    getCacheKeyNumber(style.groundShadowSaturation),
     getCacheKeyNumber(style.groundShadow2OffsetX),
     getCacheKeyNumber(style.groundShadow2OffsetY),
     getCacheKeyNumber(style.groundShadow2Blur),
@@ -794,6 +805,7 @@ function getShapeSpriteCacheKey(magnet, style) {
     getCacheKeyNumber(style.groundShadow1OffsetY),
     getCacheKeyNumber(style.groundShadow1Blur),
     getCacheKeyNumber(style.groundShadow2Opacity),
+    getCacheKeyNumber(style.groundShadowSaturation),
     getCacheKeyNumber(style.groundShadow2OffsetX),
     getCacheKeyNumber(style.groundShadow2OffsetY),
     getCacheKeyNumber(style.groundShadow2Blur),
@@ -1371,6 +1383,26 @@ function mixColors(colorA, colorB, ratio = 0.5) {
     green: Math.round(rgbA.green + (rgbB.green - rgbA.green) * ratio),
     blue: Math.round(rgbA.blue + (rgbB.blue - rgbA.blue) * ratio),
   });
+}
+
+function getGroundShadowBounceColor(baseColor, saturation = 1) {
+  const mutedBounce = mixColors(baseColor, MAGNET_RENDER_THEME.shadowSoft, 0.72);
+  const neutralBounce = mixColors(mutedBounce, MAGNET_RENDER_THEME.shadowSoft, 0.86);
+  const clampedSaturation = clamp(saturation, 0, 1.5);
+
+  if (clampedSaturation <= 1) {
+    return shiftColor(
+      mixColors(neutralBounce, mutedBounce, clampedSaturation),
+      -0.04,
+    );
+  }
+
+  const boostedBounce = mixColors(
+    mutedBounce,
+    baseColor,
+    ((clampedSaturation - 1) / 0.5) * 0.18,
+  );
+  return shiftColor(boostedBounce, -0.04);
 }
 
 function getReadableTextColor(color) {
