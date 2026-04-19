@@ -12,6 +12,8 @@ VITE_ENABLE_DEBUG_UI=true
 
 Debug UI is also enabled automatically when `import.meta.env.DEV` is true (normal `vite` dev mode).
 
+Keep `VITE_ENABLE_DEBUG_UI` unset in production deployments. Only set it in local/debug environments when you intentionally want debug controls visible.
+
 When debug UI is enabled, you get:
 - the floating control launcher,
 - the inline control dock and external control panel mount,
