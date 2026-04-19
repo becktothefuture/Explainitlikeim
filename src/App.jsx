@@ -3500,49 +3500,9 @@ function SectionBreak({
   levelControls = LEVEL_CONTROL_DEFAULTS,
 }) {
   const pillHeight = 22;
-  const pillMotionSize = Math.max(28, pillHeight);
-  const dividerMagnetProps = buildSharedMagnetVisualProps(
-    levelControls,
-    getFiniteNumber(heroMagnetControls.vibrance, HERO_MAGNET_DEFAULTS.vibrance),
-  );
-  const pillMagnet = createShapeMagnet({
-    id: `section-break-${color}-${tilt}-${width}`,
-    shapeType: 'pill',
-    authorX: 0,
-    authorY: 0,
-    width,
-    height: pillHeight,
-    rotation: tilt,
-    color,
-    magnetProps: {
-      ...dividerMagnetProps,
-      styleReferenceHeight: pillHeight,
-      motionWidth: pillMotionSize,
-      motionHeight: pillMotionSize,
-      innerLightOpacity: dividerMagnetProps.innerLightOpacity * 0.82,
-      groundShadow1Opacity: dividerMagnetProps.groundShadow1Opacity * 0.56,
-      groundShadow1Blur: dividerMagnetProps.groundShadow1Blur * 0.72,
-      groundShadow2Opacity: dividerMagnetProps.groundShadow2Opacity * 0.5,
-      groundShadow2Blur: dividerMagnetProps.groundShadow2Blur * 0.68,
-      x: 0,
-      y: 0,
-      zIndex: 1,
-      hoverable: false,
-    },
-  });
-  const visualPad = getHeroMagnetVisualPad(pillMagnet);
-  const floatRangeX = getFiniteNumber(
-    heroMagnetControls.floatRangeX,
-    HERO_MAGNET_DEFAULTS.floatRangeX,
-  );
-  const floatRangeY = getFiniteNumber(
-    heroMagnetControls.floatRangeY,
-    HERO_MAGNET_DEFAULTS.floatRangeY,
-  );
-  const slotWidth = Math.ceil(pillMagnet.width + visualPad * 2 + floatRangeX * 12);
-  const slotHeight = Math.ceil(pillMagnet.height + visualPad * 2 + floatRangeY * 22);
-  pillMagnet.x = (slotWidth - pillMagnet.width) / 2;
-  pillMagnet.y = (slotHeight - pillMagnet.height) / 2;
+  const slotWidth = width + 34;
+  const slotHeight = pillHeight + 34;
+  const floatDelay = `${((width % 7) * -0.11).toFixed(2)}s`;
 
   return (
     <div className={className} aria-hidden="true">
@@ -3552,14 +3512,16 @@ function SectionBreak({
         style={{
           width: `${slotWidth}px`,
           height: `${slotHeight}px`,
+          '--divider-pill-width': `${width}px`,
+          '--divider-pill-height': `${pillHeight}px`,
+          '--divider-pill-color': color,
+          '--divider-pill-tilt': `${tilt}deg`,
+          '--divider-float-delay': floatDelay,
         }}
       >
-        <MagnetCanvas
-          className="eli5-section-break__magnet"
-          magnets={[pillMagnet]}
-          motionConfig={heroMagnetControls}
-          localCoordinates
-        />
+        <span className="eli5-section-break__float">
+          <span className="eli5-section-break__pill" />
+        </span>
       </div>
       <span className="eli5-section-break__rail" />
     </div>
