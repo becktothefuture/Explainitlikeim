@@ -1,5 +1,9 @@
 # Explain It Like I'm Five
 
+[![Deploy GitHub Pages](https://github.com/becktothefuture/Explainitlikeim/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/becktothefuture/Explainitlikeim/actions/workflows/deploy-pages.yml)
+[![Live Site](https://img.shields.io/badge/live%20site-GitHub%20Pages-0a7cff)](https://becktothefuture.github.io/Explainitlikeim/)
+[![License](https://img.shields.io/github/license/becktothefuture/Explainitlikeim)](./LICENSE)
+
 Explain It Like I'm Five is a skill for AI agents. It rewrites one answer into five levels, from simple to precise, so people can get the plain version first and the fuller version right underneath.
 
 Use it in Codex, Claude Code, Cursor, and similar agents when an answer is technically correct but not exactly easy to follow.
@@ -12,6 +16,7 @@ This repo contains the landing site for the skill and the downloadable Markdown 
 
 - Visit the live site: [becktothefuture.github.io/Explainitlikeim](https://becktothefuture.github.io/Explainitlikeim/)
 - Download the actual skill file: [public/downloads/explain-it-like-im-5.md](public/downloads/explain-it-like-im-5.md)
+- Direct raw download: [raw.githubusercontent.com/.../explain-it-like-im-5.md](https://raw.githubusercontent.com/becktothefuture/Explainitlikeim/main/public/downloads/explain-it-like-im-5.md)
 - Read the research notes behind the format: [public/downloads/references/learning-principles.md](public/downloads/references/learning-principles.md)
 - Local development notes: [docs/development.md](docs/development.md)
 
@@ -104,6 +109,7 @@ The important path is near the top of the tree:
 Install dependencies and run the site locally:
 
 ```bash
+nvm use
 npm install
 npm run dev
 ```
@@ -121,3 +127,5 @@ npm run preview
 ```
 
 Live site deploys from `main` only.
+
+Licensed under the [MIT License](./LICENSE).

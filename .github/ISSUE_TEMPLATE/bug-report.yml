@@ -1,0 +1,52 @@
+name: Bug report
+description: Report a broken page, bad link, confusing copy, or skill-file issue.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where is the problem?
+      options:
+        - README
+        - Landing page
+        - Skill file
+        - Build or deployment
+        - Something else
+    validations:
+      required: true
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: Say what broke or what looks wrong.
+      placeholder: The raw download link returns the wrong file...
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Go to ...
+        2. Click ...
+        3. See ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect instead?
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Browser or environment
+      placeholder: Safari 18, GitHub README view, local Node 22, etc.
+  - type: textarea
+    id: notes
+    attributes:
+      label: Extra notes or screenshots
+      description: Optional, but useful when the bug is visual.
