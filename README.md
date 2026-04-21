@@ -17,7 +17,7 @@ This repo gives you the landing page and the Markdown skill file you install.
 - Live site: currently broken
 - Download the skill file: [public/downloads/explain-it-like-im-5.md](public/downloads/explain-it-like-im-5.md)
 - Raw download: [raw.githubusercontent.com/.../explain-it-like-im-5.md](https://raw.githubusercontent.com/becktothefuture/Explainitlikeim/main/public/downloads/explain-it-like-im-5.md)
-- Read the research notes behind the format: [public/downloads/references/learning-principles.md](public/downloads/references/learning-principles.md)
+- Read why the five-level structure works: [public/downloads/references/learning-principles.md](public/downloads/references/learning-principles.md)
 - Local development notes: [docs/development.md](docs/development.md)
 
 If you are here for the skill, start with `public/downloads/explain-it-like-im-5.md`.
@@ -65,11 +65,13 @@ You get:
 🎓: A budget surplus is the positive balance that remains when revenue or allocated funds exceed expenditures for a defined period. It can come from higher-than-expected income, lower costs, delayed purchases, or deliberate underspending. The next question is usually whether to save it, reallocate it, or return it.
 ```
 
-## Why This Format Works
+## Why This Works
 
-The tone is cheeky. The method is not.
+People understand more when explanations arrive in smaller, clearer steps.
 
-People understand more when explanations arrive in smaller, clearer steps. This format uses plain language, segmentation, scaffolding, and a small amount of relevant personality instead of one dense wall of text. If you want the longer version, read [public/downloads/references/learning-principles.md](public/downloads/references/learning-principles.md).
+The skill gives you one simple version first, then adds detail step by step. That makes the answer easier to follow without asking for another rewrite right away.
+
+If you want the longer research notes, read [public/downloads/references/learning-principles.md](public/downloads/references/learning-principles.md).
 
 ## Where The Skill File Lives
 
@@ -100,7 +102,7 @@ Short version:
 ```
 
 - `public/downloads/explain-it-like-im-5.md` is the skill file you install
-- `public/downloads/references/learning-principles.md` explains the learning principles behind the format
+- `public/downloads/references/learning-principles.md` explains the learning principles behind the five-level structure
 - `src/App.jsx` contains the main landing-page structure and copy
 - `docs/development.md` covers local debug notes
 
