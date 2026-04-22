@@ -9,3 +9,4 @@ output
 tmp
 __pycache__/
 *.pyc
+screenshots/
