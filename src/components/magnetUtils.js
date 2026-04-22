@@ -1,7 +1,7 @@
 import { MAGNET_COLORS, MAGNET_RENDER_THEME } from '../theme.js';
 
 export const MAGNET_FONT_FAMILY =
-  "'Fredoka', 'Arial Rounded MT Bold', 'Nunito', 'Trebuchet MS', 'Segoe UI', sans-serif";
+  "'Londrina Solid', 'Arial Rounded MT Bold', 'Trebuchet MS', 'Segoe UI', sans-serif";
 
 const DEG_TO_RAD = Math.PI / 180;
 const LETTER_SPRITE_SCALE = 1.65;

@@ -6,7 +6,7 @@
   --shell-max: 1020px;
   --shell: min(var(--shell-max), calc(100vw - 88px));
   --font-ui: 'Outfit', 'Inter', 'Segoe UI', sans-serif;
-  --font-magnet: 'Fredoka', 'Arial Rounded MT Bold', sans-serif;
+  --font-magnet: 'Londrina Solid', 'Arial Rounded MT Bold', sans-serif;
   --type-display-size: clamp(53px, calc(48.17px + 1.24vw), 66px);
   --type-display-line-height: 0.94;
   --type-display-weight: 700;
