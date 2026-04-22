@@ -116,12 +116,6 @@ const LOAD_TIMELINE = [
   { stage: LOAD_CUES.controlDock, delay: 1240 },
 ];
 const FINAL_LOAD_STAGE = LOAD_TIMELINE[LOAD_TIMELINE.length - 1]?.stage ?? 0;
-const SCROLL_INTRO_DISTANCE = 300;
-const SCROLL_INTRO_BAND_RATIO = 0.2;
-const SCROLL_INTRO_ACTIVE_ROOT_MARGIN = '0px 0px 35% 0px';
-const SCROLL_INTRO_SLOW_BAND_MULTIPLIER = 1.45;
-const SCROLL_INTRO_BASE_EASE_POWER = 3;
-const SCROLL_INTRO_SLOW_EASE_POWER = 3;
 const HERO_TITLE_SLOT_PADDING_X = 28;
 const HERO_TITLE_SLOT_PADDING_Y = 24;
 const HERO_SLOT_MIN_HEIGHT = 380;
@@ -585,214 +579,36 @@ function getLoadItemStyle(delay = 0) {
   };
 }
 
-function easeOutPower(progress, power) {
-  return 1 - ((1 - progress) ** power);
-}
-
-function applyScrollIntroState(record, progress, isSettled = false) {
-  const clampedProgress = clamp(progress, 0, 1);
-  const translateY = isSettled
-    ? 0
-    : Math.round((1 - clampedProgress) * SCROLL_INTRO_DISTANCE * 1000) / 1000;
-  const opacity = isSettled
-    ? 1
-    : Math.round(clampedProgress * 1000) / 1000;
-
-  record.node.style.setProperty('--scroll-intro-y', `${translateY}px`);
-  record.node.style.setProperty('--scroll-intro-opacity', `${opacity}`);
-  record.node.style.setProperty('--scroll-intro-progress', `${clampedProgress}`);
-  record.node.classList.toggle('is-settled', isSettled);
-}
-
 function createScrollIntroManager() {
   if (typeof window === 'undefined') {
     return null;
   }
 
-  const records = new Map();
-  const activeRecords = new Set();
   const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-  let frameId = 0;
-
-  const settleRecord = (record) => {
-    if (!record || record.settled) {
-      return;
-    }
-
-    record.settled = true;
-    activeRecords.delete(record);
-    applyScrollIntroState(record, 1, true);
-    observer?.unobserve(record.node);
-  };
-
-  const measureActiveRecords = () => {
-    frameId = 0;
-
-    if (reducedMotionQuery.matches) {
-      records.forEach((record) => {
-        settleRecord(record);
-      });
-      return;
-    }
-
-    if (activeRecords.size === 0) {
-      return;
-    }
-
-    const viewportHeight = Math.max(
-      window.innerHeight || 0,
-      document.documentElement.clientHeight || 0,
-      1,
-    );
-    const measurements = Array.from(activeRecords, (record) => ({
-      record,
-      rect: record.node.getBoundingClientRect(),
-    }));
-
-    measurements.forEach(({ record, rect }) => {
-      if (!records.has(record.node) || record.settled) {
-        return;
-      }
-
-      const bandRatio = SCROLL_INTRO_BAND_RATIO * (
-        record.speed === 'slow' ? SCROLL_INTRO_SLOW_BAND_MULTIPLIER : 1
-      );
-      const bandHeight = Math.max(viewportHeight * bandRatio, 1);
-      const settleLine = viewportHeight - bandHeight;
-      const rawProgress = clamp((viewportHeight - rect.top) / bandHeight, 0, 1);
-      const easedProgress = easeOutPower(
-        rawProgress,
-        record.speed === 'slow' ? SCROLL_INTRO_SLOW_EASE_POWER : SCROLL_INTRO_BASE_EASE_POWER,
-      );
-
-      applyScrollIntroState(record, easedProgress);
-
-      if (rawProgress >= 1 || rect.top <= settleLine || rect.bottom <= 0) {
-        settleRecord(record);
-        return;
-      }
-
-      if (rect.top >= viewportHeight + SCROLL_INTRO_DISTANCE + 160) {
-        activeRecords.delete(record);
-        applyScrollIntroState(record, 0);
-      }
-    });
-
-    if (activeRecords.size > 0) {
-      requestMeasure();
-    }
-  };
-
-  const requestMeasure = () => {
-    if (frameId || activeRecords.size === 0) {
-      return;
-    }
-
-    frameId = window.requestAnimationFrame(measureActiveRecords);
-  };
-
-  const handleObserverEntries = (entries) => {
-    entries.forEach((entry) => {
-      const record = records.get(entry.target);
-
-      if (!record || record.settled) {
-        return;
-      }
-
-      if (reducedMotionQuery.matches) {
-        settleRecord(record);
-        return;
-      }
-
-      if (entry.boundingClientRect.bottom <= 0) {
-        settleRecord(record);
-        return;
-      }
-
-      if (entry.isIntersecting || entry.boundingClientRect.top < window.innerHeight + SCROLL_INTRO_DISTANCE) {
-        activeRecords.add(record);
-        return;
-      }
-
-      activeRecords.delete(record);
-      applyScrollIntroState(record, 0);
-    });
-
-    requestMeasure();
+  const reveal = (node) => {
+    node.classList.add('is-visible');
   };
 
   const observer = typeof IntersectionObserver === 'function'
-    ? new IntersectionObserver(handleObserverEntries, {
-      rootMargin: SCROLL_INTRO_ACTIVE_ROOT_MARGIN,
-      threshold: 0,
-    })
+    ? new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          reveal(entry.target);
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' })
     : null;
 
-  const queueActiveMeasure = () => {
-    if (activeRecords.size === 0) {
-      return;
-    }
-
-    requestMeasure();
-  };
-
-  const handleMotionChange = (event) => {
-    if (event.matches) {
-      records.forEach((record) => {
-        settleRecord(record);
-      });
-      return;
-    }
-
-    records.forEach((record) => {
-      if (!record.settled) {
-        activeRecords.add(record);
-      }
-    });
-    requestMeasure();
-  };
-
-  window.addEventListener('scroll', queueActiveMeasure, { passive: true });
-  window.addEventListener('resize', queueActiveMeasure);
-
-  if (typeof reducedMotionQuery.addEventListener === 'function') {
-    reducedMotionQuery.addEventListener('change', handleMotionChange);
-  } else {
-    reducedMotionQuery.addListener(handleMotionChange);
-  }
-
   return {
-    observe(node, { speed = 'base' } = {}) {
-      if (!node) {
+    observe(node) {
+      if (!node) return () => {};
+      if (reducedMotionQuery.matches || !observer) {
+        reveal(node);
         return () => {};
       }
-
-      const record = {
-        node,
-        speed,
-        settled: false,
-      };
-
-      records.set(node, record);
-      node.dataset.scrollIntroSpeed = speed;
-      applyScrollIntroState(record, reducedMotionQuery.matches ? 1 : 0, reducedMotionQuery.matches);
-
-      if (reducedMotionQuery.matches || !observer) {
-        settleRecord(record);
-      } else {
-        observer.observe(node);
-      }
-
-      return () => {
-        activeRecords.delete(record);
-        observer?.unobserve(node);
-        records.delete(node);
-        node.classList.remove('is-settled');
-        node.style.removeProperty('--scroll-intro-y');
-        node.style.removeProperty('--scroll-intro-opacity');
-        node.style.removeProperty('--scroll-intro-progress');
-        delete node.dataset.scrollIntroSpeed;
-      };
+      observer.observe(node);
+      return () => observer.unobserve(node);
     },
   };
 }
@@ -809,7 +625,8 @@ function ScrollIntro({
   as: Tag = 'div',
   children,
   className = '',
-  speed = 'base',
+  index,
+  style,
   ...props
 }) {
   const nodeRef = useRef(null);
@@ -822,13 +639,18 @@ function ScrollIntro({
       return undefined;
     }
 
-    return manager.observe(node, { speed });
-  }, [speed]);
+    return manager.observe(node);
+  }, []);
+
+  const staggerStyle = Number.isFinite(index)
+    ? { ...style, '--stagger-index': Math.min(index, 4) }
+    : style;
 
   return (
     <Tag
       ref={nodeRef}
       className={['eli5-scroll-intro', className].filter(Boolean).join(' ')}
+      style={staggerStyle}
       {...props}
     >
       {children}
@@ -4957,6 +4779,11 @@ export default function App() {
   }, [activeHeroLayout, activeHeroLayoutVariant]);
 
   useEffect(() => {
+    if (typeof document === 'undefined') return;
+    document.documentElement.classList.add('js-ready');
+  }, []);
+
+  useEffect(() => {
     if (typeof window === 'undefined') {
       return;
     }
@@ -5737,7 +5564,7 @@ export default function App() {
                 <section id="how" className="eli5-section eli5-section--how">
                   <div ref={howSectionRef} className="eli5-how">
                     <div className="eli5-how__copy">
-                      <ScrollIntro className="eli5-how__intro" speed="slow">
+                      <ScrollIntro className="eli5-how__intro">
                         <h2>What this skill does</h2>
                         <p className="eli5-how__lede">
                           The skill rewrites one answer in five levels. You get the simple version first, then the fuller version right underneath.
@@ -5753,7 +5580,7 @@ export default function App() {
 
                       <div className="eli5-how__benefits">
                         {HOW_BENEFITS.map((benefit, index) => (
-                          <ScrollIntro as="article" key={benefit.title} className="eli5-how-benefit">
+                          <ScrollIntro as="article" key={benefit.title} className="eli5-how-benefit" index={index}>
                             <div
                               className="eli5-how-benefit__art"
                               aria-hidden="true"
@@ -5811,7 +5638,7 @@ export default function App() {
                 />
 
                 <section id="examples" className="eli5-section eli5-section--examples">
-                  <ScrollIntro className="eli5-section-heading" speed="slow">
+                  <ScrollIntro className="eli5-section-heading">
                     <h2>See the output.</h2>
                     <p>Pick a topic. The prompt stays short. The skill rewrites the answer in five visual levels, from simple to precise.</p>
                   </ScrollIntro>
@@ -5871,14 +5698,14 @@ export default function App() {
                 />
 
                 <section id="install" className="eli5-section eli5-section--install">
-                  <ScrollIntro className="eli5-section-heading" speed="slow">
+                  <ScrollIntro className="eli5-section-heading">
                     <h2>Add the skill in three short steps.</h2>
                     <p>This is a Markdown skill file for AI agents. Download it, add it to Codex, Claude Code, Cursor, or a similar AI setup, and ask your question as usual. That&apos;s the whole setup.</p>
                   </ScrollIntro>
 
                   <div className="eli5-install-grid">
                     {INSTALL_STEPS.map((step, index) => (
-                      <ScrollIntro as="article" key={step.title} className="eli5-install-step">
+                      <ScrollIntro as="article" key={step.title} className="eli5-install-step" index={index}>
                         <div
                           className="eli5-install-step__art-frame"
                           aria-hidden="true"
@@ -5918,14 +5745,14 @@ export default function App() {
                   className="eli5-section eli5-section--science"
                   aria-label="The science"
                 >
-                  <ScrollIntro className="eli5-section-heading" speed="slow">
+                  <ScrollIntro className="eli5-section-heading">
                     <h2>Why this format works.</h2>
                     <p>The tone is cheeky. The method is not. Research on plain language, segmentation, scaffolding, and relevant humor points the same way: people understand more when explanations arrive in smaller, clearer steps.</p>
                   </ScrollIntro>
 
                   <div className="eli5-science-grid">
-                    {SCIENCE_PRINCIPLES.map((item) => (
-                      <ScrollIntro as="article" key={item.title} className="eli5-science-point eli5-depth--0">
+                    {SCIENCE_PRINCIPLES.map((item, index) => (
+                      <ScrollIntro as="article" key={item.title} className="eli5-science-point eli5-depth--0" index={index}>
                         <div>
                           <h3>{item.title}</h3>
                           <p>{item.copy}</p>
