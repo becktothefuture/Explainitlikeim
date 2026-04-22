@@ -71,7 +71,25 @@ async function main() {
       const page = await context.newPage();
 
       await page.goto(BASE_URL, { waitUntil: 'networkidle', timeout: 20000 });
-      await page.waitForTimeout(1200);
+      await page.waitForTimeout(800);
+
+      // First-paint screenshot captures the initial above-the-fold state
+      // before the user scrolls. Useful for catching hidden-content bugs.
+      await page.screenshot({
+        path: join(vpDir, 'first-paint.png'),
+        fullPage: false,
+      });
+
+      // Walk the page so IntersectionObserver reveals every section,
+      // then scroll back to top before the fullpage capture so both
+      // revealed and above-the-fold content is captured consistently.
+      const total = await page.evaluate(() => document.documentElement.scrollHeight);
+      for (let y = 0; y < total; y += Math.floor(vp.height * 0.6)) {
+        await page.evaluate((py) => window.scrollTo(0, py), y);
+        await page.waitForTimeout(120);
+      }
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await page.waitForTimeout(600);
 
       await page.screenshot({
         path: join(vpDir, 'fullpage.png'),
