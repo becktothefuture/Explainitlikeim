@@ -1,3 +1,14 @@
+/*
+ * Design tokens — all values flow from :root below.
+ *
+ * Breakpoints (mobile-first):  600px | 1024px | 1280px
+ * Shell (content width):       --shell  → min(--shell-max, 100vw − clamp gutter)
+ * Space scale:                 --space-1 … --space-10  (clamp-based, ~4px → 128px)
+ * Type scale:                  --type-display / heading / ui / body / meta / eyebrow
+ * Scroll-reveal:               .js-ready + IntersectionObserver flip .is-visible
+ *                              offset: --scroll-intro-distance (36px), stagger via --stagger-index
+ */
+
 :root {
   --shadow-soft: none;
   --radius-pill: 999px;
@@ -3148,16 +3159,6 @@ html[data-debug-ui='true'] .eli5-control-dock {
   outline-offset: 3px;
 }
 
-@media (max-width: 1023.98px) {
-  .eli5-header {
-    width: 100%;
-  }
-
-  .eli5-playfield {
-    min-height: 920px;
-  }
-}
-
 @media (min-width: 1280px) {
   :root {
     --shell-max: clamp(1120px, 72vw, 1380px);
@@ -3526,16 +3527,33 @@ html[data-debug-ui='true'] .eli5-control-dock {
     position: static;
   }
 
+  .eli5-depth-lab {
+    width: min(100%, calc(100vw - 12px));
+  }
+
   .eli5-depth-lab__grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
   }
 
   .eli5-depth-lab__minimal-demo {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
   }
 
   .eli5-depth-lab__button-sample {
     grid-column: 1 / -1;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .eli5-depth-lab__menu-demo,
+  .eli5-depth-lab__button-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .eli5-depth-lab__menu-demo .eli5-button,
+  .eli5-depth-lab__button-row .eli5-button {
+    width: 100%;
   }
 
   .eli5-section-break {
@@ -3632,36 +3650,6 @@ html[data-debug-ui='true'] .eli5-control-dock {
 
   .eli5-button--cta-download {
     min-width: 0;
-  }
-}
-
-@media (max-width: 599.98px) {
-  .eli5-depth-lab__minimal-demo {
-    grid-template-columns: 1fr;
-  }
-
-  .eli5-depth-lab__button-sample {
-    width: 100%;
-    min-width: 0;
-  }
-
-  .eli5-depth-lab__grid {
-    grid-template-columns: 1fr;
-  }
-
-  .eli5-depth-lab {
-    width: min(100%, calc(100vw - 12px));
-  }
-
-  .eli5-depth-lab__menu-demo,
-  .eli5-depth-lab__button-row {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .eli5-depth-lab__menu-demo .eli5-button,
-  .eli5-depth-lab__button-row .eli5-button {
-    width: 100%;
   }
 }
 

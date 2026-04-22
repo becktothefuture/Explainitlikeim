@@ -1,7 +1,6 @@
 # Explain It Like I'm Five
 
 [![Deploy GitHub Pages](https://github.com/becktothefuture/Explainitlikeim/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/becktothefuture/Explainitlikeim/actions/workflows/deploy-pages.yml)
-![Site Status](https://img.shields.io/badge/site-currently%20broken-lightgrey)
 [![License](https://img.shields.io/github/license/becktothefuture/Explainitlikeim)](./LICENSE)
 
 Explain It Like I'm Five is a skill for AI agents. It rewrites one answer into five levels, from simple to precise, so you get the plain version first and the fuller version after that.
@@ -14,7 +13,7 @@ This repo gives you the landing page and the Markdown skill file you install.
 
 ## Start Here
 
-- Live site: currently broken
+- Live site: [explainitlikeim.com](https://becktothefuture.github.io/Explainitlikeim/)
 - Download the skill file: [public/downloads/explain-it-like-im-5.md](public/downloads/explain-it-like-im-5.md)
 - Raw download: [raw.githubusercontent.com/.../explain-it-like-im-5.md](https://raw.githubusercontent.com/becktothefuture/Explainitlikeim/main/public/downloads/explain-it-like-im-5.md)
 - Read why the five-level structure works: [public/downloads/references/learning-principles.md](public/downloads/references/learning-principles.md)
