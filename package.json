@@ -7,12 +7,12 @@
     "node": "22.x"
   },
   "scripts": {
-    "dev": "vite --host 127.0.0.1 --port 4173",
+    "dev": "vite --host 0.0.0.0 --port 4173",
     "build:cursors": "python3 scripts/build_cursors.py",
     "build:floating-letters-snapshot": "node scripts/generate_floating_letters_build_snapshot.mjs",
     "build:theme-tokens": "node scripts/generate_theme_token_map.mjs",
     "build": "npm run build:floating-letters-snapshot && npm run build:theme-tokens && vite build",
-    "preview": "vite preview --host 127.0.0.1 --port 4173",
+    "preview": "vite preview --host 0.0.0.0 --port 4173",
     "screenshot:baseline": "node scripts/capture-screenshots.mjs baseline",
     "screenshot:after": "node scripts/capture-screenshots.mjs after"
   },
