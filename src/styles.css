@@ -2113,7 +2113,7 @@ html[data-debug-ui='true'] .eli5-control-dock {
   align-items: center;
   min-height: 34px;
   padding: 0 12px;
-  border: 1px solid color-mix(in srgb, var(--magnet-violet) 26%, var(--slate-300));
+  border: 1.5px solid color-mix(in srgb, var(--magnet-violet) 56%, var(--slate-300));
   border-radius: 12px;
   background: var(--skill-pill-fill);
   box-shadow: none;
